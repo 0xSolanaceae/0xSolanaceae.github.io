@@ -2,6 +2,6 @@
 
 || GITHUB: Atropa-Solanaceae
 
-|| DISCORD: Solanaceae#5428
+|| DISCORD: xsolanaceae
 
 || INSTAGRAM: Solanaceae_Solanum
