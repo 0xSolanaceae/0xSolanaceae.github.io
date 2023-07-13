@@ -8,20 +8,25 @@
   --socials-box-shadow-color: #811ce7;
   --text-color: white;
   --link-color: #bdace7;
+  --card-height: 65vh;
+  --card-width: calc(var(--card-height) / 1.5);
 }
 
 body {
   font-family: 'Source Code Pro', monospace;
   text-align: center;
-  background-color: #171126;
+  background-color: var(--background-color);
   margin: 0;
   padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
 }
 
 canvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: -1;
 }
 
@@ -52,7 +57,7 @@ canvas {
 }
 
 .skills {
-  color: white;
+  color: var(--text-color);
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -87,13 +92,12 @@ canvas {
 
 .link {
   display: inline;
-  color: white;
   font-weight: 100;
-  color: var(--link-color);
   font-size: 15px;
-  background-color: var(--link-background-color);
   padding: 8px;
   border-radius: 5px;
+  color: var(--link-color);
+  background-color: var(--link-background-color);
 }
 
 .divider {
@@ -107,7 +111,7 @@ canvas {
   }
   100% {
     opacity: 1;
-    transform: translateX(0px);
+    transform: translateX(0);
   }
 }
 
@@ -135,11 +139,6 @@ canvas {
 
 #heart:hover {
   transform: scale(1.5);
-}
-
-:root {
-  --card-height: 65vh;
-  --card-width: calc(var(--card-height) / 1.5);
 }
 
 .card::after {
@@ -219,5 +218,11 @@ svg {
 @keyframes stroke-offset {
   100% {
     stroke-dashoffset: -35%;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .card {
+    margin-top: 20vh; /* Adjust the value as needed to center the card vertically */
   }
 }
