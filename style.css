@@ -64,6 +64,18 @@ canvas {
   font-size: 13px;
 }
 
+.link {
+  display: inline;
+  font-weight: 100;
+  font-size: 13px;
+  font-family: 'Fira Code', monospace;
+  font-variant-ligatures: contextual;
+  padding: 8px;
+  border-radius: 5px;
+  color: var(--link-color);
+  background-color: var(--link-background-color);
+}
+
 .socials {
   background-color: var(--link-background-color);
   padding: 8px;
@@ -87,22 +99,20 @@ canvas {
   vertical-align: middle;
   display: inline;
   color: var(--secondary-color);
-  font-size: 15px;
-}
-
-.link {
-  display: inline;
-  font-weight: 100;
-  font-size: 15px;
-  padding: 8px;
-  border-radius: 5px;
-  color: var(--link-color);
-  background-color: var(--link-background-color);
+  font-family: 'Fira Code', monospace;
+  font-variant-ligatures: contextual;
+  font-size: 14px;
 }
 
 .divider {
   margin: 0 10px;
 }
+
+#avatar {
+  max-width: 128px;
+  max-height: 128px;
+}
+
 
 @keyframes slideIn {
   0% {
@@ -168,7 +178,7 @@ canvas {
   }
 }
 
-/* swirly css */
+/* swirly text css */
 
 body {
   background: #030321;
@@ -218,11 +228,5 @@ svg {
 @keyframes stroke-offset {
   100% {
     stroke-dashoffset: -35%;
-  }
-}
-
-@media screen and (max-width: 600px) {
-  .card {
-    margin-top: 20vh; /* Adjust the value as needed to center the card vertically */
   }
 }
