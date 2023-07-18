@@ -95,6 +95,12 @@ canvas {
   transition: transform 0.2s ease-in-out;
 }
 
+@media screen and (max-width: 600px) {
+  .card {
+    margin-top: 20vh;
+  }
+}
+
 .title {
   vertical-align: middle;
   display: inline;
