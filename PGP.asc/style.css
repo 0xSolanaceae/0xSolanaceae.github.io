@@ -43,14 +43,14 @@ a:hover {
   font-size: 12px;
   float: right;
   margin-top: -50px;
+  margin-right: -23px;
   background-color: #946df7;
   color: white;
   border: none;
   padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 .copy-button:hover {
