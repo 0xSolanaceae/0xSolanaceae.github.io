@@ -25,8 +25,10 @@ a:hover {
 
 /* PGP Key */
 .pgp-key {
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
   font-size: 15px;
-  line-height: 1.6; /* Slightly reduced line-height for better readability */
+  line-height: 2; /* Slightly reduced line-height for better readability */
   white-space: pre-wrap;
   max-width: 600px;
   margin: 20px auto;
@@ -34,7 +36,6 @@ a:hover {
   border: 2px solid #811ce7; /* Slightly thinner border */
   border-radius: 8px; /* Increased border radius for a softer look */
   text-align: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adding a subtle box shadow */
 }
 
 .copy-button {
