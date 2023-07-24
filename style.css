@@ -41,6 +41,8 @@ canvas {
 }
 
 .madewith {
+  font-family: 'Fira Code', monospace;
+  font-weight: 100;
   width: fit-content;
   padding: 10px;
   margin: auto;
@@ -48,6 +50,7 @@ canvas {
   margin-top: 6%;
   box-shadow: 5px 5px 5px var(--box-shadow-color);
   border-radius: 5px;
+  color: #bdace7;
 }
 
 .card img {
