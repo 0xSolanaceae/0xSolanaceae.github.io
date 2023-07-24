@@ -6,4 +6,4 @@
 
 || INSTAGRAM: Solanaceae_Solanum
 
-|| [PGP](https://p.ip.fi/YxW_)
+|| [PGP](https://solanaceae.xyz/PGP.asc/)
