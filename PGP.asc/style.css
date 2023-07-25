@@ -2,7 +2,7 @@ body {
   background-color: #262133;
   font-family: "Fira Code", monospace;
   color: #bdace7;
-  margin: 0px auto;
+  margin: 0;
   padding: 8px;
   max-width: 600px;
 }
@@ -14,48 +14,49 @@ h1 {
 
 a {
   color: #946df7;
-  text-decoration: none; /* Remove the default underline */
-  border-bottom: 2px solid transparent; /* Add a transparent border for a subtle underline effect */
-  transition: border-bottom 0.2s ease-in-out; /* Add a smooth transition for the underline effect */
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: border-bottom 0.2s ease-in-out;
 }
 
 a:hover {
-  opacity: 0.8; /* Reduce the opacity slightly on hover for a polished look */
+  opacity: 0.8;
 }
 
 /* PGP Key */
 .pgp-key {
-  display: inline-block;
   font-family: 'Fira Code', monospace;
   font-size: 15px;
-  line-height: 2; /* Slightly reduced line-height for better readability */
-  white-space: pre-wrap;
+  line-height: 1.5;
   max-width: 600px;
-  margin: 20px auto;
-  padding: 15px; /* Increased padding for more breathing space */
-  border: 2px solid #811ce7; /* Slightly thinner border */
-  border-radius: 8px; /* Increased border radius for a softer look */
   text-align: center;
 }
 
 .copy-button {
   font-family: "Fira Code", monospace;
   font-size: 12px;
-  float: right;
-  margin-top: -50px;
-  margin-right: -23px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  padding: 10px 15px;
   background-color: #946df7;
   color: white;
   border: none;
-  padding: 10px 15px;
   border-radius: 5px;
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .copy-button:hover {
-  transform: scale(1.10);
+  transform: scale(1.1);
   box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+.copy-button:focus {
+  outline: none;
+}
+
+.copy-button:active {
+  transform: scale(0.9);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Scrollbar styles */
@@ -72,4 +73,28 @@ a:hover {
 /* Scrollbar handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background-color: #946df7b6;
+}
+
+/* Media query for phones */
+@media screen and (max-width: 600px) {
+  body {
+    padding: 4px; /* Reduce padding for better mobile experience */
+  }
+
+  h1 {
+    font-size: 24px; /* Adjust the heading size for mobile */
+  }
+
+  .pgp-key {
+    font-size: 8px; /* Adjust the font size for mobile */
+    margin: 10px auto; /* Reduce the margin for mobile */
+    padding: 10px; /* Reduce padding for mobile */
+  }
+
+  .copy-button {
+    font-size: 10px; /* Adjust the font size for mobile */
+    top: -30px; /* Adjust the button position for mobile */
+    right: -13px; /* Adjust the button position for mobile */
+    padding: 6px 10px; /* Adjust the button padding for mobile */
+  }
 }
