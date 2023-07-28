@@ -4,6 +4,6 @@
 
 || DISCORD: xsolanaceae
 
-|| INSTAGRAM: Solanaceae_Solanum
+|| mailto:solanaceae@duck.com
 
 || [PGP](https://solanaceae.xyz/PGP.asc/)
