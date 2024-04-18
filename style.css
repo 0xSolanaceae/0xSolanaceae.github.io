@@ -87,6 +87,7 @@ canvas {
   box-shadow: var(--socials-box-shadow-color);
   text-align: left;
   transition: transform 0.2s ease-in-out;
+  cursor: pointer;
 }
 
 .socials:hover {
