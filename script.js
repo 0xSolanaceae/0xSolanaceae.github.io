@@ -15,7 +15,6 @@ for (let i = 0; i < columns; i++) {
 const str = "#()?/\\|{}[]";
 
 function draw() {
-    // Clear the canvas by setting the composite operation to "destination-out"
     context.globalCompositeOperation = "destination-out";
     context.fillStyle = "rgba(0, 0, 0, 0.1)";
     context.fillRect(0, 0, canvas.width, canvas.height);
