@@ -7,20 +7,20 @@
     <title>artemive</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://kit.fontawesome.com/dd13dde450.js" crossorigin="anonymous"></script>
-    <link rel="icon" type="image/webp" href="../assets/logo.webp"/>
+    <link rel="icon" type="image/webp" href="assets/logo.webp"/>
     <!-- Fonts -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="../assets/fonts/SourceCodePro.css" rel="stylesheet">
-    <link href="../assets/fonts/FiraCode.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@200&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
     <!-- Fonts -->
 </head>
 <body>
     <canvas id="canvas"></canvas>
     <script src="script.js"></script>
     <div class="card">
-        <img id="avatar" src="../assets/logo.webp" alt="logo">
+        <img id="avatar" src="assets/logo.webp" alt="logo">
         <div class="author">
             <svg viewBox="0 0 960 200">
                 <symbol id="s-text">
@@ -55,14 +55,14 @@
                 <a style="text-decoration: none" href="mailto:solanaceae@duck.com" target="_blank"><h1 class="link">solanaceae@duck.com</h1></a>
             </div>
             <div class="socials">
-                <a style="text-decoration: none" href="PGP/" onclick="redirectToPGP()">
+                <a style="text-decoration: none" href="PGP.asc/" onclick="redirectToPGP()">
                     <h1 class="title"><-------------PGP-------------></h1>
                 </a>
             </div>
             <script>
                 function redirectToPGP(event) {
                     event.preventDefault();
-                    window.location.href = "https://solanaceae.xyz/PGP/";
+                    window.location.href = "https://solanaceae.xyz/PGP.asc/";
                 }
             </script>            
         </div>
