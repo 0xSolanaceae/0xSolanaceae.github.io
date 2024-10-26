@@ -5,16 +5,20 @@
     <link href="style.css" rel="stylesheet">
     <title>PGP.asc</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
     <link rel="icon" type="image/webp" href="../assets/logo.webp"/>
 </head>
 <body>
-    <h1>PGP.asc</h1>
-    <p>
-        <a href="https://solanaceae.xyz/">~/.solanaceae.xyz</a>
-    </p>
-    <button class="copy-button" onclick="copyPGPKey()">copy</button>
-    <pre class="pgp-key">
+    <header>
+        <h1>PGP.asc</h1>
+        <p>
+            <a href="../index.html">~/.solanaceae.xyz</a>
+        </p>
+    </header>
+    <main>
+        <section class="pgp-container">
+            <button class="copy-button" onclick="copyPGPKey()">copy key</button>
+            <pre class="pgp-key">
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQINBGZC6FYBEADY/xyRS9dpta6qRnL2e0OP7irrr/KDLq4QhYRDJ0QanhWzdeT/

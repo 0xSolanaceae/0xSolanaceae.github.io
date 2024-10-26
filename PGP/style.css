@@ -5,6 +5,14 @@ body {
   margin: 0;
   padding: 8px;
   max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header, footer {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 h1 {
@@ -23,13 +31,23 @@ a:hover {
   opacity: 0.8;
 }
 
-/* PGP Key */
+.pgp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .pgp-key {
   font-family: 'Fira Code', monospace;
   font-size: 15px;
   line-height: 1.5;
   max-width: 600px;
   text-align: center;
+  background-color: #1e1b29;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
 }
 
 .copy-button {
@@ -43,6 +61,7 @@ a:hover {
   border: none;
   border-radius: 5px;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
 }
 
 .copy-button:hover {
@@ -93,8 +112,6 @@ a:hover {
 
   .copy-button {
     font-size: 10px; /* Adjust the font size for mobile */
-    top: -30px; /* Adjust the button position for mobile */
-    right: -13px; /* Adjust the button position for mobile */
     padding: 6px 10px; /* Adjust the button padding for mobile */
   }
 }
