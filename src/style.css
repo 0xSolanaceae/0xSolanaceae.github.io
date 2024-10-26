@@ -1,0 +1,243 @@
+:root {
+  --primary-color: #9400d3;
+  --secondary-color: #946df7;
+  --background-color: #171126;
+  --card-background-color: #2c2146;
+  --box-shadow-color: #1f1030;
+  --link-background-color: #120e1b;
+  --socials-box-shadow-color: #811ce7;
+  --text-color: white;
+  --link-color: #bdace7;
+  --card-height: 65vh;
+  --card-width: calc(var(--card-height) / 1.5);
+}
+
+body {
+  font-family: 'Source Code Pro', monospace;
+  text-align: center;
+  background-color: var(--background-color);
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrollbars */
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+}
+
+.card {
+  width: fit-content;
+  padding: 15px;
+  margin: auto;
+  background-color: var(--card-background-color);
+  margin-top: 2.5%;
+  box-shadow: 5px 5px 5px var(--box-shadow-color);
+  border-radius: 5px;
+}
+
+
+.madewith {
+  font-family: 'Fira Code', monospace;
+  font-weight: 100;
+  width: fit-content;
+  padding: 10px;
+  margin: auto;
+  background-color: var(--card-background-color);
+  margin-top: 6%;
+  box-shadow: 5px 5px 5px var(--box-shadow-color);
+  border-radius: 5px;
+  color: #bdace7;
+}
+
+.card img {
+  box-shadow: 0px 0px 10px 0px var(--primary-color);
+  border-radius: 100px;
+  border: 2px solid var(--primary-color);
+}
+
+.skills {
+  color: var(--text-color);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 13px;
+}
+
+.link {
+  display: inline;
+  font-weight: 100;
+  font-size: 13px;
+  font-family: 'Fira Code', monospace;
+  font-variant-ligatures: contextual;
+  padding: 8px;
+  border-radius: 5px;
+  color: var(--link-color);
+  background-color: var(--link-background-color);
+}
+
+.socials {
+  background-color: var(--link-background-color);
+  padding: 8px;
+  border-radius: 5px;
+  margin-top: 10px;
+  box-shadow: var(--socials-box-shadow-color);
+  text-align: left;
+  transition: transform 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.socials:hover {
+  transform: translateY(-5px);
+}
+
+.socials:active {
+  transform: translateY(0);
+  transition: transform 0.2s ease-in-out;
+}
+
+@media screen and (max-width: 600px) {
+  .card {
+    margin-top: 20vh;
+  }
+}
+
+.title {
+  vertical-align: middle;
+  display: inline;
+  color: var(--secondary-color);
+  font-family: 'Fira Code', monospace;
+  font-variant-ligatures: contextual;
+  font-size: 14px;
+}
+
+.divider {
+  margin: 0 10px;
+}
+
+#avatar {
+  max-width: 128px;
+  max-height: 128px;
+}
+
+
+@keyframes slideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes underline {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: 22%;
+  }
+}
+
+#heart {
+  transition: all 0.3s ease-in-out;
+}
+
+#heart:hover {
+  transform: scale(1.5);
+}
+
+.card::after {
+  position: absolute;
+  content: "";
+  top: calc(var(--card-height) / 10);
+  left: 0;
+  right: 0;
+  z-index: -2;
+  height: 100%;
+  width: 100%;
+  margin: 0 auto;
+  transform: scale(0.8);
+  filter: blur(calc(var(--card-height) / 3));
+  background-image: linear-gradient(var(--rotate), #6600ff, #ff00e1, #831acb);
+  opacity: 1;
+  transition: opacity .5s;
+  animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    --rotate: 0deg;
+  }
+  100% {
+    --rotate: 360deg;
+  }
+}
+
+/* swirly text css */
+
+body {
+  background: #030321;
+  font-family: sans-serif;
+}
+
+svg {
+  display: block;
+  font: 160px 'Source Code Pro';
+  margin: 0 auto;
+}
+
+.text-copy {
+  fill: none;
+  stroke: white;
+  stroke-dasharray: 6% 29%;
+  stroke-width: 5px;
+  stroke-dashoffset: 0%;
+  animation: stroke-offset 5.5s infinite linear;
+}
+
+.text-copy:nth-child(1) {
+  stroke: #811ce7;
+  animation-delay: -1s;
+}
+
+.text-copy:nth-child(2) {
+  stroke: #9400d3;
+  animation-delay: -2s;
+}
+
+.text-copy:nth-child(3) {
+  stroke: #b931ff;
+  animation-delay: -3s;
+}
+
+.text-copy:nth-child(4) {
+  stroke: #c954fb;
+  animation-delay: -4s;
+}
+
+.text-copy:nth-child(5) {
+  stroke: #946df7;
+  animation-delay: -5s;
+}
+
+@keyframes stroke-offset {
+  100% {
+    stroke-dashoffset: -35%;
+  }
+}
