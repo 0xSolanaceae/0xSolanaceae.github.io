@@ -1,3 +1,4 @@
+```
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQINBGZC6FYBEADY/xyRS9dpta6qRnL2e0OP7irrr/KDLq4QhYRDJ0QanhWzdeT/
@@ -50,3 +51,4 @@ qJw6+CZHojOnhVxhlh/di9dPyYAd7Zdft2TNP0ZlpwJsdgbhxYHkXp6P0fYJ2y9V
 X0IqDtpAXxS1icc=
 =K6jI
 -----END PGP PUBLIC KEY BLOCK-----
+```
