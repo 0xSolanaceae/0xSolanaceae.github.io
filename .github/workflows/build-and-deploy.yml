@@ -18,7 +18,8 @@ jobs:
           node-version: '18'
           
       - name: Install dependencies 📦
-        run: npm ci
+        # Use regular npm install since we may not have a package-lock.json yet
+        run: npm install
         
       - name: Build and minify 🔧
         run: npm run build
