@@ -31,8 +31,8 @@ jobs:
         
       - name: Copy CNAME and robots.txt
         run: |
-          cp CNAME dist/
-          cp robots.txt dist/
+          cp CNAME dist/ || echo "No CNAME file found"
+          cp robots.txt dist/ || echo "No robots.txt file found"
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2

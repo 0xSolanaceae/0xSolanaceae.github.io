@@ -2,10 +2,10 @@
 import './styles.css';
 
 // Import JavaScript files
-import '../morph/ascii-morph.js';
+// Note: These will be handled differently
+import '../morph/ascii-morph.js';  // This will be copied by CopyPlugin
 import './ambient.js';
 import './render.js';
 
 // This is the main entry point for webpack
-// It imports all the necessary files so webpack can bundle them
 console.log('Website loaded successfully');

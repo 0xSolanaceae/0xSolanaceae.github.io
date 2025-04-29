@@ -3,13 +3,14 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
   
   return {
     entry: {
-      main: './src/index.js',
+      main: path.resolve(__dirname, 'src/index.js'),
     },
     output: {
       filename: 'js/[name].[contenthash].js',
@@ -28,19 +29,16 @@ module.exports = (env, argv) => {
             format: {
               comments: false,
             },
+            compress: {
+              drop_console: true,
+            },
           },
           extractComments: false,
         }),
         new CssMinimizerPlugin(),
       ],
       splitChunks: {
-        cacheGroups: {
-          vendor: {
-            test: /[\\/]node_modules[\\/]/,
-            name: 'vendors',
-            chunks: 'all',
-          },
-        },
+        chunks: 'all',
       },
     },
     module: {
@@ -110,6 +108,19 @@ module.exports = (env, argv) => {
       }),
       new MiniCssExtractPlugin({
         filename: 'css/[name].[contenthash].css',
+      }),
+      new CopyPlugin({
+        patterns: [
+          { 
+            from: "morph", 
+            to: "morph" 
+          },
+          { 
+            from: "assets", 
+            to: "assets",
+            noErrorOnMissing: true
+          }
+        ],
       }),
     ],
   };
