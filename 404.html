@@ -1,39 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <link href="../PGP/style.css" rel="stylesheet">
-    <title>404 Not Found</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/webp" href="../assets/logo.webp"/>
-    <style>
-        body, html {
-            height: 100%;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            overflow: hidden;
-        }
-        .error-container {
-            max-width: 600px;
-            margin: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - Page Not Found</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <link rel="icon" href="/assets/fav.webp" type="image/webp">
+  <link rel="preload" href="morph/ascii-morph.js" as="script">
+  <style>
+    .error-container {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      margin-top: -30px; /* Move up to create more space at bottom */
+    }
+    
+    .error-message {
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      color: var(--fg);
+      margin-bottom: 20px;
+    }
+    
+    .home-button {
+      display: inline-block;
+      padding: 8px 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: var(--fg);
+      background-color: transparent;
+      border: 1px solid var(--fg);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 40px; /* Add space at the bottom */
+    }
+    
+    .home-button:hover {
+      color: var(--orange);
+    }
+    
+    @media (max-width: 768px) {
+      .error-container {
+        margin-top: -15px;
+      }
+      .error-message {
+        font-size: 13px;
+        padding: 0 10px;
+      }
+      .home-button {
+        margin-bottom: 30px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .error-message {
+        font-size: 11px;
+      }
+      .home-button {
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>404 not found</h1>
-        <p>
-            <a href="../">~/.solanaceae.xyz</a>
-        </p>
-    </header>
-    <main>
-        <section class="error-container">
-            <p>this page does not exist</p>
-            <p>please don't hack my site :(</p>
-        </section>
-    </main>
+  <div class="ambient-container"></div>
+  
+  <main>
+    <div class="error-container">
+      <div class="error-message">page not found</div>
+      <button class="home-button" onclick="window.location.href='/'">RETURN</button>
+    </div>
+  </main>
+
+  <script src="morph/ascii-morph.js"></script>
+  <script src="src/ambient.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const errorContainer = document.querySelector('.error-container');
+      
+      function randomFlicker() {
+        const rand = Math.random();
+        if (rand > 0.7) {
+          errorContainer.classList.add('drift');
+          setTimeout(() => {
+            errorContainer.classList.remove('drift');
+          }, 2000);
+        }
+        
+        setTimeout(randomFlicker, Math.random() * 10000 + 5000);
+      }
+      
+      randomFlicker();
+    });
+  </script>
 </body>
 </html>

@@ -1,72 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>artemive</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://kit.fontawesome.com/dd13dde450.js" crossorigin="anonymous"></script>
-    <link rel="icon" type="image/webp" href="assets/logo.webp"/>
-    <!-- Fonts -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@200&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
-    <!-- Fonts -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>artemive</title>
+  <link rel="stylesheet" href="src/styles.css">
+  <link rel="icon" href="/assets/fav.webp" type="image/webp">
+  <link rel="preload" href="morph/ascii-morph.js" as="script">
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <script src="script.js"></script>
-    <div class="card">
-        <img id="avatar" src="assets/logo.webp" alt="logo">
-        <div class="author">
-            <svg viewBox="0 0 960 200">
-                <symbol id="s-text">
-                    <text text-anchor="middle" x="50%" y="80%">SOLANACEAE</text>
-                </symbol>
-                <g class="g-ants">
-                    <use xlink:href="#s-text" class="text-copy"></use>
-                    <use xlink:href="#s-text" class="text-copy"></use>
-                    <use xlink:href="#s-text" class="text-copy"></use>
-                    <use xlink:href="#s-text" class="text-copy"></use>
-                    <use xlink:href="#s-text" class="text-copy"></use>
-                </g>
-            </svg>
-        </div>
-        <h2 class="skills">/ Hacker // Developer /</h2>
-        <div style="margin-top:20px;">
-            <div class="socials">
-                <h1 class="title">github::</h1>
-                <a style="text-decoration: none" href="https://github.com/0xSolanaceae" target="_blank">
-                    <h1 class="link">0xSolanaceae</h1>
-                </a>
-            </div>
-            <div class="socials">
-                <h1 class="title">discord::</h1>
-                <a style="text-decoration: none" href="https://discordapp.com/users/1098339239432835162" target="_blank">
-                    <h1 class="link">0x_solanaceae</h1>
-                </a>
-            </div>
-            <div class="socials">
-                <h1 class="title">email::</h1>
-                <a style="text-decoration: none" href="mailto:solanaceae@duck.com" target="_blank">
-                    <h1 class="link">solanaceae@duck.com</h1>
-                </a>
-            </div>
-            <div class="socials">
-                <a style="text-decoration: none" href="PGP.asc/" onclick="redirectToPGP(event)">
-                    <h1 class="title"><-------------PGP-------------></h1>
-                </a>
-            </div>
-        </div>
+  <div class="ambient-container"></div>
+  
+  <div class="controls">
+    <div id="nav-buttons"></div>
+  </div>
+  
+  <main>
+    <pre class="morph-section"></pre>
+    
+    <div class="pgp-key-container">
+      <pre class="pgp-key"></pre>
     </div>
-    <h1 class="madewith" style="font-size: 15px; margin-top: 15px;">
-        Made with <a href="https://ko-fi.com/solanaceae" target="_blank" style="color: red;">
-            <i id="heart" style="color: red;" class="fa-solid fa-heart"></i>
-        </a>
-    </h1>
-    <script src="redirect.js"></script>
+  </main>
+
+  <script src="morph/ascii-morph.js"></script>
+  <script src="src/ambient.js"></script>
+  <script src="src/render.js"></script>
 </body>
 </html>
