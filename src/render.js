@@ -8,17 +8,16 @@ const mobileSections = {
     "",
     "<span class='center-item mobile-text'>═══════════════</span>",
     "",
-    "<span class='center-item mobile-text'>┌─────────────┐</span>",
-    "<span class='center-item mobile-text'>│  security   │</span>",
-    "<span class='center-item mobile-text'>│  engineer   │</span>",
-    "<span class='center-item mobile-text'>└─────────────┘</span>",
+    "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
+    "<span class='center-item mobile-text box-content'>security engineer</span>",
+    "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
     "",
   ],
   
   pgp: [
-    "<span class='center-item mobile-text'>┌─────────────┐</span>",
-    "<span class='center-item mobile-text'>│     PGP     │</span>",
-    "<span class='center-item mobile-text'>└─────────────┘</span>",
+    "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
+    "<span class='center-item mobile-text box-content'>PGP</span>",
+    "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "<span class='center-item mobile-text pgp-link'>[VIEW KEY]</span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
@@ -26,9 +25,9 @@ const mobileSections = {
   ],
   
   projects: [
-    "<span class='center-item mobile-text'>┌─────────────┐</span>",
-    "<span class='center-item mobile-text'>│  PROJECTS   │</span>",
-    "<span class='center-item mobile-text'>└─────────────┘</span>",
+    "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
+    "<span class='center-item mobile-text box-content'>PROJECTS</span>",
+    "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank'>://proXXy</a></span>",
     "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank'>://discord-imhex</a></span>",
@@ -38,9 +37,9 @@ const mobileSections = {
   ],
   
   contact: [
-    "<span class='center-item mobile-text'>┌─────────────┐</span>",
-    "<span class='center-item mobile-text'>│   CONTACT   │</span>",
-    "<span class='center-item mobile-text'>└─────────────┘</span>",
+    "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
+    "<span class='center-item mobile-text box-content'>CONTACT</span>",
+    "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "<span class='center-item mobile-text'><a href='mailto:solanaceae@duck.com'>solanaceae@duck.com</a></span>",
     "<span class='center-item mobile-text'><a href='https://discordapp.com/users/1098339239432835162' target='_blank'>discord://0x_Solanaceae</a></span>",
@@ -408,6 +407,31 @@ function init() {
   
   if (isMobileView) {
     element.classList.add('mobile-centered');
+    // Add special CSS for box rendering on mobile
+    const style = document.createElement('style');
+    style.textContent = `
+      .box-line {
+        letter-spacing: -0.5px;
+        white-space: nowrap;
+        display: inline-block;
+        width: auto !important;
+        font-family: 'Courier New', monospace;
+      }
+      .box-content {
+        display: inline-block;
+        padding: 0 8px;
+        width: auto !important;
+        white-space: nowrap;
+        line-height: 1.2;
+        font-family: 'Courier New', monospace;
+      }
+      @media (max-width: 480px) {
+        .box-line {
+          letter-spacing: -1px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }
   
   resetIdleTimer();

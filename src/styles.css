@@ -246,6 +246,25 @@ main {
   margin-bottom: 8px;
 }
 
+.box-line {
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  display: inline-block;
+  width: auto !important;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+}
+
+.box-content {
+  display: inline-block;
+  padding: 0 8px;
+  width: auto !important;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-family: 'Courier New', monospace;
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   main {
     align-items: center;
@@ -371,6 +390,16 @@ main {
     background-color: var(--fg);
     border-radius: 6px;
   }
+
+  .box-line {
+    letter-spacing: -0.5px;
+    text-rendering: geometricPrecision;
+  }
+  
+  .box-content {
+    max-width: 90% !important;
+    margin: 0 auto;
+  }
 }
 
 @media (max-width: 480px) {
@@ -402,5 +431,10 @@ main {
   
   .mobile-text.title-text {
     font-size: 1.6em !important;
+  }
+
+  .box-line {
+    letter-spacing: -1px;
+    font-size: 11px;
   }
 }
