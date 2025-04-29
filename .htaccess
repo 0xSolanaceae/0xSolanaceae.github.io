@@ -1,0 +1,24 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /src/ [NC]
+  RewriteRule ^src/.*$ - [F,L]
+</IfModule>
+
+<IfModule mod_authz_core.c>
+  <FilesMatch "^(render|ambient)\.js$">
+    <If "%{REQUEST_URI} =~ m#^/src/#">
+      Require all denied
+    </If>
+  </FilesMatch>
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+  <FilesMatch "^(render|ambient)\.js$">
+    Order deny,allow
+    Deny from all
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteRule ^src/.*\.js$ - [F,L]
+</IfModule>
