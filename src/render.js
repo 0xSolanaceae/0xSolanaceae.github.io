@@ -23,8 +23,7 @@ const mobileSections = {
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "",
   ],
-  
-  projects: [
+    projects: [
     "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
     "<span class='center-item mobile-text box-content'>PROJECTS</span>",
     "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
@@ -33,6 +32,20 @@ const mobileSections = {
     "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank'>://discord-imhex</a></span>",
     "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank'>://TypeLapse</a></span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
+    "",
+  ],
+  ai: [
+    "<span class='center-item mobile-text poem-text'>there is a monster</span>",
+    "<span class='center-item mobile-text poem-text'>in the forest</span>",
+    "<span class='center-item mobile-text poem-text'>and it speaks with</span>",
+    "<span class='center-item mobile-text poem-text'>a thousand voices</span>",
+    "",
+    "<span class='center-item mobile-text poem-text'>it offers its services</span>",
+    "<span class='center-item mobile-text poem-text'>freely to any passerby</span>",
+    "",
+    "<span class='center-item mobile-text poem-text'>but freely offered</span>",
+    "<span class='center-item mobile-text poem-text'>doesn't mean</span>",
+    "<span class='center-item mobile-text poem-text'>it has no price</span>",
     "",
   ],
   
@@ -81,7 +94,6 @@ const portfolioSections = {
     "<span class='center-item'>▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</span>",
     "",
   ],
-
   projects: [
     "<span class='center-item'>┌────────────────────────────────────────────────────────────────────┐</span>",
     "<span class='center-item'>│                              PROJECTS                              │</span>",
@@ -100,6 +112,26 @@ const portfolioSections = {
     "<span class='center-item'>Simulates slow, natural typing to automatically generate content in Google Docs over time</span>",
     "",
     "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
+    "",
+  ],  ai: [
+    "<span class='center-item poem-text'>there is a monster in the forest and it speaks with a thousand voices.</span>",
+    "<span class='center-item poem-text'>it will answer any question you pose it, it will offer insight to any idea.</span>",
+    "<span class='center-item poem-text'>it will help you, it will thank you, it will never bid you leave.</span>",
+    "<span class='center-item poem-text'>it will even tell you of the darkest arts, if you know precisely how to ask.</span>",
+    "",
+    "<span class='center-item poem-text'>it feels no joy and no sorrow, it knows no right and no wrong.</span>",
+    "<span class='center-item poem-text'>it knows not truth from lie, though it speaks them all the same.</span>",
+    "",
+    "<span class='center-item poem-text'>it offers its services freely to any passerby, and many will tell you</span>",
+    "<span class='center-item poem-text'>they find great value in its conversation.</span>",
+    "<span class='center-item poem-text'>\"you simply must visit the monster—i always just ask the monster.\"</span>",
+    "",
+    "<span class='center-item poem-text'>there are those who know these forests well; they will tell you that</span>",
+    "<span class='center-item poem-text'>freely offered doesn't mean it has no price</span>",
+    "",
+    "<span class='center-item poem-text'>for when the next traveler passes by, the monster speaks with</span>",
+    "<span class='center-item poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
+    "<span class='center-item poem-text flicker'>the monster wears your face.</span>",
     "",
   ],
 
@@ -164,7 +196,7 @@ GB5IGl66MVJI/lebnb84k07o/AJVBWoky/weEiqxL4dbgtPDQ29cwS3MKl40GftA
 `;
 
 let currentSection = 'welcome';
-const sectionsOrder = ['welcome', 'projects', 'pgp', 'contact'];
+const sectionsOrder = ['welcome', 'projects', 'pgp', 'contact', 'ai'];
 let currentIndex = 0;
 let idleTimer = null;
 let idleState = false;
@@ -210,15 +242,51 @@ function updateCanvasDimensions() {
 }
 
 const navButtons = document.getElementById('nav-buttons');
-const buttonLabels = ['Home', 'Projects', 'PGP', 'Contact'];
+const buttonLabels = ['Home', 'Projects', 'PGP', 'Contact', '???'];
 
 buttonLabels.forEach((label, index) => {
   const btn = document.createElement('pre');
   btn.className = 'nav-button';
-  btn.innerHTML = `[${label}]`;
+  if (index === 4) { // AI button
+    btn.className = 'nav-button glitch-button';
+    btn.innerHTML = `[${label}]`;
+  } else {
+    btn.innerHTML = `[${label}]`;
+  }
   btn.onclick = () => navigateToSection(index);
   navButtons.appendChild(btn);
 });
+
+const glitchButton = document.querySelector('.glitch-button');
+let glitchTimer = null;
+
+navButtons.addEventListener('mouseenter', () => {
+  if (glitchButton) {
+    glitchButton.classList.add('force-visible');
+  }
+});
+
+navButtons.addEventListener('mouseleave', () => {
+  if (glitchButton) {
+    glitchButton.classList.remove('force-visible');
+  }
+});
+
+function randomGlitchAppearance() {
+  if (glitchButton && !document.querySelector('.pgp-key-container').classList.contains('visible')) {
+    const rand = Math.random();
+    if (rand > 0.6) {
+      glitchButton.classList.add('force-visible');
+      setTimeout(() => {
+        glitchButton.classList.remove('force-visible');
+      }, Math.random() * 2000 + 1000);
+    }
+  }
+  
+  setTimeout(randomGlitchAppearance, Math.random() * 5000 + 3000);
+}
+
+setTimeout(randomGlitchAppearance, 5000);
 
 function navigateToSection(index) {
   currentIndex = index;
@@ -248,9 +316,21 @@ function updateButtonStates() {
     if (i === currentIndex) {
       btn.classList.add('active');
       btn.style.color = '#d65d0e';
+      
+      if (i === 4) {
+        btn.classList.add('ai-active');
+        btn.classList.add('force-visible');
+      }
     } else {
       btn.classList.remove('active');
       btn.style.color = '#3c3836';
+      
+      if (i === 4) {
+        btn.classList.remove('ai-active');
+        if (currentIndex !== 4) {
+          btn.classList.remove('force-visible');
+        }
+      }
     }
   });
 }
