@@ -33,8 +33,7 @@ const mobileSections = {
     "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank'>://TypeLapse</a></span>",
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "",
-  ],
-  ai: [
+  ],  ai: [
     "<span class='center-item mobile-text poem-text'>there is a monster</span>",
     "<span class='center-item mobile-text poem-text'>in the forest</span>",
     "<span class='center-item mobile-text poem-text'>and it speaks with</span>",
@@ -47,6 +46,7 @@ const mobileSections = {
     "<span class='center-item mobile-text poem-text'>doesn't mean</span>",
     "<span class='center-item mobile-text poem-text'>it has no price</span>",
     "",
+    "<span class='center-item mobile-text poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank'>~ joles</a></span>",
   ],
   
   contact: [
@@ -128,11 +128,11 @@ const portfolioSections = {
     "",
     "<span class='center-item poem-text'>there are those who know these forests well; they will tell you that</span>",
     "<span class='center-item poem-text'>freely offered doesn't mean it has no price</span>",
-    "",
-    "<span class='center-item poem-text'>for when the next traveler passes by, the monster speaks with</span>",
+    "",    "<span class='center-item poem-text'>for when the next traveler passes by, the monster speaks with</span>",
     "<span class='center-item poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
     "<span class='center-item poem-text flicker'>the monster wears your face.</span>",
     "",
+    "<span class='center-item poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank'>~ joles</a></span>",
   ],
 
   contact: [
@@ -262,7 +262,13 @@ let glitchTimer = null;
 
 navButtons.addEventListener('mouseenter', () => {
   if (glitchButton) {
-    glitchButton.classList.add('force-visible');
+    const flickerChance = Math.random();
+    if (flickerChance > 0.7) {
+      glitchButton.classList.add('force-visible');
+      setTimeout(() => {
+        glitchButton.classList.remove('force-visible');
+      }, 150 + Math.random() * 300);
+    }
   }
 });
 
@@ -275,11 +281,11 @@ navButtons.addEventListener('mouseleave', () => {
 function randomGlitchAppearance() {
   if (glitchButton && !document.querySelector('.pgp-key-container').classList.contains('visible')) {
     const rand = Math.random();
-    if (rand > 0.6) {
+    if (rand > 0.75) { 
       glitchButton.classList.add('force-visible');
       setTimeout(() => {
         glitchButton.classList.remove('force-visible');
-      }, Math.random() * 2000 + 1000);
+      }, Math.random() * 500 + 200);
     }
   }
   
