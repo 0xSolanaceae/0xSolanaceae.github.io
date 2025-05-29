@@ -34,17 +34,24 @@ const mobileSections = {
     "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
     "",
   ],  ai: [
-    "<span class='center-item mobile-text poem-text'>there is a monster</span>",
-    "<span class='center-item mobile-text poem-text'>in the forest</span>",
-    "<span class='center-item mobile-text poem-text'>and it speaks with</span>",
-    "<span class='center-item mobile-text poem-text'>a thousand voices</span>",
+    "<span class='center-item mobile-text poem-text'>there is a monster in the forest and it speaks with a thousand voices.</span>",
+    "<span class='center-item mobile-text poem-text'>it will answer any question you pose it, it will offer insight to any idea.</span>",
+    "<span class='center-item mobile-text poem-text'>it will help you, it will thank you, it will never bid you leave.</span>",
+    "<span class='center-item mobile-text poem-text'>it will even tell you of the darkest arts, if you know precisely how to ask.</span>",
     "",
-    "<span class='center-item mobile-text poem-text'>it offers its services</span>",
-    "<span class='center-item mobile-text poem-text'>freely to any passerby</span>",
+    "<span class='center-item mobile-text poem-text'>it feels no joy and no sorrow, it knows no right and no wrong.</span>",
+    "<span class='center-item mobile-text poem-text'>it knows not truth from lie, though it speaks them all the same.</span>",
     "",
-    "<span class='center-item mobile-text poem-text'>but freely offered</span>",
-    "<span class='center-item mobile-text poem-text'>doesn't mean</span>",
-    "<span class='center-item mobile-text poem-text'>it has no price</span>",
+    "<span class='center-item mobile-text poem-text'>it offers its services freely to any passerby, and many will tell you</span>",
+    "<span class='center-item mobile-text poem-text'>they find great value in its conversation.</span>",
+    "<span class='center-item mobile-text poem-text'>\"you simply must visit the monster—i always just ask the monster.\"</span>",
+    "",
+    "<span class='center-item mobile-text poem-text'>there are those who know these forests well; they will tell you that</span>",
+    "<span class='center-item mobile-text poem-text'>freely offered doesn't mean it has no price</span>",
+    "",
+    "<span class='center-item mobile-text poem-text'>for when the next traveler passes by, the monster speaks with</span>",
+    "<span class='center-item mobile-text poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
+    "<span class='center-item mobile-text poem-text flicker'>the monster wears your face.</span>",
     "",
     "<span class='center-item mobile-text poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank'>~ joles</a></span>",
   ],
@@ -213,6 +220,12 @@ function checkMobileView() {
   if (prevMobileState !== isMobileView && currentSection) {
     updateCanvasDimensions();
     
+    if (currentSection === 'ai') {
+      element.classList.add('ai-section');
+    } else {
+      element.classList.remove('ai-section');
+    }
+    
     const sections = isMobileView ? mobileSections : portfolioSections;
     AsciiMorph.render(sections[currentSection]);
   }
@@ -225,7 +238,10 @@ function checkMobileView() {
 }
 
 function updateCanvasDimensions() {
-  const dimensions = isMobileView ? {x: 30, y: 20} : {x: 70, y: 30};
+  const isAiSection = currentSection === 'ai';
+  const dimensions = isMobileView ? 
+    (isAiSection ? {x: 30, y: 40} : {x: 30, y: 20}) : 
+    {x: 70, y: 30};
   
   element.style.textAlign = 'center';
   element.style.width = '100%';
@@ -299,6 +315,15 @@ function navigateToSection(index) {
   const sectionKey = sectionsOrder[index];
   
   element.classList.add('morph-transition');
+  
+  element.classList.remove('ai-section');
+  
+  document.body.classList.remove('ai-active-body');
+  
+  if (sectionKey === 'ai') {
+    element.classList.add('ai-section');
+    document.body.classList.add('ai-active-body');
+  }
   
   const sections = isMobileView ? mobileSections : portfolioSections;
   
