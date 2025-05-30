@@ -261,7 +261,6 @@ function updateButtonStates() {
   document.querySelectorAll('.nav-button').forEach((btn, i) => {
     if (i === currentIndex) {
       btn.classList.add('active');
-      btn.style.color = '#d65d0e';
       
       if (i === 4) {
         btn.classList.add('ai-active');
@@ -269,7 +268,6 @@ function updateButtonStates() {
       }
     } else {
       btn.classList.remove('active');
-      btn.style.color = '#3c3836';
       
       if (i === 4) {
         btn.classList.remove('ai-active');
