@@ -1,0 +1,136 @@
+@keyframes flicker {
+  0% { opacity: 1; }
+  1% { opacity: 0.8; }
+  2% { opacity: 1; }
+  6% { opacity: 1; }
+  7% { opacity: 0.9; }
+  8% { opacity: 1; }
+  10% { opacity: 1; }
+  11% { opacity: 0.8; }
+  12% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes glitch {
+  0% { 
+    transform: translate(0);
+    opacity: 1;
+  }
+  2% { 
+    transform: translate(-2px, 1px);
+    opacity: 0.8;
+  }
+  4% { 
+    transform: translate(-1px, -1px);
+    opacity: 1;
+  }
+  6% { 
+    transform: translate(2px, 0);
+    opacity: 0.9;
+  }
+  8% { 
+    transform: translate(1px, 1px);
+    opacity: 0.7;
+  }
+  10% { 
+    transform: translate(0);
+    opacity: 1;
+  }
+  100% { 
+    transform: translate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes textGlitch {
+  0% { 
+    content: '[???]';
+  }
+  10% { 
+    content: '[M0n]';
+  }
+  20% { 
+    content: '[?o?]';
+  }
+  30% { 
+    content: '[???]';
+  }
+  40% { 
+    content: '[M?n]';
+  }
+  50% { 
+    content: '[???]';
+  }
+  60% { 
+    content: '[Mon]';
+  }
+  70% { 
+    content: '[?st]';
+  }
+  80% { 
+    content: '[???]';
+  }
+  90% { 
+    content: '[M?n]';
+  }
+  100% { 
+    content: '[???]';
+  }
+}
+
+@keyframes glitch-visibility {
+  0%, 5% { opacity: 0; visibility: hidden; }
+  6%, 15% { opacity: 1; visibility: visible; }
+  16%, 20% { opacity: 0; visibility: hidden; }
+  21%, 30% { opacity: 1; visibility: visible; }
+  31%, 35% { opacity: 0; visibility: hidden; }
+  36%, 45% { opacity: 1; visibility: visible; }
+  46%, 50% { opacity: 0; visibility: hidden; }
+  51%, 60% { opacity: 1; visibility: visible; }
+  61%, 65% { opacity: 0; visibility: hidden; }
+  66%, 75% { opacity: 1; visibility: visible; }
+  76%, 80% { opacity: 0; visibility: hidden; }
+  81%, 90% { opacity: 1; visibility: visible; }
+  91%, 95% { opacity: 0; visibility: hidden; }  96%, 100% { opacity: 1; visibility: visible; }
+}
+
+@keyframes glitch-appear {
+  0% { 
+    opacity: 0;
+    transform: translate(0) scale(1);
+    filter: hue-rotate(0deg);
+  }
+  20% { 
+    opacity: 0.8;
+    transform: translate(-3px, 2px) scale(1.05);
+    filter: hue-rotate(180deg);
+  }
+  40% { 
+    opacity: 1;
+    transform: translate(2px, -1px) scale(0.95);
+    filter: hue-rotate(360deg);
+  }
+  60% { 
+    opacity: 0.9;
+    transform: translate(-1px, 3px) scale(1.02);
+    filter: hue-rotate(90deg);
+  }
+  80% { 
+    opacity: 1;
+    transform: translate(1px, -2px) scale(0.98);
+    filter: hue-rotate(270deg);
+  }
+  100% { 
+    opacity: 1;
+    transform: translate(0) scale(1);
+    filter: hue-rotate(0deg);
+  }
+}

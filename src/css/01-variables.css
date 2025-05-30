@@ -1,0 +1,11 @@
+:root {
+  --bg: #e6c875;
+  --fg: #3c3836;
+  --orange: #d65d0e;
+  --gray: #7c6f64;
+  --bg-alt: #ebdbb2;
+  --scrollbar-thumb: var(--orange);
+  --scrollbar-track: var(--bg-alt);
+  --scrollbar-width: 8px;
+  --scrollbar-hover: #b85504;
+}

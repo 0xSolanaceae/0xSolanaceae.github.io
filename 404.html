@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 - Page Not Found</title>
-  <link rel="stylesheet" href="src/styles.css">
-  <link rel="icon" href="/assets/fav.webp" type="image/webp">
-  <link rel="preload" href="morph/ascii-morph.js" as="script">
+  <title>404 - Page Not Found</title>  <link rel="stylesheet" href="src/main.css">
+  <link rel="icon" href="assets/fav.webp" type="image/webp">
+  <link rel="preload" href="src/js/ascii-morph.js" as="script">
   <style>
     .error-container {
       position: relative;
@@ -72,9 +71,8 @@
       <button class="home-button" onclick="window.location.href='/'">RETURN</button>
     </div>
   </main>
-
-  <script src="morph/ascii-morph.js"></script>
-  <script src="src/ambient.js"></script>
+  <script src="src/js/ascii-morph.js"></script>
+  <script src="src/js/ambient.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const errorContainer = document.querySelector('.error-container');
