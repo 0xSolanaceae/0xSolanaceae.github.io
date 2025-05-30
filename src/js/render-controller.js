@@ -417,22 +417,13 @@ document.addEventListener('click', (e) => {
   }
 });
 
-document.addEventListener('keydown', (e) => {  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    currentIndex = (currentIndex + 1) % sectionsOrder.length;
-    element.classList.add('rapid-flicker');
-    setTimeout(() => {
-      element.classList.remove('rapid-flicker');
-      navigateToSection(currentIndex);
-    }, 300);  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    currentIndex = (currentIndex - 1 + sectionsOrder.length) % sectionsOrder.length;
-    element.classList.add('chromatic-aberration');
-    setTimeout(() => {
-      element.classList.remove('chromatic-aberration');
-      navigateToSection(currentIndex);
-    }, 200);  } else if (e.key === 'Escape') {
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
     hidePgpKey();
-    element.classList.add('tv-static');setTimeout(() => {
-      element.classList.remove('tv-static');    }, 500);
+    element.classList.add('tv-static');
+    setTimeout(() => {
+      element.classList.remove('tv-static');
+    }, 500);
   }
   
   if (Math.random() > 0.9) {
@@ -478,23 +469,8 @@ document.addEventListener('mousemove', (e) => {
     }  }, 100);
 });
 
-document.addEventListener('keydown', (e) => {  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-    currentIndex = (currentIndex + 1) % sectionsOrder.length;
-    if (Math.random() > 0.7) {
-      element.classList.add('rapid-flicker');
-      setTimeout(() => {
-        element.classList.remove('rapid-flicker');
-      }, 200);
-    }    navigateToSection(currentIndex);
-  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-    currentIndex = (currentIndex - 1 + sectionsOrder.length) % sectionsOrder.length;
-    if (Math.random() > 0.8) {
-      element.classList.add('tv-static');
-      setTimeout(() => {
-        element.classList.remove('tv-static');
-      }, 150);
-    }
-    navigateToSection(currentIndex);  } else if (e.key === 'Escape') {
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
     hidePgpKey();
     element.classList.add('tv-static');
     setTimeout(() => {
