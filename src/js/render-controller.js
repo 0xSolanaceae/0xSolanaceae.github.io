@@ -72,17 +72,17 @@ let glitchTimer = null;
 
 navButtons.addEventListener('mouseenter', () => {
   if (glitchButton) {
-    const flickerChance = Math.random();    if (flickerChance > 0.8) {
+    const flickerChance = Math.random();    if (flickerChance > 0.6) {
       glitchButton.classList.add('force-visible');
       
-      if (flickerChance > 0.95) {
+      if (flickerChance > 0.85) {
         element.classList.add('crt-flicker');
         setTimeout(() => {
           element.classList.remove('crt-flicker');
         }, 1500);
       }
       
-      if (flickerChance > 0.92) {
+      if (flickerChance > 0.8) {
         setTimeout(() => {
           element.classList.add('rgb-shift-fast');
           setTimeout(() => {
@@ -106,21 +106,21 @@ navButtons.addEventListener('mouseleave', () => {
 
 function randomGlitchAppearance() {
   if (glitchButton && !document.querySelector('.pgp-key-container').classList.contains('visible')) {
-    const rand = Math.random();    if (rand > 0.92) {
+    const rand = Math.random();    if (rand > 0.75) {
       glitchButton.classList.add('force-visible');
       
       const effectChance = Math.random();
-      if (effectChance > 0.9) {
+      if (effectChance > 0.8) {
         applyRandomGlitchEffect();
       }
       
       setTimeout(() => {
         glitchButton.classList.remove('force-visible');
-      }, Math.random() * 200 + 100);
+      }, Math.random() * 300 + 150);
     }
   }
   
-  setTimeout(randomGlitchAppearance, Math.random() * 25000 + 15000);
+  setTimeout(randomGlitchAppearance, Math.random() * 10000 + 5000);
 }
 
 function applyRandomGlitchEffect() {
