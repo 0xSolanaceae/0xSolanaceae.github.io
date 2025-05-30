@@ -189,3 +189,231 @@
   color: inherit;
   text-decoration: none;
 }
+
+.crt-flicker {
+  animation: crt-flicker 3s linear infinite;
+}
+
+.crt-flicker-intense {
+  animation: crt-flicker 1.5s linear infinite;
+}
+
+.crt-flicker-extreme {
+  animation: crt-flicker-extreme 2s linear infinite;
+}
+
+.rgb-shift-extreme {
+  animation: rgb-shift-extreme 1.5s linear infinite;
+}
+
+.chromatic-aberration {
+  animation: chromatic-aberration 0.8s linear infinite;
+}
+
+.tv-static {
+  animation: tv-static 0.2s linear infinite;
+  position: relative;
+}
+
+.tv-static::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px);
+  background-size: 20px 20px, 30px 30px;
+  animation: tv-static 0.1s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.ultimate-crt-glitch {
+  animation: ultimate-crt-glitch 1.8s linear infinite;
+}
+
+.rgb-shift {
+  animation: rgb-shift 2s linear infinite;
+}
+
+.rgb-shift-fast {
+  animation: rgb-shift 0.8s linear infinite;
+}
+
+.rgb-glitch-intense {
+  animation: rgb-glitch-intense 1.2s linear infinite;
+}
+
+.crt-rgb-combo {
+  animation: crt-rgb-combo 2.5s linear infinite;
+}
+
+.crt-rgb-combo-fast {
+  animation: crt-rgb-combo 1s linear infinite;
+}
+
+.crt-scanlines {
+  position: relative;
+}
+
+.crt-scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    transparent 50%,
+    rgba(0, 0, 0, 0.1) 50%
+  );
+  background-size: 100% 4px;
+  animation: scanlines 0.1s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.crt-scanlines-enhanced {
+  position: relative;
+}
+
+.crt-scanlines-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(
+      rgba(18, 16, 16, 0) 50%, 
+      rgba(0, 0, 0, 0.25) 50%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+  background-size: 100% 2px, 3px 100%;
+  animation: scanlines 0.1s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.crt-curvature {
+  transform: perspective(800px) rotateX(0.5deg);
+  filter: 
+    contrast(1.1) 
+    brightness(1.05) 
+    saturate(1.1);
+}
+
+.phosphor-glow {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor;
+  animation: phosphor-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes phosphor-pulse {
+  0% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+  100% {
+    text-shadow: 
+      0 0 8px currentColor,
+      0 0 16px currentColor,
+      0 0 24px currentColor;
+  }
+}
+
+.vhs-tracking {
+  position: relative;
+  overflow: hidden;
+}
+
+.vhs-tracking::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: 
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.8),
+      transparent
+    );
+  animation: vhs-tracking-lines 3s linear infinite;
+  z-index: 2;
+}
+
+@keyframes vhs-tracking-lines {
+  0% {
+    top: -10px;
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    top: 100%;
+    left: 100%;
+  }
+}
+
+.flicker-enhanced {
+  animation: flicker 4s linear infinite, crt-flicker 3s linear infinite;
+}
+
+.flicker-rgb {
+  animation: flicker 4s linear infinite, rgb-shift 2s linear infinite;
+}
+
+.ultimate-glitch {
+  animation: 
+    glitch 0.3s infinite,
+    rgb-glitch-intense 1.2s linear infinite,
+    crt-flicker 2s linear infinite;
+}
+
+.morph-transition-enhanced {
+  animation: crt-rgb-combo-fast 1s ease-out;
+}
+
+.rapid-flicker {
+  animation: 
+    crt-flicker 0.5s linear infinite,
+    rgb-shift 0.3s linear infinite;
+}
+
+.glitch-storm {
+  animation: 
+    ultimate-crt-glitch 1.5s linear infinite,
+    glitch 0.2s infinite,
+    rgb-shift-extreme 1s linear infinite;
+}
+
+.crt-breathing {
+  animation: crt-flicker 4s ease-in-out infinite alternate;
+}
+
+.rgb-pulse {
+  animation: rgb-shift 3s ease-in-out infinite alternate;
+}
+
+.ambient-glow {
+  animation: 
+    crt-breathing 6s ease-in-out infinite alternate,
+    rgb-pulse 4s ease-in-out infinite alternate;
+}

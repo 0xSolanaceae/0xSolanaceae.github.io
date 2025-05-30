@@ -72,12 +72,28 @@ let glitchTimer = null;
 
 navButtons.addEventListener('mouseenter', () => {
   if (glitchButton) {
-    const flickerChance = Math.random();
-    if (flickerChance > 0.7) {
+    const flickerChance = Math.random();    if (flickerChance > 0.8) {
       glitchButton.classList.add('force-visible');
+      
+      if (flickerChance > 0.95) {
+        element.classList.add('crt-flicker');
+        setTimeout(() => {
+          element.classList.remove('crt-flicker');
+        }, 1500);
+      }
+      
+      if (flickerChance > 0.92) {
+        setTimeout(() => {
+          element.classList.add('rgb-shift-fast');
+          setTimeout(() => {
+            element.classList.remove('rgb-shift-fast');
+          }, 1000);
+        }, 500);
+      }
+      
       setTimeout(() => {
         glitchButton.classList.remove('force-visible');
-      }, 150 + Math.random() * 300);
+      }, 150 + Math.random() * 200);
     }
   }
 });
@@ -90,50 +106,155 @@ navButtons.addEventListener('mouseleave', () => {
 
 function randomGlitchAppearance() {
   if (glitchButton && !document.querySelector('.pgp-key-container').classList.contains('visible')) {
-    const rand = Math.random();
-    if (rand > 0.75) { 
+    const rand = Math.random();    if (rand > 0.92) {
       glitchButton.classList.add('force-visible');
+      
+      const effectChance = Math.random();
+      if (effectChance > 0.9) {
+        applyRandomGlitchEffect();
+      }
+      
       setTimeout(() => {
         glitchButton.classList.remove('force-visible');
-      }, Math.random() * 500 + 200);
+      }, Math.random() * 200 + 100);
     }
   }
   
-  setTimeout(randomGlitchAppearance, Math.random() * 5000 + 3000);
+  setTimeout(randomGlitchAppearance, Math.random() * 25000 + 15000);
 }
 
-setTimeout(randomGlitchAppearance, 5000);
+function applyRandomGlitchEffect() {
+  const effects = [
+    'crt-flicker', 
+    'crt-flicker-intense', 
+    'crt-flicker-extreme',
+    'rgb-shift', 
+    'rgb-shift-fast', 
+    'rgb-shift-extreme',
+    'rgb-glitch-intense', 
+    'chromatic-aberration',
+    'crt-rgb-combo',
+    'crt-rgb-combo-fast',
+    'ultimate-glitch',
+    'ultimate-crt-glitch',
+    'rapid-flicker',
+    'glitch-storm',
+    'tv-static',
+    'flicker-vintage',
+    'flicker-digital-glitch',
+    'phosphor-glow',
+    'vhs-tracking',
+    'crt-curvature'
+  ];
+    const randomEffect = effects[Math.floor(Math.random() * effects.length)];
+  element.classList.add(randomEffect);
+  
+  if (['crt-flicker', 'crt-flicker-intense', 'flicker-vintage'].includes(randomEffect)) {
+    element.classList.add('crt-scanlines-enhanced');
+  }
+  
+  const durations = {
+    'crt-flicker': 3000,
+    'crt-flicker-intense': 2000,
+    'crt-flicker-extreme': 2500,
+    'rgb-shift': 2500,
+    'rgb-shift-fast': 1500,
+    'rgb-shift-extreme': 2000,
+    'rgb-glitch-intense': 2000,
+    'chromatic-aberration': 1200,
+    'crt-rgb-combo': 3000,
+    'crt-rgb-combo-fast': 1500,
+    'ultimate-glitch': 1000,
+    'ultimate-crt-glitch': 1800,
+    'rapid-flicker': 800,
+    'glitch-storm': 1500,
+    'tv-static': 600,
+    'flicker-vintage': 4000,
+    'flicker-digital-glitch': 2000,
+    'phosphor-glow': 3000,
+    'vhs-tracking': 3000,
+    'crt-curvature': 2000
+  };
+    setTimeout(() => {
+    element.classList.remove(randomEffect);
+    element.classList.remove('crt-scanlines-enhanced');
+  }, durations[randomEffect] || 2000);
+}
+
+function enhanceTextWithGlitchEffects() {
+  const textElements = element.querySelectorAll('span');
+  textElements.forEach((span, index) => {
+    if (Math.random() > 0.85) {
+      const delay = Math.random() * 3000;
+      setTimeout(() => {
+        const effects = [
+          'crt-breathing', 
+          'rgb-pulse', 
+          'ambient-glow'
+        ];
+        const effectClass = effects[Math.floor(Math.random() * effects.length)];
+        span.classList.add(effectClass);
+        
+        const effectDurations = {
+          'crt-breathing': 4000,
+          'rgb-pulse': 3000,
+          'ambient-glow': 5000
+        };
+        
+        setTimeout(() => {
+          span.classList.remove(effectClass);
+        }, effectDurations[effectClass] || 2000);      }, delay);
+    }
+  });
+  
+  if (currentSection === 'ai') {
+    const poemTexts = element.querySelectorAll('.poem-text');
+    poemTexts.forEach((poem, index) => {
+      setTimeout(() => {
+        if (Math.random() > 0.7) {
+          const specialEffects = ['crt-breathing', 'rgb-pulse'];
+          const effect = specialEffects[Math.floor(Math.random() * specialEffects.length)];
+          poem.classList.add(effect);
+          setTimeout(() => {
+            poem.classList.remove(effect);
+          }, 3000 + Math.random() * 2000);
+        }
+      }, index * 1500);
+    });
+  }
+}
 
 function navigateToSection(index) {
   currentIndex = index;
-  const sectionKey = sectionsOrder[index];
+  currentSection = sectionsOrder[index];
   
-  element.classList.add('morph-transition');
+  if (Math.random() > 0.8) {
+    applyRandomGlitchEffect();
+  }
   
-  element.classList.remove('ai-section');
+  const buttons = navButtons.querySelectorAll('.nav-button');
+  buttons.forEach((btn, i) => {
+    if (i === index) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
   
-  document.body.classList.remove('ai-active-body');
-  
-  if (sectionKey === 'ai') {
+  if (currentSection === 'ai') {
     element.classList.add('ai-section');
-    document.body.classList.add('ai-active-body');
+  } else {
+    element.classList.remove('ai-section');
   }
   
   const sections = isMobileView ? mobileSections : portfolioSections;
-  
-  const rect = element.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  
-  AsciiMorph.morph(sections[sectionKey]);
-  
-  currentSection = sectionKey;
-  updateButtonStates();
-  resetIdleTimer();
+  AsciiMorph.morph(sections[currentSection]);
   
   setTimeout(() => {
-    element.classList.remove('morph-transition');
-  }, 1000);
+    enhanceTextWithGlitchEffects();
+  }, 500);
+  
+  resetIdleTimer();
 }
 
 function updateButtonStates() {
@@ -226,8 +347,14 @@ document.querySelector('.pgp-key-container').addEventListener('click', (e) => {
 function resetIdleTimer() {
   clearTimeout(idleTimer);
   if (idleState) {
-    idleState = false;
-    element.classList.remove('drift');
+    idleState = false;    element.classList.remove('drift');
+    element.classList.remove('crt-flicker');
+    element.classList.remove('crt-flicker-intense');
+    element.classList.remove('rgb-shift');
+    element.classList.remove('rgb-shift-fast');
+    element.classList.remove('rgb-glitch-intense');
+    element.classList.remove('crt-rgb-combo');
+    element.classList.remove('crt-scanlines');
   }
   
   idleTimer = setTimeout(() => {
@@ -238,10 +365,30 @@ function resetIdleTimer() {
     if (flickerChance > 0.7) {
       element.classList.add('flicker');
       setTimeout(() => {
-        element.classList.remove('flicker');
-      }, 4000);
+        element.classList.remove('flicker');      }, 4000);
+    }    if (flickerChance > 0.9) {
+      const effectType = Math.random();
+      if (effectType > 0.95) {
+        element.classList.add('crt-flicker');        setTimeout(() => {
+          element.classList.remove('crt-flicker');
+        }, 1500);
+      } else {
+        element.classList.add('crt-breathing');
+        setTimeout(() => {
+          element.classList.remove('crt-breathing');
+        }, 3000);
+      }
     }
-  }, 10000);
+    
+    if (flickerChance > 0.95) {
+      setTimeout(() => {
+        element.classList.add('rgb-pulse');
+        setTimeout(() => {
+          element.classList.remove('rgb-pulse');
+        }, 2000);
+      }, 6000);
+    }
+  }, 30000);
 }
 
 document.addEventListener('mousemove', resetIdleTimer);
@@ -252,18 +399,111 @@ document.addEventListener('click', (e) => {
   if (e.target.classList.contains('pgp-link') || 
       (e.target.parentElement && e.target.parentElement.classList.contains('pgp-link'))) {
     showPgpKey();
+  }  
+  if (e.target.classList.contains('glitch-button')) {
+    element.classList.add('glitch-storm');
+    setTimeout(() => {
+      element.classList.remove('glitch-storm');
+      element.classList.add('ultimate-crt-glitch');
+      setTimeout(() => {
+        element.classList.remove('ultimate-crt-glitch');
+      }, 2000);    }, 1500);  }
+  if (Math.random() > 0.95) {
+    const quickEffects = ['rapid-flicker', 'tv-static'];
+    const effect = quickEffects[Math.floor(Math.random() * quickEffects.length)];
+    element.classList.add(effect);    setTimeout(() => {
+      element.classList.remove(effect);
+    }, 500);
   }
 });
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+document.addEventListener('keydown', (e) => {  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
     currentIndex = (currentIndex + 1) % sectionsOrder.length;
-    navigateToSection(currentIndex);
+    element.classList.add('rapid-flicker');
+    setTimeout(() => {
+      element.classList.remove('rapid-flicker');
+      navigateToSection(currentIndex);
+    }, 300);  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    currentIndex = (currentIndex - 1 + sectionsOrder.length) % sectionsOrder.length;
+    element.classList.add('chromatic-aberration');
+    setTimeout(() => {
+      element.classList.remove('chromatic-aberration');
+      navigateToSection(currentIndex);
+    }, 200);  } else if (e.key === 'Escape') {
+    hidePgpKey();
+    element.classList.add('tv-static');setTimeout(() => {
+      element.classList.remove('tv-static');    }, 500);
+  }
+  
+  if (Math.random() > 0.9) {
+    applyRandomGlitchEffect();
+  }
+});
+
+function initializeEnhancedEffects() {
+  setTimeout(() => {
+    element.classList.add('ambient-glow');
+    setTimeout(() => {
+      element.classList.remove('ambient-glow');
+    }, 3000);  }, 1000);
+  setTimeout(randomGlitchAppearance, 2000);
+  
+  setInterval(() => {
+    if (!document.querySelector('.pgp-key-container').classList.contains('visible')) {
+      const burstChance = Math.random();      if (burstChance > 0.95) {
+        const burstEffects = [
+          'crt-breathing',
+          'rgb-pulse'
+        ];
+        const effect = burstEffects[Math.floor(Math.random() * burstEffects.length)];
+        element.classList.add(effect);
+        setTimeout(() => {
+          element.classList.remove(effect);
+        }, 1500);
+      }
+    }  }, 60000);
+}
+
+let mouseMovementTimer = null;
+document.addEventListener('mousemove', (e) => {
+  resetIdleTimer();
+    clearTimeout(mouseMovementTimer);  mouseMovementTimer = setTimeout(() => {
+    if (Math.random() > 0.95) {
+      const subtleEffects = ['crt-breathing', 'rgb-pulse', 'chromatic-aberration'];
+      const effect = subtleEffects[Math.floor(Math.random() * subtleEffects.length)];
+      element.classList.add(effect);
+      setTimeout(() => {
+        element.classList.remove(effect);
+      }, 1500);
+    }  }, 100);
+});
+
+document.addEventListener('keydown', (e) => {  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    currentIndex = (currentIndex + 1) % sectionsOrder.length;
+    if (Math.random() > 0.7) {
+      element.classList.add('rapid-flicker');
+      setTimeout(() => {
+        element.classList.remove('rapid-flicker');
+      }, 200);
+    }    navigateToSection(currentIndex);
   } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
     currentIndex = (currentIndex - 1 + sectionsOrder.length) % sectionsOrder.length;
-    navigateToSection(currentIndex);
-  } else if (e.key === 'Escape') {
+    if (Math.random() > 0.8) {
+      element.classList.add('tv-static');
+      setTimeout(() => {
+        element.classList.remove('tv-static');
+      }, 150);
+    }
+    navigateToSection(currentIndex);  } else if (e.key === 'Escape') {
     hidePgpKey();
+    element.classList.add('tv-static');
+    setTimeout(() => {
+      element.classList.remove('tv-static');
+    }, 500);
+  }
+  
+  if (Math.random() > 0.9) {
+    applyRandomGlitchEffect();
   }
 });
 
@@ -287,16 +527,84 @@ function randomFlicker() {
     setTimeout(randomFlicker, Math.random() * 10000 + 15000);
     return;
   }
-  
-  const rand = Math.random();
+    const rand = Math.random();
   if (rand > 0.7) {
-    element.classList.add('flicker');
-    setTimeout(() => {
-      element.classList.remove('flicker');
-    }, 2000);
+    const effectType = Math.random();
+      if (effectType > 0.8) {
+      element.classList.add('ultimate-glitch');
+      setTimeout(() => {
+        element.classList.remove('ultimate-glitch');
+      }, 1500);    } else if (effectType > 0.6) {
+      element.classList.add('crt-rgb-combo');
+      setTimeout(() => {
+        element.classList.remove('crt-rgb-combo');
+      }, 2500);    } else if (effectType > 0.4) {
+      element.classList.add('flicker-enhanced');
+      setTimeout(() => {
+        element.classList.remove('flicker-enhanced');
+      }, 3000);    } else if (effectType > 0.2) {
+      element.classList.add('rgb-shift');
+      setTimeout(() => {
+        element.classList.remove('rgb-shift');
+      }, 2000);    } else {
+      element.classList.add('flicker');
+      setTimeout(() => {
+        element.classList.remove('flicker');
+      }, 2000);
+    }
   }
   
   setTimeout(randomFlicker, Math.random() * 20000 + 15000);
+}
+
+function randomCrtEffects() {
+  if (document.querySelector('.pgp-key-container').classList.contains('visible')) {
+    setTimeout(randomCrtEffects, Math.random() * 8000 + 5000);
+    return;
+  }
+  
+  const rand = Math.random();  if (rand > 0.85) {
+    element.classList.add('crt-scanlines');
+    setTimeout(() => {
+      element.classList.remove('crt-scanlines');
+    }, Math.random() * 3000 + 1000);
+  }
+    if (rand > 0.9) {
+    element.classList.add('crt-flicker-intense');
+    setTimeout(() => {
+      element.classList.remove('crt-flicker-intense');
+    }, Math.random() * 1000 + 500);
+  }
+  
+  setTimeout(randomCrtEffects, Math.random() * 8000 + 5000);
+}
+
+function randomRgbGlitch() {
+  if (document.querySelector('.pgp-key-container').classList.contains('visible')) {
+    setTimeout(randomRgbGlitch, Math.random() * 6000 + 4000);
+    return;
+  }
+  
+  const rand = Math.random();
+  if (rand > 0.8) {
+    const glitchType = Math.random();
+      if (glitchType > 0.7) {
+      element.classList.add('rgb-glitch-intense');
+      setTimeout(() => {
+        element.classList.remove('rgb-glitch-intense');
+      }, Math.random() * 1200 + 800);    } else if (glitchType > 0.4) {
+      element.classList.add('rgb-shift-fast');
+      setTimeout(() => {
+        element.classList.remove('rgb-shift-fast');
+      }, Math.random() * 800 + 400);    } else {
+      element.classList.add('flicker-rgb');
+      setTimeout(() => {
+        element.classList.remove('flicker-rgb');
+      }, Math.random() * 2000 + 1000);
+    }
+  }
+  
+  setTimeout(randomRgbGlitch, Math.random() * 6000 + 4000);
 }
 
 function init() {
@@ -355,6 +663,8 @@ function init() {
   window.addEventListener('resize', debounce(function() {
     checkMobileView();
   }, 250));
+  
+  initializeEnhancedEffects();
 }
 
 function debounce(func, wait) {
@@ -370,3 +680,7 @@ function debounce(func, wait) {
 }
 
 init();
+
+setTimeout(() => {
+  initializeEnhancedEffects();
+}, 1000);
