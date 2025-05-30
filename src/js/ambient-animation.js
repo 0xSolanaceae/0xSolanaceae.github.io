@@ -29,8 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
       }, nextGlitchTime);
     }
-    
-    function updateDustParticles() {
+      function updateDustParticles() {
+      if (!window.ambientDustParticles || window.ambientDustParticles.length === 0) {
+        return;
+      }
+      
       for (let i = 0; i < window.ambientDustParticles.length; i++) {
         const particle = window.ambientDustParticles[i];
         
@@ -48,15 +51,23 @@ document.addEventListener('DOMContentLoaded', function() {
           particle.angle = Math.random() * Math.PI * 2;
         }
       }
-    }
-    
-    function drawDustParticles() {
+    }    function drawDustParticles() {
+      if (!window.ambientDustParticles || window.ambientDustParticles.length === 0) {
+        return;
+      }
+      
       ctx.save();
       
       for (const particle of window.ambientDustParticles) {
         ctx.beginPath();
         ctx.fillStyle = `rgba(255, 255, 255, ${particle.opacity})`;
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Add a subtle glow effect for better visibility
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 255, 255, ${particle.opacity * 0.3})`;
+        ctx.arc(particle.x, particle.y, particle.size * 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
       
