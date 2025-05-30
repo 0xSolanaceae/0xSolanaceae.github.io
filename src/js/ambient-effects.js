@@ -30,14 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
       dustParticles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 2.5 + 0.8,  // Slightly larger particles
-        opacity: Math.random() * 0.7 + 0.3,  // Higher opacity range (0.3-1.0)
+        size: Math.random() * 2.5 + 0.8,
+        opacity: Math.random() * 0.7 + 0.3,
         speed: Math.random() * 0.3 + 0.1,
         angle: Math.random() * Math.PI * 2
       });
     }
     
-    // Update the global reference to ensure the animation loop can access the particles
     window.ambientDustParticles = dustParticles;
   }
   
