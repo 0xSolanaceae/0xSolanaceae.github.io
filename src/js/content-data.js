@@ -116,7 +116,7 @@ const portfolioSections = {
     "<span class='center-item'>A discord rich presence client for ImHex, not reliant on the ImHex API</span>",
     "",
     "<span class='center-item'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank'>://TypeLapse</a></span>",
-    "<span class='center-item'>Simulates slow, natural typing to automatically generate content in Google Docs over time</span>",
+    "<span class='center-item'>Slow, natural typing to automatically generate content over time</span>",
     "",
     "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
     "",
