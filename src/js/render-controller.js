@@ -142,7 +142,6 @@ function applyRandomGlitchEffect() {
     'tv-static',
     'flicker-vintage',
     'flicker-digital-glitch',
-    'phosphor-glow',
     'vhs-tracking',
     'crt-curvature'
   ];
@@ -171,7 +170,6 @@ function applyRandomGlitchEffect() {
     'tv-static': 600,
     'flicker-vintage': 4000,
     'flicker-digital-glitch': 2000,
-    'phosphor-glow': 3000,
     'vhs-tracking': 3000,
     'crt-curvature': 2000
   };
@@ -189,16 +187,14 @@ function enhanceTextWithGlitchEffects() {
       setTimeout(() => {
         const effects = [
           'crt-breathing', 
-          'rgb-pulse', 
-          'ambient-glow'
+          'rgb-pulse'
         ];
         const effectClass = effects[Math.floor(Math.random() * effects.length)];
         span.classList.add(effectClass);
         
         const effectDurations = {
           'crt-breathing': 4000,
-          'rgb-pulse': 3000,
-          'ambient-glow': 5000
+          'rgb-pulse': 3000
         };
         
         setTimeout(() => {
