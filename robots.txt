@@ -1,5 +1,7 @@
 User-agent: *
-Disallow: /
+Allow: /
+
+Sitemap: https://solanaceae.xyz/sitemap.xml
 
 User-agent: GPTBot
 Disallow: /

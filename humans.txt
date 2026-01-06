@@ -1,0 +1,11 @@
+/* TEAM */
+Owner: Solanaceae
+Role: Security engineer
+Contact: solanaceae@duck.com
+Discord: https://discordapp.com/users/1098339239432835162
+GitHub: https://github.com/0xSolanaceae
+
+/* SITE */
+URL: https://solanaceae.xyz/
+Last-Updated: 2026-01-05
+Language: en

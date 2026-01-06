@@ -1,0 +1,5 @@
+Contact: mailto:solanaceae@duck.com
+Preferred-Languages: en
+Canonical: https://solanaceae.xyz/.well-known/security.txt
+Policy: https://solanaceae.xyz/
+Expires: 2026-07-05T00:00:00Z
