@@ -229,6 +229,7 @@ GB5IGl66MVJI/lebnb84k07o/AJVBWoky/weEiqxL4dbgtPDQ29cwS3MKl40GftA
     renderSection(true);
     attachGlobalListeners();
     scheduleEffects();
+    applyAntiAiHardening();
     restartIdleTimer();
   }
 
@@ -401,6 +402,39 @@ GB5IGl66MVJI/lebnb84k07o/AJVBWoky/weEiqxL4dbgtPDQ29cwS3MKl40GftA
     ];
 
     effectPlans.forEach((plan) => scheduleEffect(plan));
+  }
+
+  function applyAntiAiHardening() {
+    const banner = document.querySelector('.anti-ai-banner');
+    if (!banner) return;
+
+    const reasons = [];
+    const ua = navigator.userAgent || '';
+    if (navigator.webdriver) reasons.push('webdriver');
+    if (/Headless|bot|crawler|spider|archiver|python|curl|httpx|fetch/i.test(ua)) reasons.push('ua');
+    if (navigator.languages && navigator.languages.length === 0) reasons.push('lang');
+    if (!navigator.maxTouchPoints && !state.isMobile) reasons.push('no-touch');
+    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 2) reasons.push('low-core');
+
+    const reasonTarget = banner.querySelector('.anti-ai-reasons');
+    if (reasons.length >= 2) {
+      document.body.classList.add('ai-suspect');
+      if (reasonTarget) {
+        reasonTarget.textContent = `signals: ${reasons.join(', ')}`;
+      }
+    }
+
+    document.addEventListener('copy', () => {
+      const selection = window.getSelection();
+      if (!selection) return;
+      const text = selection.toString();
+      if (text.length > 1200) {
+        document.body.classList.add('ai-suspect');
+        if (reasonTarget) {
+          reasonTarget.textContent = 'signals: bulk copy observed';
+        }
+      }
+    });
   }
 
   function scheduleEffect({ fn, min, max }) {
