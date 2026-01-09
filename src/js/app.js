@@ -36,9 +36,9 @@
       "<span class='center-item mobile-text box-content'>PROJECTS</span>",
       "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
       "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
-      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noreferrer'>://proXXy</a></span>",
-      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank' rel='noreferrer'>://discord-imhex</a></span>",
-      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noreferrer'>://TypeLapse</a></span>",
+      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noopener noreferrer'>://proXXy</a></span>",
+      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank' rel='noopener noreferrer'>://discord-imhex</a></span>",
+      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noopener noreferrer'>://TypeLapse</a></span>",
       "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
       ''
     ],
@@ -62,7 +62,7 @@
       "<span class='center-item mobile-text poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
       "<span class='center-item mobile-text poem-text'>the monster wears your face.</span>",
       '',
-      "<span class='center-item mobile-text poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank' rel='noreferrer'>~ joles</a></span>"
+      "<span class='center-item mobile-text poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank' rel='noopener noreferrer'>~ joles</a></span>"
     ],
     contact: [
       "<span class='center-item mobile-text box-line'>┌─────────────┐</span>",
@@ -70,8 +70,8 @@
       "<span class='center-item mobile-text box-line'>└─────────────┘</span>",
       "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
       "<span class='center-item mobile-text'><a href='mailto:solanaceae@duck.com'>solanaceae@duck.com</a></span>",
-      "<span class='center-item mobile-text'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noreferrer'>discord://0x_Solanaceae</a></span>",
-      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noreferrer'>github.com/0xSolanaceae</a></span>",
+      "<span class='center-item mobile-text'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noopener noreferrer'>discord://0x_Solanaceae</a></span>",
+      "<span class='center-item mobile-text'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noopener noreferrer'>github.com/0xSolanaceae</a></span>",
       "<span class='center-item mobile-text'>░░░▒▒▓▓▓▓▓▓▓▒▒░░░</span>",
       ''
     ]
@@ -116,13 +116,13 @@
       '',
       "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
       '',
-      "<span class='center-item'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noreferrer'>://proXXy</a></span>",
+      "<span class='center-item'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noopener noreferrer'>://proXXy</a></span>",
       "<span class='center-item'>A super simple asynchronous multithreaded proxy scraper</span>",
       '',
-      "<span class='center-item'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank' rel='noreferrer'>://discord-imhex</a></span>",
+      "<span class='center-item'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank' rel='noopener noreferrer'>://discord-imhex</a></span>",
       "<span class='center-item'>A discord rich presence client for ImHex, not reliant on the ImHex API</span>",
       '',
-      "<span class='center-item'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noreferrer'>://TypeLapse</a></span>",
+      "<span class='center-item'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noopener noreferrer'>://TypeLapse</a></span>",
       "<span class='center-item'>Slow, natural typing to automatically generate content over time</span>",
       '',
       "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
@@ -148,7 +148,7 @@
       "<span class='center-item poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
       "<span class='center-item poem-text'>the monster wears your face.</span>",
       '',
-      "<span class='center-item poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank' rel='noreferrer'>~ joles</a></span>"
+      "<span class='center-item poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank' rel='noopener noreferrer'>~ joles</a></span>"
     ],
     contact: [
       "<span class='center-item'>┌────────────────────────────────────────────────────────────────────┐</span>",
@@ -159,8 +159,8 @@
       "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
       '',
       "<span class='center-item'><a href='mailto:solanaceae@duck.com'>solanaceae@duck.com</a></span>",
-      "<span class='center-item'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noreferrer'>discord://0x_Solanaceae</a></span>",
-      "<span class='center-item'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noreferrer'>github.com/0xSolanaceae</a></span>",
+      "<span class='center-item'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noopener noreferrer'>discord://0x_Solanaceae</a></span>",
+      "<span class='center-item'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noopener noreferrer'>github.com/0xSolanaceae</a></span>",
       '',
       "<span class='center-item'>░░░░░░░▒▒▒▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▒▒▒░░░░░░░</span>",
       ''
