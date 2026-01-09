@@ -269,7 +269,30 @@ GB5IGl66MVJI/lebnb84k07o/AJVBWoky/weEiqxL4dbgtPDQ29cwS3MKl40GftA
       AsciiMorph.morph(content);
     }
     updateNavigationState();
-    requestAnimationFrame(applyInlinePoemEffects);
+    requestAnimationFrame(() => {
+      applyInlinePoemEffects();
+      updatePoetryScrolling();
+    });
+  }
+
+  function updatePoetryScrolling() {
+    const isAi = state.currentSection === 'ai';
+    if (!isAi) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      return;
+    }
+
+    // Allow scrolling only when content is taller than the viewport
+    const contentHeight = asciiContainer.scrollHeight || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (contentHeight > viewportHeight) {
+      document.body.style.overflow = 'auto';
+      document.body.style.height = 'auto';
+    } else {
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+    }
   }
 
   function navigateTo(sectionKey) {
