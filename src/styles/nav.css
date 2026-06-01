@@ -1,7 +1,8 @@
 /* nav
  * --------------------------------------------------------------
- * the vertical sigil rail along the left margin.
- * collapses to a horizontal strip at the top on narrow viewports.
+ * the botanical sigil rail — a frosted parchment strip running
+ * down the left margin. collapses to a horizontal strip at top
+ * on narrow viewports.
  */
 
 .rail {
@@ -14,42 +15,94 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 22px;
-	padding: 20px 0;
+	gap: 8px;
+	padding: 14px 0;
+
+	/* frosted parchment — same paper world, slightly set apart */
+	background: rgba(235, 219, 178, 0.88);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	border-right: 1px solid var(--berry-soft);
+	box-shadow:
+		2px 0 20px -6px rgba(91, 58, 94, 0.22),
+		inset -1px 0 0 rgba(255, 255, 255, 0.30),
+		inset 0 0 40px var(--paper-grain);
 }
 
-/* a faint vertical thread connecting the sigils, like a stem */
+/* vertical stem thread — the spine binding the panel */
 .rail::before {
 	content: '';
 	position: absolute;
-	top: 28px;
-	bottom: 28px;
+	top: 50px;
+	bottom: 50px;
 	left: 50%;
 	width: 1px;
 	background: linear-gradient(
 		180deg,
 		transparent 0%,
-		var(--berry-soft) 18%,
-		var(--berry-soft) 82%,
+		var(--berry-soft) 20%,
+		var(--berry-soft) 80%,
 		transparent 100%
 	);
 	transform: translateX(-50%);
-	opacity: 0.55;
+	opacity: 0.4;
 	pointer-events: none;
 }
 
+/* cap marks — pressed-specimen ornament, same berry ink as ornaments */
+.rail-cap {
+	display: block;
+	width: 100%;
+	text-align: center;
+	font-family: var(--font-mono);
+	font-size: 9px;
+	line-height: 1;
+	color: var(--berry);
+	opacity: 0.5;
+	pointer-events: none;
+	user-select: none;
+	letter-spacing: 1px;
+}
+.rail-cap::before { content: '* ─ *'; }
+
+/* each nav item */
 .rail-item {
 	position: relative;
 	display: flex;
 	align-items: center;
+	justify-content: center;
+	width: 100%;
 	cursor: pointer;
 	color: var(--fg-soft);
-	background: var(--bg);
-	padding: 4px 0;
-	transition: color var(--dur-fast) var(--ease-soft);
+	background: transparent;
+	border: none;
+	padding: 6px 0;
+	transition:
+		color var(--dur-fast) var(--ease-soft),
+		background var(--dur-fast) var(--ease-soft);
 	-webkit-tap-highlight-color: transparent;
 }
 
+/* active: barely-there warm tint behind the row */
+.rail-item.is-active {
+	background: rgba(214, 93, 14, 0.07);
+}
+
+/* orange bookmark pip flush to the right edge */
+.rail-item.is-active::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 2px;
+	height: 24px;
+	background: var(--orange);
+	border-radius: 2px 0 0 2px;
+	pointer-events: none;
+}
+
+/* the sigil glyph */
 .rail-glyph {
 	display: inline-flex;
 	align-items: center;
@@ -59,80 +112,84 @@
 	font-size: var(--fs-rail);
 	font-family: var(--font-mono);
 	line-height: 1;
+	color: inherit;
 	transition:
 		color var(--dur-fast) var(--ease-soft),
 		transform var(--dur-med) var(--ease-soft);
 }
 
+/* mounted specimen label — slides out from the panel edge on hover */
 .rail-label {
 	position: absolute;
-	left: 38px;
+	left: var(--rail-width);
+	top: 50%;
+	transform: translateY(-50%) translateX(-8px);
+
+	padding: 4px 11px 4px 8px;
+	background: var(--bg-alt);
+	border-top: 1px solid var(--berry-mist);
+	border-right: 1px solid var(--berry-mist);
+	border-bottom: 1px solid var(--berry-mist);
+	border-left: 2px solid var(--berry);
+	box-shadow:
+		3px 2px 14px -5px rgba(60, 56, 54, 0.32),
+		inset 0 0 20px var(--paper-grain);
+
 	font-family: var(--font-mono);
-	font-size: 13px;
+	font-size: 11px;
 	letter-spacing: 2px;
 	text-transform: lowercase;
-	color: var(--fg-soft);
+	color: var(--fg);
 	white-space: nowrap;
 	opacity: 0;
-	transform: translateX(-6px);
+	pointer-events: none;
 	transition:
 		opacity var(--dur-med) var(--ease-soft),
-		transform var(--dur-med) var(--ease-soft),
-		color var(--dur-fast) var(--ease-soft);
-	pointer-events: none;
+		transform var(--dur-med) var(--ease-soft);
 }
+.rail-label::before { content: none; }
+.rail-label::after  { content: none; }
 
-/* a small bracket that frames the label, like a tag on a botanical
- * specimen drawer. drawn purely with pseudo-elements */
-.rail-label::before { content: '['; margin-right: 4px; color: var(--berry); opacity: 0.7; }
-.rail-label::after  { content: ']'; margin-left: 4px;  color: var(--berry); opacity: 0.7; }
-
+/* hover + focus */
 .rail-item:hover .rail-glyph,
 .rail-item:focus-visible .rail-glyph {
 	color: var(--orange);
-	transform: scale(1.08);
+	transform: scale(1.10);
 }
 .rail-item:hover .rail-label,
 .rail-item:focus-visible .rail-label {
 	opacity: 1;
-	transform: translateX(0);
-	color: var(--fg);
+	transform: translateY(-50%) translateX(0);
 }
 
+/* active */
 .rail-item.is-active .rail-glyph {
 	color: var(--orange);
 }
 .rail-item.is-active .rail-label {
 	opacity: 1;
-	transform: translateX(0);
+	transform: translateY(-50%) translateX(0);
 	color: var(--orange);
+	border-left-color: var(--orange);
 }
 
-/* the hidden ??? item — invisible until the rail itself is hovered.
- * stays revealed while active so users can navigate away. */
+/* the hidden ??? item */
 .rail-item--shade {
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity var(--dur-med) var(--ease-soft);
 }
 .rail-item--shade .rail-glyph {
-	color: var(--berry-soft);
+	color: var(--gray);
 }
-
 .rail:hover .rail-item--shade,
-.rail:focus-within .rail-item--shade,
 .rail-item--shade.is-active {
-	opacity: 1;
+	opacity: 0.85;
 	pointer-events: auto;
 }
 
-.rail-item--shade:hover .rail-glyph,
-.rail-item--shade.is-active .rail-glyph {
-	color: var(--berry);
-}
-
-/* a focus ring that doesn't look out of place on parchment */
+/* focus ring that fits the parchment world */
 .rail-item:focus-visible {
-	outline: 1px dashed var(--berry);
-	outline-offset: 4px;
+	outline: 1px dashed var(--berry-soft);
+	outline-offset: 2px;
 }

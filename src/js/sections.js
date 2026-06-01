@@ -120,7 +120,7 @@
 			"<span class='center-item box-content'>PGP</span>",
 			"<span class='ornament'>" + ORNAMENT + "</span>",
 			'',
-			"<span class='center-item'><span class='pgp-link'>[ view public key ]</span></span>",
+			"<span class='center-item'><span class='pgp-link'>[ view key ]</span></span>",
 			'',
 			"<span class='frame-rule'>" + FRAME_D + "</span>",
 			''

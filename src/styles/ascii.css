@@ -34,7 +34,7 @@
 }
 
 .morph-section a {
-	color: inherit;
+	color: var(--fg);
 	text-decoration: none;
 	cursor: pointer;
 	position: relative;
@@ -79,7 +79,9 @@
 
 .tag-line {
 	display: inline-block;
+	font-size: var(--fs-body);
 	letter-spacing: 1px;
+	line-height: var(--lh-body);
 	color: var(--fg-soft);
 }
 
@@ -100,7 +102,8 @@
 	white-space: nowrap;
 	line-height: var(--lh-tight);
 	font-family: var(--font-mono);
-	letter-spacing: 4px;
+	font-size: var(--fs-body);
+	letter-spacing: 2px;
 	font-weight: bold;
 	color: var(--fg);
 }
@@ -118,10 +121,11 @@
 /* small caption beneath project links */
 .caption {
 	display: inline-block;
+	font-size: var(--fs-body);
+	line-height: var(--lh-body);
 	color: var(--fg-soft);
 	font-style: italic;
-	letter-spacing: 0.3px;
-	opacity: 0.85;
+	letter-spacing: 0.2px;
 }
 
 /* section corner-bracket frames — match the pgp modal aesthetic */

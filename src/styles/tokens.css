@@ -16,11 +16,11 @@
 	--paper-stain:   rgba(184, 85, 4, 0.05);
 	--vignette:      rgba(60, 56, 54, 0.18);
 
-	--fg:            #3c3836;
-	--fg-soft:       #5c544f;
-	--fg-faint:      rgba(60, 56, 54, 0.55);
-	--gray:          #7c6f64;
-	--ink-wet:       rgba(60, 56, 54, 0.85);
+	--fg:            #282828;   /* gruvbox hard dark — max ink contrast */
+	--fg-soft:       #3c3836;   /* readable body text, ~6:1 on --bg */
+	--fg-faint:      rgba(40, 40, 40, 0.55);
+	--gray:          #504945;   /* was too light, lifted for readability */
+	--ink-wet:       rgba(40, 40, 40, 0.90);
 
 	/* nightshade accents */
 	--orange:        #d65d0e;   /* primary accent (kept) */
@@ -46,11 +46,13 @@
 	--font-mono:    'Courier New', 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
 	/* base size is fluid: SOLANACEAE wordmark is ~87 chars wide and
 	 * must clear the rail gutter on either side. tune carefully. */
-	--fs-base:      clamp(11px, calc(0.95vw + 4px), 22px);
-	--fs-poem:      clamp(13px, calc(0.55vw + 8px), 20px);
+	--fs-base:      clamp(13px, calc(0.75vw + 6px), 19px);
+	--fs-body:      clamp(14px, calc(0.5vw + 10px), 17px); /* readable body text */
+	--fs-poem:      clamp(14px, calc(0.55vw + 9px), 20px);
 	--fs-rail:      18px;
-	--lh-tight:     1.2;
-	--lh-poem:      1.55;
+	--lh-tight:     1.25;
+	--lh-body:      1.65;
+	--lh-poem:      1.65;
 
 	/* spacing */
 	--gutter:       40px;

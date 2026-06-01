@@ -34,7 +34,9 @@
 	max-height: 86vh;
 	display: flex;
 	flex-direction: column;
-	padding: 36px 40px;
+	/* horizontal padding lives on .pgp-key-text so the scrollbar
+	 * sits outside the text area rather than overlapping it */
+	padding: 36px 0;
 	background: var(--bg-alt);
 	background-image:
 		radial-gradient(ellipse at 20% 12%, var(--bg-warm) 0%, transparent 55%),
@@ -55,10 +57,13 @@
 .pgp-key-text {
 	white-space: pre-wrap;
 	overflow: auto;
+	flex: 1;
 	min-height: 0;
 	user-select: text;
 	scrollbar-width: thin;
 	scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+	/* pad inside the scroll container so text doesn't touch the scrollbar */
+	padding: 0 40px;
 }
 
 /* four pinned corner flourishes — herbarium specimen tape */

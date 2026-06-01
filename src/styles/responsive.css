@@ -7,7 +7,7 @@
 @media (max-width: 768px) {
 	main {
 		padding-left: 0;
-		padding-top: 80px;
+		padding-top: 76px;
 		padding-bottom: 24px;
 		justify-content: flex-start;
 		align-items: center;
@@ -15,7 +15,7 @@
 	}
 
 	.ai-active main {
-		padding-top: 88px;
+		padding-top: 84px;
 	}
 
 	.morph-section {
@@ -28,7 +28,7 @@
 	}
 
 	.morph-section.ai-section {
-		max-height: calc(100vh - 88px);
+		max-height: calc(100vh - 84px);
 		padding: 0 18px 32px;
 		scrollbar-width: thin;
 		scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -51,56 +51,67 @@
 		padding: 0 6px;
 	}
 
+	/* cap marks hidden in horizontal layout */
+	.rail-cap { display: none; }
+
 	/* rail collapses to a horizontal strip pinned to the top */
 	.rail {
 		position: fixed;
-		top: 22px;
+		top: 0;
 		left: 0;
 		right: 0;
 		width: 100%;
 		transform: none;
 		flex-direction: row;
 		justify-content: center;
-		gap: 10px;
-		padding: 0 12px;
-	}
-	.rail::before {
-		top: 50%;
-		bottom: auto;
-		left: 12%;
-		right: 12%;
-		width: auto;
-		height: 1px;
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			var(--berry-soft) 18%,
-			var(--berry-soft) 82%,
-			transparent 100%
-		);
-		transform: none;
+		gap: 4px;
+		padding: 8px 16px;
+		/* parchment strip — same frosted paper look as the desktop panel */
+		border-right: none;
+		border-bottom: 1px solid var(--berry-soft);
+		box-shadow: 0 2px 12px -4px rgba(91, 58, 94, 0.20);
 	}
 
+	/* hide the decorative thread in horizontal layout */
+	.rail::before { display: none; }
+
+	/* each item in the strip */
 	.rail-item {
-		padding: 6px 10px;
+		padding: 5px 10px;
+		background: transparent;
 		border: 1px solid transparent;
-		background: var(--bg);
+		border-radius: 2px;
+		color: var(--fg-soft);
+		/* reset the active pip pseudo-element */
 	}
-	.rail-item:hover,
+	.rail-item.is-active::after { display: none; }
+
+	/* active item: subtle berry border + warm tint */
 	.rail-item.is-active {
 		border-color: var(--berry-soft);
+		background: rgba(214, 93, 14, 0.07);
 	}
-	.rail-label {
-		position: static;
-		display: none;
+	.rail-item:hover {
+		border-color: var(--berry-mist);
 	}
+
+	/* labels hidden in horizontal layout — not enough room */
+	.rail-label { display: none; }
+
 	.rail-glyph {
 		width: 26px;
 		height: 26px;
 		font-size: 16px;
 	}
 
-	.pgp-key { font-size: 13px; padding: 18px 16px; }
+	.pgp-key {
+		max-width: 96%;
+		padding: 20px 18px;
+	}
+	.pgp-key-text { font-size: 12px; }
+
+	/* pgp corner decorations too cramped on small card */
+	.pgp-corner { display: none; }
 }
 
 @media (max-width: 480px) {
@@ -112,7 +123,8 @@
 
 	.title-text { font-size: 1.6em; }
 
-	.rail { gap: 6px; }
+	.rail { gap: 2px; padding: 6px 10px; }
+	.rail-item { padding: 4px 7px; }
 	.rail-glyph { width: 22px; height: 22px; font-size: 14px; }
 
 	.poem-text { font-size: 14px; line-height: 1.5; padding: 2px 6px; }

@@ -25,7 +25,8 @@ main {
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
-	background-color: transparent;
+	/* subtle scrim so ambient art doesn't compete with text */
+	background: radial-gradient(ellipse at center, rgba(235, 219, 178, 0.45) 30%, transparent 80%);
 	/* symmetric gutter so the rail clears on the left while content
 	 * stays perfectly centered in the viewport */
 	padding: 0 var(--rail-width);

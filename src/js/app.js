@@ -47,6 +47,13 @@
 
 	function buildRail() {
 		const frag = document.createDocumentFragment();
+
+		// top botanical cap mark
+		const capTop = document.createElement('span');
+		capTop.className = 'rail-cap';
+		capTop.setAttribute('aria-hidden', 'true');
+		frag.appendChild(capTop);
+
 		railItems.forEach((item) => {
 			const btn = document.createElement('button');
 			btn.type = 'button';
@@ -58,6 +65,13 @@
 				`<span class="rail-label">${item.label}</span>`;
 			frag.appendChild(btn);
 		});
+
+		// bottom botanical cap mark
+		const capBot = document.createElement('span');
+		capBot.className = 'rail-cap';
+		capBot.setAttribute('aria-hidden', 'true');
+		frag.appendChild(capBot);
+
 		dom.railRoot.appendChild(frag);
 
 		dom.railRoot.addEventListener('click', (e) => {
