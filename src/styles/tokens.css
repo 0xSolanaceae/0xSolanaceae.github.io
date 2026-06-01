@@ -5,24 +5,36 @@
  */
 
 :root {
-	/* paper & ink */
+	/* paper & ink — a richer layered vellum */
 	--bg:            #e6c875;
 	--bg-alt:        #ebdbb2;
 	--bg-deep:       #d6b659;
+	--bg-warm:       #efd092;   /* lit highlight on the paper */
+	--bg-cool:       #c9a849;   /* shaded valley of the fold */
 	--paper-grain:   rgba(60, 56, 54, 0.04);
+	--paper-fiber:   rgba(91, 58, 94, 0.035);
+	--paper-stain:   rgba(184, 85, 4, 0.05);
+	--vignette:      rgba(60, 56, 54, 0.18);
 
 	--fg:            #3c3836;
 	--fg-soft:       #5c544f;
 	--fg-faint:      rgba(60, 56, 54, 0.55);
 	--gray:          #7c6f64;
+	--ink-wet:       rgba(60, 56, 54, 0.85);
 
 	/* nightshade accents */
 	--orange:        #d65d0e;   /* primary accent (kept) */
 	--orange-deep:   #b85504;
-	--berry:         #5b3a5e;   /* nightshade berry (new) */
+	--orange-soft:   rgba(214, 93, 14, 0.35);
+	--berry:         #5b3a5e;   /* nightshade berry */
+	--berry-deep:    #3e2741;
 	--berry-soft:    rgba(91, 58, 94, 0.55);
-	--moss:          #6b7a3a;   /* vine green (new) */
+	--berry-mist:    rgba(91, 58, 94, 0.18);
+	--moss:          #6b7a3a;   /* vine green */
 	--moss-soft:     rgba(107, 122, 58, 0.45);
+	--moss-mist:     rgba(107, 122, 58, 0.16);
+	--gold:          #b88b1e;   /* gold-leaf flourish */
+	--gold-soft:     rgba(184, 139, 30, 0.45);
 
 	/* scrollbars */
 	--scrollbar-thumb:  var(--orange);
@@ -47,9 +59,11 @@
 	/* motion */
 	--ease-soft:    cubic-bezier(0.22, 0.61, 0.36, 1);
 	--ease-paper:   cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-stem:    cubic-bezier(0.16, 1, 0.3, 1);   /* growing-vine ease */
 	--dur-fast:     180ms;
 	--dur-med:      420ms;
 	--dur-slow:     900ms;
+	--dur-bloom:    1600ms;
 
 	/* layers */
 	--z-ambient:    0;

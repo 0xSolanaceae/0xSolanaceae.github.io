@@ -31,10 +31,12 @@ main {
 	padding: 0 var(--rail-width);
 }
 
-/* when the hidden poem section is active, anchor content to the top
- * so it can scroll naturally without fighting the flex centering */
+/* ai-active: anchor content to the top so the poem can scroll
+ * naturally without fighting the flex centering */
 .ai-active main {
 	justify-content: flex-start;
 	align-items: center;
 	padding-top: 28px;
 }
+
+

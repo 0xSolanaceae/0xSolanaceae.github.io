@@ -11,8 +11,10 @@
 	justify-content: center;
 	align-items: center;
 	background-color: rgba(230, 200, 117, 0.92);
-	backdrop-filter: blur(2px);
-	-webkit-backdrop-filter: blur(2px);
+	background-image:
+		radial-gradient(ellipse at center, transparent 40%, rgba(91, 58, 94, 0.18) 100%);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity var(--dur-med) var(--ease-soft);
@@ -28,41 +30,93 @@
 	font-size: 15px;
 	line-height: 1.35;
 	color: var(--fg);
-	white-space: pre-wrap;
 	max-width: 90%;
 	max-height: 86vh;
-	overflow: auto;
-	padding: 28px 32px;
+	display: flex;
+	flex-direction: column;
+	padding: 36px 40px;
 	background: var(--bg-alt);
+	background-image:
+		radial-gradient(ellipse at 20% 12%, var(--bg-warm) 0%, transparent 55%),
+		radial-gradient(circle at 30% 70%, var(--paper-fiber) 1.5px, transparent 2px),
+		radial-gradient(circle at 80% 30%, var(--paper-fiber) 1.5px, transparent 2px);
+	background-size: 100% 100%, 280px 280px, 320px 320px;
 	border: 1px solid var(--berry-soft);
 	box-shadow:
 		0 0 0 1px rgba(60, 56, 54, 0.08),
-		0 14px 40px -18px rgba(60, 56, 54, 0.45);
-	user-select: text;
+		0 0 0 8px var(--bg),
+		0 0 0 9px var(--berry-mist),
+		0 14px 40px -18px rgba(60, 56, 54, 0.55),
+		inset 0 0 60px var(--paper-grain);
 	position: relative;
+}
+
+/* scrollable key text — lives inside the non-scrolling frame */
+.pgp-key-text {
+	white-space: pre-wrap;
+	overflow: auto;
+	min-height: 0;
+	user-select: text;
 	scrollbar-width: thin;
 	scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* corner flourishes — purely decorative, drawn with pseudo elements */
+/* four pinned corner flourishes — herbarium specimen tape */
 .pgp-key::before,
-.pgp-key::after {
-	content: '*';
+.pgp-key::after,
+.pgp-corner {
 	position: absolute;
 	color: var(--berry);
-	opacity: 0.55;
-	font-size: 14px;
+	opacity: 0.75;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	line-height: 1;
 	pointer-events: none;
+	white-space: pre;
 }
-.pgp-key::before { top: 6px;  left: 10px; }
-.pgp-key::after  { bottom: 6px; right: 10px; }
+/* top-left */
+.pgp-key::before {
+	content: '+--*\A|\A*';
+	top: 8px;
+	left: 10px;
+	text-align: left;
+}
+/* bottom-right */
+.pgp-key::after {
+	content: '*\A|\A*--+';
+	bottom: 8px;
+	right: 10px;
+	text-align: right;
+}
+/* top-right */
+.pgp-corner--tr::before {
+	content: '*--+\A|\A*';
+	display: block;
+	white-space: pre;
+}
+.pgp-corner--tr {
+	top: 8px;
+	right: 10px;
+	text-align: right;
+}
+/* bottom-left */
+.pgp-corner--bl::before {
+	content: '*\A|\A*--+';
+	display: block;
+	white-space: pre;
+}
+.pgp-corner--bl {
+	bottom: 8px;
+	left: 10px;
+	text-align: left;
+}
 
-.pgp-key::-webkit-scrollbar { width: var(--scrollbar-width); height: var(--scrollbar-width); }
-.pgp-key::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
-.pgp-key::-webkit-scrollbar-thumb {
+.pgp-key-text::-webkit-scrollbar { width: var(--scrollbar-width); height: var(--scrollbar-width); }
+.pgp-key-text::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 4px; }
+.pgp-key-text::-webkit-scrollbar-thumb {
 	background: var(--scrollbar-thumb);
 	border-radius: 4px;
 	border: 2px solid var(--scrollbar-track);
 }
-.pgp-key::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
-.pgp-key::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
+.pgp-key-text::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+.pgp-key-text::-webkit-scrollbar-corner { background: var(--scrollbar-track); }

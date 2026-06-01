@@ -17,10 +17,12 @@
 	font-size: 16px;
 	line-height: 1.4;
 	color: var(--berry);
-	opacity: 0.78;
+	opacity: 0.85;
 	margin: 0 auto 28px;
 	white-space: pre;
 	letter-spacing: 1px;
+	text-shadow: 0 0 8px var(--berry-mist);
+	animation: breath 8s ease-in-out infinite, sway 16s ease-in-out infinite;
 }
 
 .error-message {
@@ -41,10 +43,12 @@
 	border: 1px solid var(--berry-soft);
 	background: var(--bg-alt);
 	letter-spacing: 2px;
+	position: relative;
 	transition:
 		color var(--dur-fast) var(--ease-soft),
 		border-color var(--dur-fast) var(--ease-soft),
-		background var(--dur-fast) var(--ease-soft);
+		background var(--dur-fast) var(--ease-soft),
+		text-shadow var(--dur-med) var(--ease-soft);
 }
 
 .error-link:hover,
@@ -52,6 +56,7 @@
 	color: var(--orange);
 	border-color: var(--orange);
 	background: var(--bg);
+	text-shadow: 0 0 8px var(--orange-soft);
 	outline: none;
 }
 

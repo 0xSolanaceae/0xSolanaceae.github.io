@@ -99,7 +99,9 @@
 	color: var(--fg);
 }
 
-.rail-item.is-active .rail-glyph { color: var(--orange); }
+.rail-item.is-active .rail-glyph {
+	color: var(--orange);
+}
 .rail-item.is-active .rail-label {
 	opacity: 1;
 	transform: translateX(0);

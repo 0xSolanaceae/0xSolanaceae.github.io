@@ -1,12 +1,16 @@
-/* ambient — generative ascii vines
+/* ambient — quiet ascii botanical art
  * --------------------------------------------------------------
- * a quiet, painterly background. seeds creep in from the page edges,
- * extend one cell at a time, occasionally branch, occasionally bloom
- * into a flower glyph, then die. older marks are slowly washed back
- * to paper by a translucent fill so the canvas never saturates.
+ * a calm, painterly background composed of two layers:
  *
- * runs on a single 2d canvas behind everything. respects
- * prefers-reduced-motion (does nothing in that case).
+ *   1. specimens   pre-composed botanical sketches (flowers, berry
+ *                  sprigs, ferns, tendrils, flourishes) inked one
+ *                  cell per tick at random anchors. low alpha so
+ *                  they never compete with foreground text.
+ *   2. petals      slow drifting particles that fall across the
+ *                  page, leaving a faint trail.
+ *
+ * older marks are washed back to paper by a translucent fill so
+ * the canvas never saturates. respects prefers-reduced-motion.
  */
 
 (function () {
@@ -23,53 +27,85 @@
 		container.appendChild(canvas);
 
 		const GLYPHS = {
-			straight:  ['|', '!', ':', ';'],
-			branch:    ['+', 'T', 'Y', 'X', '*'],
-			diagonal:  ['\\', '/'],
-			vine:      ['.', ',', "'", '`', ':', ';'],
-			bloom:     ['*', '+', 'o', 'O', '@', '&', '%'],
-			berry:     ['o', 'O', '*']
+			bloom: ['*', '+', 'o', 'O', '@', '&', '%'],
+			berry: ['o', 'O', '@'],
+			petal: ['.', ',', "'", '`', '~']
 		};
 
-		const DIRS = {
-			N:  { dx:  0, dy: -1, glyphs: GLYPHS.straight },
-			S:  { dx:  0, dy:  1, glyphs: GLYPHS.straight },
-			E:  { dx:  1, dy:  0, glyphs: ['-', '=', '~'] },
-			W:  { dx: -1, dy:  0, glyphs: ['-', '=', '~'] },
-			NE: { dx:  1, dy: -1, glyphs: GLYPHS.diagonal },
-			NW: { dx: -1, dy: -1, glyphs: GLYPHS.diagonal },
-			SE: { dx:  1, dy:  1, glyphs: GLYPHS.diagonal },
-			SW: { dx: -1, dy:  1, glyphs: GLYPHS.diagonal }
-		};
+		/* pre-composed botanical specimens. each is a list of cell
+		 * offsets [dx, dy, glyph, alpha]. drawn one cell per tick at
+		 * a random anchor. tokens '$bloom' / '$berry' resolve at draw time.
+		 * alpha values intentionally low so the art reads as background. */
+		const SPECIMENS = [
+			// 0 — small bloom
+			[[0,-1,'*',0.45],[-1,0,'-',0.32],[0,0,'+',0.42],[1,0,'-',0.32],
+			 [0,1,'|',0.34],[0,2,'|',0.24]],
 
-		const DIR_KEYS = Object.keys(DIRS);
-		const CARDINAL = ['N', 'S', 'E', 'W'];
+			// 1 — 5-petal flower
+			[[0,-1,'.',0.28],[-1,-1,"'",0.28],[1,-1,"'",0.28],
+			 [-1,0,'(',0.36],[0,0,'$bloom',0.5],[1,0,')',0.36],
+			 [0,1,'|',0.36],[0,2,'|',0.28],[0,3,'|',0.2]],
 
-		// turn options for each direction: mostly continue, occasionally tilt
-		const TURN_MAP = {
-			N:  ['N', 'N', 'N', 'NE', 'NW'],
-			S:  ['S', 'S', 'S', 'SE', 'SW'],
-			E:  ['E', 'E', 'E', 'NE', 'SE'],
-			W:  ['W', 'W', 'W', 'NW', 'SW'],
-			NE: ['NE', 'NE', 'N', 'E'],
-			NW: ['NW', 'NW', 'N', 'W'],
-			SE: ['SE', 'SE', 'S', 'E'],
-			SW: ['SW', 'SW', 'S', 'W']
-		};
+			// 2 — berry sprig
+			[[-1,-1,'o',0.42],[0,-1,'O',0.48],[1,-1,'o',0.42],
+			 [0,0,'+',0.36],[0,1,'|',0.34],[0,2,'|',0.24],[-1,2,',',0.22]],
+
+			// 3 — fern frond (right-facing)
+			[[0,0,'<',0.36],[1,0,'-',0.34],[2,0,'=',0.3],[3,0,'-',0.28],[4,0,'~',0.24],
+			 [1,-1,"'",0.28],[2,-1,"'",0.24],[3,-1,'.',0.2],
+			 [1,1,',',0.28],[2,1,',',0.24],[3,1,'.',0.2]],
+
+			// 4 — fern frond (left-facing)
+			[[0,0,'>',0.36],[-1,0,'-',0.34],[-2,0,'=',0.3],[-3,0,'-',0.28],[-4,0,'~',0.24],
+			 [-1,-1,"'",0.28],[-2,-1,"'",0.24],[-3,-1,'.',0.2],
+			 [-1,1,',',0.28],[-2,1,',',0.24],[-3,1,'.',0.2]],
+
+			// 5 — curl tendril (spiral)
+			[[0,0,'(',0.36],[1,0,'_',0.34],[2,0,')',0.36],
+			 [2,1,"'",0.28],[1,1,'`',0.28],[0,1,'.',0.24],
+			 [-1,1,',',0.22],[-1,0,'/',0.2]],
+
+			// 6 — drooping vine with bloom
+			[[0,0,'|',0.34],[0,1,'|',0.3],[0,2,'|',0.28],
+			 [0,3,"'",0.24],[1,3,'.',0.22],[1,4,',',0.22],
+			 [2,4,'`',0.24],[2,5,'.',0.24],[3,5,'$bloom',0.45]],
+
+			// 7 — star bloom (radiating)
+			[[0,-2,'.',0.24],[-2,0,'.',0.24],[2,0,'.',0.24],[0,2,'.',0.24],
+			 [-1,-1,'\\',0.3],[1,-1,'/',0.3],[-1,1,'/',0.3],[1,1,'\\',0.3],
+			 [0,0,'$bloom',0.55]],
+
+			// 8 — calligraphic S-flourish
+			[[0,0,'.',0.24],[1,0,'`',0.28],[2,-1,"'",0.3],[3,-1,'.',0.3],
+			 [4,0,',',0.3],[5,0,'.',0.28],[6,1,'`',0.28],[7,1,"'",0.24],
+			 [8,2,'.',0.24]],
+
+			// 9 — ivy cluster (compact)
+			[[0,0,'`',0.28],[1,0,"'",0.3],[2,-1,'.',0.28],
+			 [0,1,',',0.28],[1,1,'`',0.3],[2,1,"'",0.28],
+			 [1,-1,'$berry',0.4],[3,0,'$berry',0.42]],
+
+			// 10 — crescent moon (rare)
+			[[0,-1,'(',0.34],[0,0,'(',0.36],[0,1,'(',0.34],[-1,0,'.',0.22]]
+		];
 
 		const config = {
 			cellW: 14,
 			cellH: 20,
-			maxSeeds: 5,
+			maxSpecimens: 5,
+			maxPetals: 5,
 			tickMs: 110,
-			washAlpha: 0.018,          // how aggressively the page fades old marks
-			berryColor:  'rgba(91, 58, 94, ALPHA)',   // nightshade berry
-			mossColor:   'rgba(107, 122, 58, ALPHA)', // vine green
-			inkColor:    'rgba(60, 56, 54, ALPHA)'    // soft ink for fine glyphs
+			washAlpha: 0.014,
+			specimenSpawnChance: 0.045,
+			petalSpawnChance: 0.022,
+			berryColor: 'rgba(91, 58, 94, ALPHA)',
+			mossColor:  'rgba(107, 122, 58, ALPHA)',
+			goldColor:  'rgba(184, 139, 30, ALPHA)'
 		};
 
 		let cols = 0, rows = 0;
-		let seeds = [];
+		let specimens = [];
+		let petals = [];
 		let lastTick = 0;
 		let running = true;
 
@@ -90,72 +126,73 @@
 			ctx.textAlign = 'center';
 			ctx.font = '14px "Courier New", monospace';
 
-			seeds = [];
-			for (let i = 0; i < 2; i++) spawnSeed();
+			specimens = [];
+			petals = [];
+			for (let i = 0; i < 2; i++) spawnSpecimen();
+			for (let i = 0; i < 3; i++) spawnPetal(true);
 		}
 
-		function spawnSeed() {
-			if (seeds.length >= config.maxSeeds) return;
+		/* ---------------------------------------------------- specimens */
 
-			// pick an edge to root from
-			const edge = pick(['top', 'bottom', 'left', 'right']);
-			let x, y, dir;
-			if (edge === 'top')    { x = randInt(0, cols); y = 0;          dir = pick(['S', 'SE', 'SW']); }
-			else if (edge === 'bottom') { x = randInt(0, cols); y = rows - 1; dir = pick(['N', 'NE', 'NW']); }
-			else if (edge === 'left')   { x = 0;          y = randInt(0, rows); dir = pick(['E', 'NE', 'SE']); }
-			else                         { x = cols - 1;  y = randInt(0, rows); dir = pick(['W', 'NW', 'SW']); }
-
-			seeds.push({
-				x, y, dir,
-				age: 0,
-				life: randInt(45, 130),
-				branchBudget: randInt(1, 3),
-				palette: Math.random() < 0.55 ? 'moss' : 'berry'
+		function spawnSpecimen() {
+			if (specimens.length >= config.maxSpecimens) return;
+			const tmpl = pick(SPECIMENS);
+			const ax = randInt(5, Math.max(6, cols - 5));
+			const ay = randInt(4, Math.max(5, rows - 4));
+			specimens.push({
+				ax, ay,
+				palette: pickPalette(),
+				cells: tmpl.slice(),
+				index: 0
 			});
 		}
 
-		function stepSeed(seed) {
-			// draw the current cell
-			const directionInfo = DIRS[seed.dir];
-			const glyph = pick(directionInfo.glyphs);
-			drawGlyph(seed.x, seed.y, glyph, seed.palette, 0.22 + Math.random() * 0.18);
-
-			// occasional joint at branch points (more visible)
-			if (Math.random() < 0.08) {
-				drawGlyph(seed.x, seed.y, pick(GLYPHS.branch), seed.palette, 0.45);
-			}
-
-			// occasional bloom — only past first few cells
-			if (seed.age > 8 && Math.random() < 0.025) {
-				drawGlyph(seed.x, seed.y, pick(GLYPHS.bloom), seed.palette, 0.7);
-			}
-
-			// branching
-			if (seed.branchBudget > 0 && seed.age > 6 && Math.random() < 0.035) {
-				seed.branchBudget--;
-				const branchDir = pick(perpendicular(seed.dir));
-				seeds.push({
-					x: seed.x,
-					y: seed.y,
-					dir: branchDir,
-					age: 0,
-					life: randInt(20, 60),
-					branchBudget: 0,
-					palette: seed.palette
-				});
-			}
-
-			// pick next direction (gentle turn)
-			seed.dir = pick(TURN_MAP[seed.dir] || CARDINAL);
-			const next = DIRS[seed.dir];
-			seed.x += next.dx;
-			seed.y += next.dy;
-			seed.age++;
+		function stepSpecimen(s) {
+			if (s.index >= s.cells.length) return;
+			const cell = s.cells[s.index++];
+			const dx = cell[0], dy = cell[1], gToken = cell[2], alpha = cell[3];
+			let glyph = gToken;
+			if      (gToken === '$bloom') glyph = pick(GLYPHS.bloom);
+			else if (gToken === '$berry') glyph = pick(GLYPHS.berry);
+			drawGlyph(s.ax + dx, s.ay + dy, glyph, s.palette, alpha != null ? alpha : 0.32);
 		}
 
-		function isInBounds(seed) {
-			return seed.x >= 0 && seed.x < cols && seed.y >= 0 && seed.y < rows;
+		/* ------------------------------------------------------ petals */
+
+		function spawnPetal(initial) {
+			if (petals.length >= config.maxPetals) return;
+			petals.push({
+				fx: initial ? Math.random() * cols : randRange(-2, cols + 2),
+				fy: initial ? Math.random() * rows : -1,
+				vx: randRange(-0.12, 0.12),
+				vy: randRange(0.06, 0.18),
+				wobble: randRange(0, Math.PI * 2),
+				wobbleRate: randRange(0.03, 0.08),
+				palette: Math.random() < 0.5 ? 'berry' : 'gold',
+				glyph: pick(GLYPHS.petal),
+				life: randInt(90, 220),
+				age: 0
+			});
 		}
+
+		function stepPetal(p) {
+			p.wobble += p.wobbleRate;
+			const wob = Math.sin(p.wobble) * 0.06;
+			p.fx += p.vx + wob;
+			p.fy += p.vy;
+			p.age++;
+
+			const cx = Math.round(p.fx);
+			const cy = Math.round(p.fy);
+			const fade = 0.16 + 0.18 * (1 - p.age / p.life);
+			drawGlyph(cx, cy, p.glyph, p.palette, Math.max(0.05, fade));
+		}
+
+		function isPetalAlive(p) {
+			return p.age < p.life && p.fy < rows + 2 && p.fx > -3 && p.fx < cols + 3;
+		}
+
+		/* ------------------------------------------------------ ticker */
 
 		function tick(timestamp) {
 			if (!running) return;
@@ -166,23 +203,23 @@
 				lastTick = timestamp;
 				washCanvas();
 
-				// step every seed
-				for (let i = seeds.length - 1; i >= 0; i--) {
-					const seed = seeds[i];
-					stepSeed(seed);
-
-					// retire if out of bounds or past life — leave a final bloom
-					if (!isInBounds(seed) || seed.age >= seed.life) {
-						if (isInBounds(seed) && Math.random() < 0.6) {
-							drawGlyph(seed.x, seed.y, pick(GLYPHS.bloom), seed.palette, 0.8);
-						}
-						seeds.splice(i, 1);
+				for (let i = specimens.length - 1; i >= 0; i--) {
+					stepSpecimen(specimens[i]);
+					if (specimens[i].index >= specimens[i].cells.length) {
+						specimens.splice(i, 1);
 					}
 				}
 
-				// keep the garden seeded but not crowded
-				if (seeds.length < 2 || (seeds.length < config.maxSeeds && Math.random() < 0.08)) {
-					spawnSeed();
+				for (let i = petals.length - 1; i >= 0; i--) {
+					stepPetal(petals[i]);
+					if (!isPetalAlive(petals[i])) petals.splice(i, 1);
+				}
+
+				if (specimens.length < config.maxSpecimens && Math.random() < config.specimenSpawnChance) {
+					spawnSpecimen();
+				}
+				if (petals.length < config.maxPetals && Math.random() < config.petalSpawnChance) {
+					spawnPetal(false);
 				}
 			}
 
@@ -190,7 +227,6 @@
 		}
 
 		function washCanvas() {
-			// translucent paper wash — old marks bleed away gradually
 			ctx.save();
 			ctx.globalCompositeOperation = 'destination-out';
 			ctx.fillStyle = `rgba(0, 0, 0, ${config.washAlpha})`;
@@ -202,27 +238,31 @@
 			if (col < 0 || col >= cols || row < 0 || row >= rows) return;
 			const px = col * config.cellW + config.cellW / 2;
 			const py = row * config.cellH + config.cellH / 2;
-			const base = palette === 'moss' ? config.mossColor : config.berryColor;
+			let base;
+			if      (palette === 'moss') base = config.mossColor;
+			else if (palette === 'gold') base = config.goldColor;
+			else                          base = config.berryColor;
 			ctx.fillStyle = base.replace('ALPHA', alpha.toFixed(2));
 			ctx.fillText(glyph, px, py);
 		}
 
-		function perpendicular(dir) {
-			if (dir === 'N' || dir === 'S') return ['E', 'W'];
-			if (dir === 'E' || dir === 'W') return ['N', 'S'];
-			if (dir === 'NE' || dir === 'SW') return ['NW', 'SE'];
-			if (dir === 'NW' || dir === 'SE') return ['NE', 'SW'];
-			return CARDINAL;
+		function pickPalette() {
+			const r = Math.random();
+			if (r < 0.08) return 'gold';
+			if (r < 0.55) return 'moss';
+			return 'berry';
 		}
 
 		function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 		function randInt(min, max) { return Math.floor(min + Math.random() * (max - min)); }
+		function randRange(min, max) { return min + Math.random() * (max - min); }
 
 		function debounce(fn, wait) {
 			let t;
-			return function (...args) {
+			return function () {
+				const args = arguments, self = this;
 				clearTimeout(t);
-				t = setTimeout(() => fn.apply(this, args), wait);
+				t = setTimeout(() => fn.apply(self, args), wait);
 			};
 		}
 

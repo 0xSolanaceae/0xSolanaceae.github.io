@@ -29,7 +29,7 @@
 		asciiContainer: document.querySelector('.morph-section'),
 		railRoot:       document.querySelector('.rail'),
 		pgpOverlay:     document.querySelector('.pgp-key-container'),
-		pgpKey:         document.querySelector('.pgp-key')
+		pgpKey:         document.querySelector('.pgp-key-text')
 	};
 
 	document.addEventListener('DOMContentLoaded', init);

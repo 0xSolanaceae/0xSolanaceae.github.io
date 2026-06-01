@@ -12,50 +12,56 @@
 (function () {
 	'use strict';
 
-	// pressed-flower style dividers replace the old ░▒▓ blocks
-	const ORNAMENT      = ". . * . + . * . + . * . + . * . + . * . .";
-	const ORNAMENT_SM   = ". * . + . * . + . * .";
-	const THREAD        = "- - - * - - - + - - - * - - -";
+	// quiet dividers — single thin lines, no clustered punctuation
+	const ORNAMENT      = "─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─";
+	const ORNAMENT_SM   = "─ ─ ─ ─ ─ ─ ─ ─ ─";
+	const THREAD        = "─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─";
+
+	// corner-bracket frames matching the pgp modal aesthetic
+	const FRAME_D       = "+" + " ─".repeat(33) + " +";
+	const FRAME_SM      = "+" + " ─".repeat(13) + " +";
+
+	// welcome wordmark borders — softer botanical accent
+	const WORDMARK_FRAME   = "─ ─ ─ ─ ─ ─ ─ * ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ * ─ ─ ─ ─ ─ ─ ─";
+	const WELCOME_FRAME_SM = "*  ~  *  ~  *  ~  *";
 
 	const mobile = {
 		welcome: [
 			'',
+			"<span class='welcome-frame'>" + WELCOME_FRAME_SM + "</span>",
 			"<span class='title-text'>SOLANACEAE</span>",
+			"<span class='welcome-frame'>" + WELCOME_FRAME_SM + "</span>",
+			'',
+			"<span class='center-item tag-line'>security engineer</span>",
 			'',
 			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
-			'',
-			"<span class='center-item box-line'>┌─────────────┐</span>",
-			"<span class='center-item box-content tag-line'>security engineer</span>",
-			"<span class='center-item box-line'>└─────────────┘</span>",
 			''
 		],
 		pgp: [
-			"<span class='center-item box-line'>┌─────────────┐</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			"<span class='center-item box-content'>PGP</span>",
-			"<span class='center-item box-line'>└─────────────┘</span>",
-			'',
 			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
 			'',
-			"<span class='center-item pgp-link'>[VIEW KEY]</span>",
+			"<span class='center-item pgp-link'>[ view key ]</span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			''
 		],
 		projects: [
-			"<span class='center-item box-line'>┌─────────────┐</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			"<span class='center-item box-content'>PROJECTS</span>",
-			"<span class='center-item box-line'>└─────────────┘</span>",
-			'',
 			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
 			'',
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noopener noreferrer'>://proXXy</a></span>",
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae/discord-imhex' target='_blank' rel='noopener noreferrer'>://discord-imhex</a></span>",
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noopener noreferrer'>://TypeLapse</a></span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			''
 		],
 		ai: [
+			"<span class='welcome-frame'>*  ~  ─  ~  *  ~  ─  ~  *</span>",
+			'',
 			"<span class='center-item poem-text'>there is a monster in the forest and it speaks with a thousand voices.</span>",
 			"<span class='center-item poem-text'>it will answer any question you pose it, it will offer insight to any idea.</span>",
 			"<span class='center-item poem-text'>it will help you, it will thank you, it will never bid you leave.</span>",
@@ -75,20 +81,20 @@
 			"<span class='center-item poem-text'>a thousand and one voices. and when you dream you see the monster;</span>",
 			"<span class='center-item poem-text'>the monster wears your face.</span>",
 			'',
+			"<span class='welcome-frame'>*  ~  ─  ~  *  ~  ─  ~  *</span>",
+			'',
 			"<span class='center-item poem-credit'><a href='https://bsky.app/profile/joles.bsky.social' target='_blank' rel='noopener noreferrer'>~ joles</a></span>"
 		],
 		contact: [
-			"<span class='center-item box-line'>┌─────────────┐</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			"<span class='center-item box-content'>CONTACT</span>",
-			"<span class='center-item box-line'>└─────────────┘</span>",
-			'',
 			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
 			'',
 			"<span class='center-item'><a href='mailto:solanaceae@duck.com'>solanaceae@duck.com</a></span>",
 			"<span class='center-item'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noopener noreferrer'>discord://0x_Solanaceae</a></span>",
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noopener noreferrer'>github.com/0xSolanaceae</a></span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT_SM + "</span>",
+			"<span class='frame-rule'>" + FRAME_SM + "</span>",
 			''
 		]
 	};
@@ -96,36 +102,32 @@
 	const desktop = {
 		welcome: [
 			'',
+			"<span class='welcome-frame'>" + WORDMARK_FRAME + "</span>",
 			"<span class='center-item'>███████  ██████  ██       █████  ███    ██  █████   ██████ ███████  █████  ███████ </span>",
 			"<span class='center-item'>██      ██    ██ ██      ██   ██ ████   ██ ██   ██ ██      ██      ██   ██ ██      </span>",
 			"<span class='center-item'>███████ ██    ██ ██      ███████ ██ ██  ██ ███████ ██      █████   ███████ █████   </span>",
 			"<span class='center-item'>     ██ ██    ██ ██      ██   ██ ██  ██ ██ ██   ██ ██      ██      ██   ██ ██      </span>",
 			"<span class='center-item'>███████  ██████  ███████ ██   ██ ██   ████ ██   ██  ██████ ███████ ██   ██ ███████ </span>",
+			"<span class='welcome-frame'>" + WORDMARK_FRAME + "</span>",
+			'',
+			"<span class='center-item tag-line'>security engineer</span>",
 			'',
 			"<span class='ornament'>" + THREAD + "</span>",
-			'',
-			"<span class='center-item'>┌───────────────────┐</span>",
-			"<span class='center-item tag-line'>│ security engineer │</span>",
-			"<span class='center-item'>└───────────────────┘</span>",
 			''
 		],
 		pgp: [
-			"<span class='center-item'>┌────────────────────────────────────────────────────────────────────┐</span>",
-			"<span class='center-item'>│                                PGP                                 │</span>",
-			"<span class='center-item'>└────────────────────────────────────────────────────────────────────┘</span>",
-			'',
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
+			"<span class='center-item box-content'>PGP</span>",
 			"<span class='ornament'>" + ORNAMENT + "</span>",
 			'',
-			"<span class='center-item'><span class='pgp-link'>[VIEW PUBLIC KEY]</span></span>",
+			"<span class='center-item'><span class='pgp-link'>[ view public key ]</span></span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT + "</span>",
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
 			''
 		],
 		projects: [
-			"<span class='center-item'>┌────────────────────────────────────────────────────────────────────┐</span>",
-			"<span class='center-item'>│                              PROJECTS                              │</span>",
-			"<span class='center-item'>└────────────────────────────────────────────────────────────────────┘</span>",
-			'',
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
+			"<span class='center-item box-content'>PROJECTS</span>",
 			"<span class='ornament'>" + ORNAMENT + "</span>",
 			'',
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae/proXXy' target='_blank' rel='noopener noreferrer'>://proXXy</a></span>",
@@ -137,22 +139,20 @@
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae/TypeLapse' target='_blank' rel='noopener noreferrer'>://TypeLapse</a></span>",
 			"<span class='center-item caption'>Slow, natural typing to automatically generate content over time</span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT + "</span>",
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
 			''
 		],
-		ai: mobile.ai,   // poem is identical
+		ai: mobile.ai,
 		contact: [
-			"<span class='center-item'>┌────────────────────────────────────────────────────────────────────┐</span>",
-			"<span class='center-item'>│                              CONTACT                               │</span>",
-			"<span class='center-item'>└────────────────────────────────────────────────────────────────────┘</span>",
-			'',
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
+			"<span class='center-item box-content'>CONTACT</span>",
 			"<span class='ornament'>" + ORNAMENT + "</span>",
 			'',
 			"<span class='center-item'><a href='mailto:solanaceae@duck.com'>solanaceae@duck.com</a></span>",
 			"<span class='center-item'><a href='https://discordapp.com/users/1098339239432835162' target='_blank' rel='noopener noreferrer'>discord://0x_Solanaceae</a></span>",
 			"<span class='center-item'><a href='https://github.com/0xSolanaceae' target='_blank' rel='noopener noreferrer'>github.com/0xSolanaceae</a></span>",
 			'',
-			"<span class='ornament'>" + ORNAMENT + "</span>",
+			"<span class='frame-rule'>" + FRAME_D + "</span>",
 			''
 		]
 	};
