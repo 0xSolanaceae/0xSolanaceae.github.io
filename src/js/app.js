@@ -29,7 +29,8 @@
 		asciiContainer: document.querySelector('.morph-section'),
 		railRoot:       document.querySelector('.rail'),
 		pgpOverlay:     document.querySelector('.pgp-key-container'),
-		pgpKey:         document.querySelector('.pgp-key-text')
+		pgpKey:         document.querySelector('.pgp-key-text'),
+		pgpClose:       document.querySelector('.pgp-close')
 	};
 
 	document.addEventListener('DOMContentLoaded', init);
@@ -227,6 +228,10 @@
 		dom.pgpOverlay.addEventListener('click', (e) => {
 			if (e.target === dom.pgpOverlay) hidePgpKey();
 		});
+
+		if (dom.pgpClose) {
+			dom.pgpClose.addEventListener('click', hidePgpKey);
+		}
 
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') hidePgpKey();

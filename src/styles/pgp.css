@@ -125,3 +125,33 @@
 }
 .pgp-key-text::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 .pgp-key-text::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
+
+/* mobile close button — hidden on desktop, shown on narrow viewports */
+.pgp-close {
+	position: absolute;
+	top: 10px;
+	right: 12px;
+	display: none;
+	background: transparent;
+	border: 1px solid var(--berry-soft);
+	border-radius: 2px;
+	color: var(--berry);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	letter-spacing: 1px;
+	padding: 4px 9px;
+	cursor: pointer;
+	opacity: 0.75;
+	z-index: 1;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	transition:
+		opacity var(--dur-fast) var(--ease-soft),
+		border-color var(--dur-fast) var(--ease-soft);
+}
+.pgp-close:hover,
+.pgp-close:focus-visible {
+	opacity: 1;
+	border-color: var(--berry);
+	outline: none;
+}

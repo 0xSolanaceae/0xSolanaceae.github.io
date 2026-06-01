@@ -99,3 +99,16 @@ a { color: inherit; text-decoration: none; }
 		scroll-behavior: auto !important;
 	}
 }
+
+/* iOS Safari: background-attachment: fixed causes paint storms and
+ * visual glitches during momentum scroll — switch to scroll on mobile. */
+@media (max-width: 768px) {
+	body {
+		background-attachment: scroll;
+	}
+
+	/* adjust the deckle-edge frame to respect safe-area insets */
+	body::before {
+		inset: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) 8px;
+	}
+}
