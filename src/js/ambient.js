@@ -1,202 +1,241 @@
-(function() {
-  'use strict';
+/* ambient — generative ascii vines
+ * --------------------------------------------------------------
+ * a quiet, painterly background. seeds creep in from the page edges,
+ * extend one cell at a time, occasionally branch, occasionally bloom
+ * into a flower glyph, then die. older marks are slowly washed back
+ * to paper by a translucent fill so the canvas never saturates.
+ *
+ * runs on a single 2d canvas behind everything. respects
+ * prefers-reduced-motion (does nothing in that case).
+ */
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+(function () {
+	'use strict';
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const container = document.querySelector('.ambient-container');
-    if (!container || prefersReducedMotion) {
-      return;
-    }
+	const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    container.appendChild(canvas);
+	document.addEventListener('DOMContentLoaded', () => {
+		const container = document.querySelector('.ambient-container');
+		if (!container || prefersReducedMotion) return;
 
-    const baseTexture = document.createElement('canvas');
-    const baseCtx = baseTexture.getContext('2d', { alpha: false });
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d', { alpha: true });
+		container.appendChild(canvas);
 
-    let particles = [];
-    let running = true;
-    let lastTimestamp = 0;
-    let glitchCooldown = getNextGlitchDelay();
+		const GLYPHS = {
+			straight:  ['|', '!', ':', ';'],
+			branch:    ['+', 'T', 'Y', 'X', '*'],
+			diagonal:  ['\\', '/'],
+			vine:      ['.', ',', "'", '`', ':', ';'],
+			bloom:     ['*', '+', 'o', 'O', '@', '&', '%'],
+			berry:     ['o', 'O', '*']
+		};
 
-    function getNextGlitchDelay() {
-      return 5000 + Math.random() * 6000;
-    }
+		const DIRS = {
+			N:  { dx:  0, dy: -1, glyphs: GLYPHS.straight },
+			S:  { dx:  0, dy:  1, glyphs: GLYPHS.straight },
+			E:  { dx:  1, dy:  0, glyphs: ['-', '=', '~'] },
+			W:  { dx: -1, dy:  0, glyphs: ['-', '=', '~'] },
+			NE: { dx:  1, dy: -1, glyphs: GLYPHS.diagonal },
+			NW: { dx: -1, dy: -1, glyphs: GLYPHS.diagonal },
+			SE: { dx:  1, dy:  1, glyphs: GLYPHS.diagonal },
+			SW: { dx: -1, dy:  1, glyphs: GLYPHS.diagonal }
+		};
 
-    function resize() {
-      const { innerWidth: width, innerHeight: height } = window;
-      canvas.width = width;
-      canvas.height = height;
-      baseTexture.width = width;
-      baseTexture.height = height;
+		const DIR_KEYS = Object.keys(DIRS);
+		const CARDINAL = ['N', 'S', 'E', 'W'];
 
-      paintBaseTexture(width, height);
-      seedParticles(width, height);
-    }
+		// turn options for each direction: mostly continue, occasionally tilt
+		const TURN_MAP = {
+			N:  ['N', 'N', 'N', 'NE', 'NW'],
+			S:  ['S', 'S', 'S', 'SE', 'SW'],
+			E:  ['E', 'E', 'E', 'NE', 'SE'],
+			W:  ['W', 'W', 'W', 'NW', 'SW'],
+			NE: ['NE', 'NE', 'N', 'E'],
+			NW: ['NW', 'NW', 'N', 'W'],
+			SE: ['SE', 'SE', 'S', 'E'],
+			SW: ['SW', 'SW', 'S', 'W']
+		};
 
-    function paintBaseTexture(width, height) {
-      const gradient = baseCtx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, Math.max(width, height) / 1.3
-      );
+		const config = {
+			cellW: 14,
+			cellH: 20,
+			maxSeeds: 5,
+			tickMs: 110,
+			washAlpha: 0.018,          // how aggressively the page fades old marks
+			berryColor:  'rgba(91, 58, 94, ALPHA)',   // nightshade berry
+			mossColor:   'rgba(107, 122, 58, ALPHA)', // vine green
+			inkColor:    'rgba(60, 56, 54, ALPHA)'    // soft ink for fine glyphs
+		};
 
-      gradient.addColorStop(0, 'rgba(238, 215, 172, 0.82)');
-      gradient.addColorStop(0.6, 'rgba(226, 185, 139, 0.86)');
-      gradient.addColorStop(1, 'rgba(192, 158, 121, 0.9)');
+		let cols = 0, rows = 0;
+		let seeds = [];
+		let lastTick = 0;
+		let running = true;
 
-      baseCtx.fillStyle = gradient;
-      baseCtx.fillRect(0, 0, width, height);
+		function resize() {
+			const dpr = Math.min(window.devicePixelRatio || 1, 2);
+			const { innerWidth: w, innerHeight: h } = window;
+			canvas.width = w * dpr;
+			canvas.height = h * dpr;
+			canvas.style.width = w + 'px';
+			canvas.style.height = h + 'px';
+			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const vignette = baseCtx.createRadialGradient(
-        width / 2, height / 2, 0,
-        width / 2, height / 2, Math.max(width, height) / 2
-      );
+			cols = Math.floor(w / config.cellW);
+			rows = Math.floor(h / config.cellH);
 
-      vignette.addColorStop(0.7, 'rgba(0, 0, 0, 0)');
-      vignette.addColorStop(1, 'rgba(0, 0, 0, 0.32)');
+			ctx.clearRect(0, 0, w, h);
+			ctx.textBaseline = 'middle';
+			ctx.textAlign = 'center';
+			ctx.font = '14px "Courier New", monospace';
 
-      baseCtx.fillStyle = vignette;
-      baseCtx.fillRect(0, 0, width, height);
-    }
+			seeds = [];
+			for (let i = 0; i < 2; i++) spawnSeed();
+		}
 
-    function seedParticles(width, height) {
-      const count = Math.max(40, Math.floor((width + height) / 60));
-      particles = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: Math.random() * 2 + 0.6,
-        opacity: Math.random() * 0.6 + 0.25,
-        speed: Math.random() * 0.25 + 0.08,
-        angle: Math.random() * Math.PI * 2
-      }));
-    }
+		function spawnSeed() {
+			if (seeds.length >= config.maxSeeds) return;
 
-    function updateParticles(width, height) {
-      particles.forEach((p) => {
-        p.x += Math.cos(p.angle) * p.speed;
-        p.y += Math.sin(p.angle) * p.speed;
+			// pick an edge to root from
+			const edge = pick(['top', 'bottom', 'left', 'right']);
+			let x, y, dir;
+			if (edge === 'top')    { x = randInt(0, cols); y = 0;          dir = pick(['S', 'SE', 'SW']); }
+			else if (edge === 'bottom') { x = randInt(0, cols); y = rows - 1; dir = pick(['N', 'NE', 'NW']); }
+			else if (edge === 'left')   { x = 0;          y = randInt(0, rows); dir = pick(['E', 'NE', 'SE']); }
+			else                         { x = cols - 1;  y = randInt(0, rows); dir = pick(['W', 'NW', 'SW']); }
 
-        if (Math.random() > 0.995) {
-          p.angle += (Math.random() - 0.5) * 0.4;
-        }
+			seeds.push({
+				x, y, dir,
+				age: 0,
+				life: randInt(45, 130),
+				branchBudget: randInt(1, 3),
+				palette: Math.random() < 0.55 ? 'moss' : 'berry'
+			});
+		}
 
-        if (p.x < 0 || p.x > width || p.y < 0 || p.y > height) {
-          p.x = Math.random() * width;
-          p.y = Math.random() * height;
-          p.angle = Math.random() * Math.PI * 2;
-        }
-      });
-    }
+		function stepSeed(seed) {
+			// draw the current cell
+			const directionInfo = DIRS[seed.dir];
+			const glyph = pick(directionInfo.glyphs);
+			drawGlyph(seed.x, seed.y, glyph, seed.palette, 0.22 + Math.random() * 0.18);
 
-    function drawParticles() {
-      ctx.save();
-      particles.forEach((p) => {
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
+			// occasional joint at branch points (more visible)
+			if (Math.random() < 0.08) {
+				drawGlyph(seed.x, seed.y, pick(GLYPHS.branch), seed.palette, 0.45);
+			}
 
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity * 0.35})`;
-        ctx.arc(p.x, p.y, p.size * 1.4, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
+			// occasional bloom — only past first few cells
+			if (seed.age > 8 && Math.random() < 0.025) {
+				drawGlyph(seed.x, seed.y, pick(GLYPHS.bloom), seed.palette, 0.7);
+			}
 
-    function applyGlitch(width, height) {
-      const slices = Math.floor(Math.random() * 6) + 2;
-      const intensity = Math.random() * 14;
+			// branching
+			if (seed.branchBudget > 0 && seed.age > 6 && Math.random() < 0.035) {
+				seed.branchBudget--;
+				const branchDir = pick(perpendicular(seed.dir));
+				seeds.push({
+					x: seed.x,
+					y: seed.y,
+					dir: branchDir,
+					age: 0,
+					life: randInt(20, 60),
+					branchBudget: 0,
+					palette: seed.palette
+				});
+			}
 
-      for (let i = 0; i < slices; i++) {
-        const y = Math.floor(Math.random() * height);
-        const sliceHeight = Math.floor(Math.random() * 6) + 2;
-        const offset = (Math.random() * 20 - 10) * intensity;
+			// pick next direction (gentle turn)
+			seed.dir = pick(TURN_MAP[seed.dir] || CARDINAL);
+			const next = DIRS[seed.dir];
+			seed.x += next.dx;
+			seed.y += next.dy;
+			seed.age++;
+		}
 
-        const data = ctx.getImageData(0, y, width, sliceHeight);
-        ctx.clearRect(0, y, width, sliceHeight);
-        ctx.putImageData(data, offset, y);
-      }
+		function isInBounds(seed) {
+			return seed.x >= 0 && seed.x < cols && seed.y >= 0 && seed.y < rows;
+		}
 
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.12})`;
-      ctx.fillRect(0, 0, width, height);
+		function tick(timestamp) {
+			if (!running) return;
+			if (!lastTick) lastTick = timestamp;
+			const elapsed = timestamp - lastTick;
 
-      if (Math.random() > 0.5) {
-        ctx.fillStyle = `rgba(0, 255, 0, ${Math.random() * 0.1})`;
-        ctx.fillRect(0, 0, width, height);
-      }
+			if (elapsed >= config.tickMs) {
+				lastTick = timestamp;
+				washCanvas();
 
-      ctx.globalCompositeOperation = 'source-over';
-    }
+				// step every seed
+				for (let i = seeds.length - 1; i >= 0; i--) {
+					const seed = seeds[i];
+					stepSeed(seed);
 
-    function drawScanline(width, height) {
-      if (Math.random() > 0.995) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        if (Math.random() > 0.5) {
-          const y = Math.random() * height;
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-        } else {
-          const x = Math.random() * width;
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-        }
-        ctx.stroke();
-      }
-    }
+					// retire if out of bounds or past life — leave a final bloom
+					if (!isInBounds(seed) || seed.age >= seed.life) {
+						if (isInBounds(seed) && Math.random() < 0.6) {
+							drawGlyph(seed.x, seed.y, pick(GLYPHS.bloom), seed.palette, 0.8);
+						}
+						seeds.splice(i, 1);
+					}
+				}
 
-    function step(timestamp) {
-      if (!running) {
-        return;
-      }
+				// keep the garden seeded but not crowded
+				if (seeds.length < 2 || (seeds.length < config.maxSeeds && Math.random() < 0.08)) {
+					spawnSeed();
+				}
+			}
 
-      const width = canvas.width;
-      const height = canvas.height;
+			requestAnimationFrame(tick);
+		}
 
-      const delta = lastTimestamp ? (timestamp - lastTimestamp) : 16;
-      lastTimestamp = timestamp;
+		function washCanvas() {
+			// translucent paper wash — old marks bleed away gradually
+			ctx.save();
+			ctx.globalCompositeOperation = 'destination-out';
+			ctx.fillStyle = `rgba(0, 0, 0, ${config.washAlpha})`;
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+			ctx.restore();
+		}
 
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(baseTexture, 0, 0);
+		function drawGlyph(col, row, glyph, palette, alpha) {
+			if (col < 0 || col >= cols || row < 0 || row >= rows) return;
+			const px = col * config.cellW + config.cellW / 2;
+			const py = row * config.cellH + config.cellH / 2;
+			const base = palette === 'moss' ? config.mossColor : config.berryColor;
+			ctx.fillStyle = base.replace('ALPHA', alpha.toFixed(2));
+			ctx.fillText(glyph, px, py);
+		}
 
-      updateParticles(width, height);
-      drawParticles();
-      drawScanline(width, height);
+		function perpendicular(dir) {
+			if (dir === 'N' || dir === 'S') return ['E', 'W'];
+			if (dir === 'E' || dir === 'W') return ['N', 'S'];
+			if (dir === 'NE' || dir === 'SW') return ['NW', 'SE'];
+			if (dir === 'NW' || dir === 'SE') return ['NE', 'SW'];
+			return CARDINAL;
+		}
 
-      glitchCooldown -= delta;
-      if (glitchCooldown <= 0) {
-        applyGlitch(width, height);
-        glitchCooldown = getNextGlitchDelay();
-      }
+		function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+		function randInt(min, max) { return Math.floor(min + Math.random() * (max - min)); }
 
-      requestAnimationFrame(step);
-    }
+		function debounce(fn, wait) {
+			let t;
+			return function (...args) {
+				clearTimeout(t);
+				t = setTimeout(() => fn.apply(this, args), wait);
+			};
+		}
 
-    function handleVisibility() {
-      running = !document.hidden;
-      if (running) {
-        lastTimestamp = 0;
-        requestAnimationFrame(step);
-      }
-    }
+		window.addEventListener('resize', debounce(resize, 160));
+		document.addEventListener('visibilitychange', () => {
+			running = !document.hidden;
+			if (running) {
+				lastTick = 0;
+				requestAnimationFrame(tick);
+			}
+		});
 
-    window.addEventListener('resize', debounce(resize, 120));
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    resize();
-    requestAnimationFrame(step);
-  });
-
-  function debounce(fn, wait) {
-    let timer;
-    return function debounced(...args) {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn.apply(this, args), wait);
-    };
-  }
+		resize();
+		requestAnimationFrame(tick);
+	});
 })();

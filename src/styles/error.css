@@ -1,0 +1,62 @@
+/* error
+ * --------------------------------------------------------------
+ * dedicated styles for 404.html. kept out of the main cascade
+ * because the page has no rail, no morph engine, no scroll states.
+ */
+
+.error-stage {
+	position: relative;
+	z-index: var(--z-content);
+	text-align: center;
+	color: var(--fg);
+	padding: 0 20px;
+}
+
+.error-sigil {
+	font-family: var(--font-mono);
+	font-size: 16px;
+	line-height: 1.4;
+	color: var(--berry);
+	opacity: 0.78;
+	margin: 0 auto 28px;
+	white-space: pre;
+	letter-spacing: 1px;
+}
+
+.error-message {
+	font-family: var(--font-mono);
+	font-size: 15px;
+	font-style: italic;
+	color: var(--fg-soft);
+	margin-bottom: 24px;
+	letter-spacing: 0.5px;
+}
+
+.error-link {
+	display: inline-block;
+	font-family: var(--font-mono);
+	font-size: 14px;
+	color: var(--fg);
+	padding: 8px 18px;
+	border: 1px solid var(--berry-soft);
+	background: var(--bg-alt);
+	letter-spacing: 2px;
+	transition:
+		color var(--dur-fast) var(--ease-soft),
+		border-color var(--dur-fast) var(--ease-soft),
+		background var(--dur-fast) var(--ease-soft);
+}
+
+.error-link:hover,
+.error-link:focus-visible {
+	color: var(--orange);
+	border-color: var(--orange);
+	background: var(--bg);
+	outline: none;
+}
+
+@media (max-width: 480px) {
+	.error-sigil   { font-size: 12px; }
+	.error-message { font-size: 13px; padding: 0 12px; }
+	.error-link    { font-size: 12px; padding: 6px 14px; }
+}

@@ -1,0 +1,120 @@
+/* responsive
+ * --------------------------------------------------------------
+ * collapse the sigil rail to the top edge and tune type for narrow
+ * viewports. mobile-specific selectors live here only.
+ */
+
+@media (max-width: 768px) {
+	main {
+		padding-left: 0;
+		padding-top: 80px;
+		padding-bottom: 24px;
+		justify-content: flex-start;
+		align-items: center;
+		text-align: center;
+	}
+
+	.ai-active main {
+		padding-top: 88px;
+	}
+
+	.morph-section {
+		font-size: 16px;
+		max-width: 100%;
+		padding: 0 12px;
+		overflow-x: hidden;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
+	}
+
+	.morph-section.ai-section {
+		max-height: calc(100vh - 88px);
+		padding: 0 18px 32px;
+		scrollbar-width: thin;
+		scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+	}
+	.morph-section.ai-section::-webkit-scrollbar {
+		display: block;
+		width: 6px;
+	}
+	.morph-section.ai-section::-webkit-scrollbar-track  { background: var(--scrollbar-track); border-radius: 4px; }
+	.morph-section.ai-section::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+	.morph-section > div,
+	.morph-section > span {
+		width: 100%;
+		display: block;
+		text-align: center;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
+		white-space: normal;
+		padding: 0 6px;
+	}
+
+	/* rail collapses to a horizontal strip pinned to the top */
+	.rail {
+		position: fixed;
+		top: 22px;
+		left: 0;
+		right: 0;
+		width: 100%;
+		transform: none;
+		flex-direction: row;
+		justify-content: center;
+		gap: 10px;
+		padding: 0 12px;
+	}
+	.rail::before {
+		top: 50%;
+		bottom: auto;
+		left: 12%;
+		right: 12%;
+		width: auto;
+		height: 1px;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			var(--berry-soft) 18%,
+			var(--berry-soft) 82%,
+			transparent 100%
+		);
+		transform: none;
+	}
+
+	.rail-item {
+		padding: 6px 10px;
+		border: 1px solid transparent;
+		background: var(--bg);
+	}
+	.rail-item:hover,
+	.rail-item.is-active {
+		border-color: var(--berry-soft);
+	}
+	.rail-label {
+		position: static;
+		display: none;
+	}
+	.rail-glyph {
+		width: 26px;
+		height: 26px;
+		font-size: 16px;
+	}
+
+	.pgp-key { font-size: 13px; padding: 18px 16px; }
+}
+
+@media (max-width: 480px) {
+	.morph-section {
+		font-size: 13.5px;
+		line-height: 1.35;
+		padding: 0 8px;
+	}
+
+	.title-text { font-size: 1.6em; }
+
+	.rail { gap: 6px; }
+	.rail-glyph { width: 22px; height: 22px; font-size: 14px; }
+
+	.poem-text { font-size: 14px; line-height: 1.5; padding: 2px 6px; }
+	.poem-credit { font-size: 0.65em; margin-top: 0.8em; }
+}

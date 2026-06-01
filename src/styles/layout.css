@@ -1,0 +1,40 @@
+/* layout
+ * --------------------------------------------------------------
+ * top-level stage: ambient canvas, main content well, rail gutter.
+ */
+
+.ambient-container {
+	position: fixed;
+	inset: 0;
+	z-index: var(--z-ambient);
+	pointer-events: none;
+}
+
+.ambient-container canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+main {
+	position: relative;
+	width: 100%;
+	height: 100vh;
+	z-index: var(--z-content);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	background-color: transparent;
+	/* symmetric gutter so the rail clears on the left while content
+	 * stays perfectly centered in the viewport */
+	padding: 0 var(--rail-width);
+}
+
+/* when the hidden poem section is active, anchor content to the top
+ * so it can scroll naturally without fighting the flex centering */
+.ai-active main {
+	justify-content: flex-start;
+	align-items: center;
+	padding-top: 28px;
+}

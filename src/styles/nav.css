@@ -1,0 +1,136 @@
+/* nav
+ * --------------------------------------------------------------
+ * the vertical sigil rail along the left margin.
+ * collapses to a horizontal strip at the top on narrow viewports.
+ */
+
+.rail {
+	position: fixed;
+	top: 50%;
+	left: 0;
+	transform: translateY(-50%);
+	width: var(--rail-width);
+	z-index: var(--z-rail);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 22px;
+	padding: 20px 0;
+}
+
+/* a faint vertical thread connecting the sigils, like a stem */
+.rail::before {
+	content: '';
+	position: absolute;
+	top: 28px;
+	bottom: 28px;
+	left: 50%;
+	width: 1px;
+	background: linear-gradient(
+		180deg,
+		transparent 0%,
+		var(--berry-soft) 18%,
+		var(--berry-soft) 82%,
+		transparent 100%
+	);
+	transform: translateX(-50%);
+	opacity: 0.55;
+	pointer-events: none;
+}
+
+.rail-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	color: var(--fg-soft);
+	background: var(--bg);
+	padding: 4px 0;
+	transition: color var(--dur-fast) var(--ease-soft);
+	-webkit-tap-highlight-color: transparent;
+}
+
+.rail-glyph {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	font-size: var(--fs-rail);
+	font-family: var(--font-mono);
+	line-height: 1;
+	transition:
+		color var(--dur-fast) var(--ease-soft),
+		transform var(--dur-med) var(--ease-soft);
+}
+
+.rail-label {
+	position: absolute;
+	left: 38px;
+	font-family: var(--font-mono);
+	font-size: 13px;
+	letter-spacing: 2px;
+	text-transform: lowercase;
+	color: var(--fg-soft);
+	white-space: nowrap;
+	opacity: 0;
+	transform: translateX(-6px);
+	transition:
+		opacity var(--dur-med) var(--ease-soft),
+		transform var(--dur-med) var(--ease-soft),
+		color var(--dur-fast) var(--ease-soft);
+	pointer-events: none;
+}
+
+/* a small bracket that frames the label, like a tag on a botanical
+ * specimen drawer. drawn purely with pseudo-elements */
+.rail-label::before { content: '['; margin-right: 4px; color: var(--berry); opacity: 0.7; }
+.rail-label::after  { content: ']'; margin-left: 4px;  color: var(--berry); opacity: 0.7; }
+
+.rail-item:hover .rail-glyph,
+.rail-item:focus-visible .rail-glyph {
+	color: var(--orange);
+	transform: scale(1.08);
+}
+.rail-item:hover .rail-label,
+.rail-item:focus-visible .rail-label {
+	opacity: 1;
+	transform: translateX(0);
+	color: var(--fg);
+}
+
+.rail-item.is-active .rail-glyph { color: var(--orange); }
+.rail-item.is-active .rail-label {
+	opacity: 1;
+	transform: translateX(0);
+	color: var(--orange);
+}
+
+/* the hidden ??? item — invisible until the rail itself is hovered.
+ * stays revealed while active so users can navigate away. */
+.rail-item--shade {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity var(--dur-med) var(--ease-soft);
+}
+.rail-item--shade .rail-glyph {
+	color: var(--berry-soft);
+}
+
+.rail:hover .rail-item--shade,
+.rail:focus-within .rail-item--shade,
+.rail-item--shade.is-active {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.rail-item--shade:hover .rail-glyph,
+.rail-item--shade.is-active .rail-glyph {
+	color: var(--berry);
+}
+
+/* a focus ring that doesn't look out of place on parchment */
+.rail-item:focus-visible {
+	outline: 1px dashed var(--berry);
+	outline-offset: 4px;
+}

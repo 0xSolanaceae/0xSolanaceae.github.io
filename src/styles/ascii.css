@@ -1,0 +1,129 @@
+/* ascii
+ * --------------------------------------------------------------
+ * the morphing ascii centerpiece and herbarium ornaments.
+ */
+
+.morph-section {
+	font-family: var(--font-mono);
+	font-size: var(--fs-base);
+	line-height: var(--lh-tight);
+	color: var(--fg);
+	white-space: pre;
+	position: relative;
+	z-index: var(--z-content);
+	width: 100%;
+	text-align: center;
+	transform-origin: center center;
+	overflow: hidden;
+	user-select: none;
+}
+
+.morph-section.ai-section {
+	overflow-y: auto;
+	max-height: calc(100vh - 24px);
+	scrollbar-width: none;
+}
+.morph-section.ai-section::-webkit-scrollbar { display: none; width: 0; }
+
+.morph-section pre,
+.morph-section line,
+.morph-section div {
+	width: 100%;
+	text-align: center;
+	margin: 0 auto;
+}
+
+.morph-section a {
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	position: relative;
+	transition: color var(--dur-fast) var(--ease-soft);
+}
+
+.morph-section a:hover {
+	color: var(--orange);
+}
+
+/* an inked underline on hover, drawn with a thin ornament */
+.morph-section a:hover::after {
+	content: '';
+	position: absolute;
+	left: 12%;
+	right: 12%;
+	bottom: -2px;
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		var(--orange) 30%,
+		var(--orange) 70%,
+		transparent 100%
+	);
+	opacity: 0.6;
+}
+
+.morph-section .pgp-link { cursor: pointer; }
+.morph-section .pgp-link:hover { color: var(--orange); }
+
+/* shared inline-block helpers used by the section content data */
+.center-item {
+	display: inline-block;
+	width: 100%;
+	text-align: center;
+}
+
+/* the SOLANACEAE wordmark + tagline */
+.title-text {
+	display: inline-block;
+	font-size: 1.5em;
+	font-weight: bold;
+	letter-spacing: 2px;
+	margin-bottom: 8px;
+	color: var(--fg);
+}
+
+.tag-line {
+	display: inline-block;
+	letter-spacing: 1px;
+	color: var(--fg-soft);
+}
+
+/* the lightweight box frames around section titles */
+.box-line {
+	letter-spacing: -0.5px;
+	white-space: nowrap;
+	display: inline-block;
+	width: auto !important;
+	font-family: var(--font-mono);
+}
+.box-content {
+	display: inline-block;
+	padding: 0 8px;
+	width: auto !important;
+	white-space: nowrap;
+	line-height: var(--lh-tight);
+	font-family: var(--font-mono);
+}
+
+/* herbarium ornaments: replaces the heavy ░▒▓ blocks with delicate
+ * pressed-flower style dividers carried in the section data */
+.ornament {
+	display: inline-block;
+	width: 100%;
+	text-align: center;
+	color: var(--berry);
+	opacity: 0.7;
+	letter-spacing: 2px;
+}
+
+.ornament--moss { color: var(--moss); }
+
+/* small caption beneath project links */
+.caption {
+	display: inline-block;
+	color: var(--fg-soft);
+	font-style: italic;
+	letter-spacing: 0.3px;
+	opacity: 0.85;
+}

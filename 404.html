@@ -3,94 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 - Page Not Found</title>  <link rel="stylesheet" href="src/main.css">
+  <title>404 — not found</title>
+  <meta name="robots" content="noindex, follow, noai, noimageai, nosnippet">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; font-src 'none'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests">
+  <link rel="stylesheet" href="src/main.css">
+  <link rel="stylesheet" href="src/styles/error.css">
   <link rel="icon" href="assets/fav.webp" type="image/webp">
-  <link rel="preload" href="src/js/ascii-morph.js" as="script">
-  <style>
-    .error-container {
-      position: relative;
-      z-index: 5;
-      text-align: center;
-      margin-top: -30px;
-    }
-    
-    .error-message {
-      font-family: 'Courier New', monospace;
-      font-size: 16px;
-      color: var(--fg);
-      margin-bottom: 20px;
-    }
-    
-    .home-button {
-      display: inline-block;
-      padding: 8px 15px;
-      font-family: 'Courier New', monospace;
-      font-size: 14px;
-      color: var(--fg);
-      background-color: transparent;
-      border: 1px solid var(--fg);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      margin-bottom: 40px;
-    }
-    
-    .home-button:hover {
-      color: var(--orange);
-    }
-    
-    @media (max-width: 768px) {
-      .error-container {
-        margin-top: -15px;
-      }
-      .error-message {
-        font-size: 13px;
-        padding: 0 10px;
-      }
-      .home-button {
-        margin-bottom: 30px;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      .error-message {
-        font-size: 11px;
-      }
-      .home-button {
-        font-size: 12px;
-        padding: 6px 12px;
-      }
-    }
-  </style>
+  <script src="src/js/ambient.js" defer></script>
 </head>
 <body>
-  <div class="ambient-container"></div>
-  
+  <div class="ambient-container" aria-hidden="true"></div>
+
   <main>
-    <div class="error-container">
-      <div class="error-message">page not found</div>
-      <button class="home-button" onclick="window.location.href='/'">RETURN</button>
-    </div>
+    <section class="error-stage">
+      <pre class="error-sigil" aria-hidden="true">
+       * -------------- + -------------- *
+
+                  4    0    4
+
+       * -------------- + -------------- *
+      </pre>
+      <p class="error-message">the page you followed has wilted.</p>
+      <a class="error-link" href="/">[ return ]</a>
+    </section>
   </main>
-  <script src="src/js/ascii-morph.js"></script>
-  <script src="src/js/ambient.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const errorContainer = document.querySelector('.error-container');
-      
-      function randomFlicker() {
-        const rand = Math.random();
-        if (rand > 0.7) {
-          errorContainer.classList.add('drift');
-          setTimeout(() => {
-            errorContainer.classList.remove('drift');
-          }, 2000);
-        }
-        
-        setTimeout(randomFlicker, Math.random() * 10000 + 5000);
-      }
-      
-      randomFlicker();
-    });
-  </script>
 </body>
 </html>

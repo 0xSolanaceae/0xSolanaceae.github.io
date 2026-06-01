@@ -1,0 +1,59 @@
+/* tokens
+ * --------------------------------------------------------------
+ * design tokens: palette (gruvbox paper + nightshade berry), type,
+ * spacing, motion. all other layers consume only these variables.
+ */
+
+:root {
+	/* paper & ink */
+	--bg:            #e6c875;
+	--bg-alt:        #ebdbb2;
+	--bg-deep:       #d6b659;
+	--paper-grain:   rgba(60, 56, 54, 0.04);
+
+	--fg:            #3c3836;
+	--fg-soft:       #5c544f;
+	--fg-faint:      rgba(60, 56, 54, 0.55);
+	--gray:          #7c6f64;
+
+	/* nightshade accents */
+	--orange:        #d65d0e;   /* primary accent (kept) */
+	--orange-deep:   #b85504;
+	--berry:         #5b3a5e;   /* nightshade berry (new) */
+	--berry-soft:    rgba(91, 58, 94, 0.55);
+	--moss:          #6b7a3a;   /* vine green (new) */
+	--moss-soft:     rgba(107, 122, 58, 0.45);
+
+	/* scrollbars */
+	--scrollbar-thumb:  var(--orange);
+	--scrollbar-track:  var(--bg-alt);
+	--scrollbar-hover:  var(--orange-deep);
+	--scrollbar-width:  8px;
+
+	/* type */
+	--font-mono:    'Courier New', 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+	/* base size is fluid: SOLANACEAE wordmark is ~87 chars wide and
+	 * must clear the rail gutter on either side. tune carefully. */
+	--fs-base:      clamp(11px, calc(0.95vw + 4px), 22px);
+	--fs-poem:      clamp(13px, calc(0.55vw + 8px), 20px);
+	--fs-rail:      18px;
+	--lh-tight:     1.2;
+	--lh-poem:      1.55;
+
+	/* spacing */
+	--gutter:       40px;
+	--rail-width:   72px;
+
+	/* motion */
+	--ease-soft:    cubic-bezier(0.22, 0.61, 0.36, 1);
+	--ease-paper:   cubic-bezier(0.4, 0, 0.2, 1);
+	--dur-fast:     180ms;
+	--dur-med:      420ms;
+	--dur-slow:     900ms;
+
+	/* layers */
+	--z-ambient:    0;
+	--z-content:    2;
+	--z-rail:       4;
+	--z-modal:     10;
+}
