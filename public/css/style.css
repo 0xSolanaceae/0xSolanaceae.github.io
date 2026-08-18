@@ -1,0 +1,339 @@
+:root {
+    --parchment: #f4e3b8;
+    --parchment-deep: #e0b877;
+    --frame: #140d05;
+    --fs: clamp(6px, 0.85vmin, 10px);
+}
+
+@font-face {
+    font-family: "Metallophile";
+    src: url("../fonts/Metallophile Sp8 Light.ttf") format("truetype");
+    font-weight: 400;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background: #130d07;
+    display: flex;
+    overflow: hidden;
+}
+
+#stage {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    margin: 14px;
+    border: 3px solid var(--frame);
+    box-shadow: 0 0 0 10px #2a1a08, 0 0 0 11px var(--frame);
+    overflow: hidden;
+    user-select: none;
+    background:
+        radial-gradient(64% 68% at 32% 40%, rgba(255, 244, 204, 0.98), rgba(255, 231, 173, 0.12) 72%),
+        radial-gradient(76% 100% at 98% 28%, rgba(38, 20, 8, 0.72), rgba(83, 44, 16, 0.12) 60%, transparent 78%),
+        linear-gradient(112deg, #f6e6bd 0%, #e8bf7d 34%, #bd8043 65%, #70421f 100%);
+}
+
+#stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 14;
+    pointer-events: none;
+    /* Plain alpha (no blend mode): blending against moving layers is costly. */
+    opacity: 0.3;
+    background:
+        repeating-radial-gradient(circle at 17% 22%, rgba(61, 35, 13, 0.24) 0 0.6px, transparent 0.8px 5px),
+        repeating-linear-gradient(97deg, rgba(255, 247, 214, 0.1) 0 1px, transparent 1px 7px),
+        repeating-linear-gradient(8deg, rgba(46, 24, 8, 0.08) 0 1px, transparent 1px 11px);
+}
+
+#stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    box-shadow:
+        inset 0 0 0 2px rgba(255, 223, 157, 0.14),
+        inset 0 0 7vw 2.5vw rgba(24, 12, 4, 0.28),
+        inset 0 -18vh 16vh rgba(27, 13, 4, 0.18);
+}
+
+.layer {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    display: block;
+    font-family: "Noto Sans Mono", monospace;
+    font-size: var(--fs);
+    line-height: 1;
+    white-space: pre;
+    /* Disable kerning/ligatures: per-glyph nudges compound across a tiled row. */
+    font-kerning: none;
+    font-variant-ligatures: none;
+    font-feature-settings: "kern" 0, "liga" 0, "calt" 0;
+    text-rendering: optimizeSpeed;
+    transform: translate3d(
+        calc((var(--sx, 0) - var(--base, 0)) * 1ch),
+        calc(var(--sy, 0) * 1em - 50%),
+        0
+    );
+    will-change: transform;
+}
+
+#layer-far         { color: #b5945f; z-index: 1; }
+#layer-birds-far   { color: #3a4357; z-index: 4; }
+#layer-leaves-far  { z-index: 4; }
+#layer-birds-near  { color: #1c2333; z-index: 8; }
+#layer-mid-far     { color: #887044; z-index: 5; }
+#layer-land-mid    { color: #75603a; z-index: 6; }
+#layer-mid-near    { color: #55452a; z-index: 7; }
+#layer-land-near   { color: #46351d; z-index: 8; }
+#layer-leaves-mid  { z-index: 8; }
+#layer-fore        { color: #211309; z-index: 9; }
+#layer-paper       { z-index: 9; }
+#layer-leaves-near { z-index: 9; }
+#layer-near        { color: #3d2914; z-index: 10; text-shadow: 0 1px 0 rgba(255, 214, 140, 0.32); }
+
+#haze {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background:
+        radial-gradient(44% 50% at 34% 52%, rgba(255, 236, 180, 0.5), rgba(255, 215, 142, 0) 72%),
+        radial-gradient(42% 70% at 68% 42%, rgba(110, 83, 43, 0.14), transparent 72%),
+        linear-gradient(
+            to top,
+            rgba(133, 82, 36, 0.82) 0%,
+            rgba(220, 164, 96, 0.24) 42%,
+            transparent 74%
+        );
+}
+
+#light {
+    position: absolute;
+    left: 18%;
+    top: -6%;
+    width: 34%;
+    height: 112%;
+    z-index: 3;
+    pointer-events: none;
+    /* Radial falloff is already soft; a blur filter would re-rasterize per frame. */
+    background: radial-gradient(
+        56% 48% at 50% 30%,
+        rgba(255, 239, 193, 0.5),
+        rgba(255, 235, 180, 0.22) 46%,
+        rgba(255, 232, 170, 0) 74%
+    );
+    transform: skewX(-7deg);
+    animation: light-breath 9s ease-in-out infinite alternate;
+}
+
+@keyframes light-breath {
+    from { opacity: 0.65; transform: skewX(-7deg) scaleY(0.985); }
+    to   { opacity: 1;    transform: skewX(-7deg) scaleY(1.015); }
+}
+
+#groundlight {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 20%;
+    z-index: 11;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 100% at 36% 100%, rgba(255, 196, 120, 0.5), rgba(255, 196, 120, 0) 72%),
+        linear-gradient(to top, rgba(236, 170, 92, 0.35), transparent 90%);
+}
+
+#vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 13;
+    pointer-events: none;
+    background: radial-gradient(
+        130% 95% at 50% 40%,
+        transparent 55%,
+        rgba(30, 16, 6, 0.32) 100%
+    );
+}
+
+#loading {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #130d07;
+    transition: opacity 0.5s ease;
+}
+
+#loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 4px solid rgba(255, 214, 140, 0.18);
+    border-top-color: #ffd68c;
+    animation: spin 0.9s linear infinite;
+    will-change: transform;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #light { animation: none; }
+}
+
+#papercard {
+    position: absolute;
+    inset: 0;
+    z-index: 19;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+#papercard.open {
+    visibility: visible;
+    pointer-events: auto;
+}
+
+#papercard-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    background: rgba(12, 7, 2, 0.55);
+    opacity: 0;
+    cursor: pointer;
+}
+
+#papercard-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    width: min(420px, 88vw);
+    min-height: min(580px, 92vh);
+    color: #2a2012;
+    will-change: transform, opacity;
+}
+
+#papercard-paper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#papercard-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 48px 44px;
+    text-transform: lowercase;
+    text-align: center;
+}
+
+#papercard-name {
+    position: relative;
+    display: inline-block;
+    margin: 0 0 22px;
+    font-family: "Metallophile", "Noto Sans Mono", monospace;
+    font-size: clamp(24px, 4.2vmin, 30px);
+    font-weight: 400;
+    letter-spacing: 0;
+    text-align: left;
+    color: #2a2012;
+    text-shadow:
+        0 0.4px 0.7px rgba(42, 32, 18, 0.28),
+        0 0 1.6px rgba(42, 32, 18, 0.14);
+}
+
+#papercard-name::after {
+    content: "";
+    position: absolute;
+    left: 1%;
+    right: -1%;
+    bottom: -9px;
+    height: 5px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='5' viewBox='0 0 120 5'%3E%3Cpath d='M0 2.5C18 0.5 36 4.5 60 2.5S102 0.5 120 2.5' fill='none' stroke='%232a2012' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+    opacity: 0.55;
+}
+
+#papercard-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+#papercard-links li {
+    display: block;
+}
+
+.papercard-link {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    padding: 2px 4px;
+    border: 0;
+    background: transparent;
+    font-family: "Metallophile", "Noto Sans Mono", monospace;
+    font-size: clamp(17px, 3.2vmin, 20px);
+    line-height: 1.4;
+    color: #2a2012;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.papercard-link:hover,
+.papercard-link:focus-visible,
+.papercard-link:hover .papercard-val,
+.papercard-link:focus-visible .papercard-val {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+}
+
+.papercard-key {
+    color: inherit;
+}
+
+.papercard-val {
+    word-break: break-all;
+    color: #2a2012;
+    text-shadow:
+        0 0.4px 0.7px rgba(42, 32, 18, 0.28),
+        0 0 1.6px rgba(42, 32, 18, 0.14);
+}
