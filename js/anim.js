@@ -6,6 +6,9 @@ let rafId = 0;
 let wakeTimer = 0;
 let lastTick = 0;
 let viewportW = window.innerWidth || 1;
+let dragging = false;
+let dragStartX = 0;
+let dragStartTmx = 0;
 
 /* Exponential smoothing constant (1/s), frame-rate independent. */
 const SMOOTH_RATE = 14;
@@ -62,13 +65,40 @@ function tick(now) {
 window.addEventListener("resize", () => { viewportW = window.innerWidth || 1; });
 
 window.addEventListener("pointermove", (e) => {
-  tmx = clamp((e.clientX / viewportW) * 2 - 1, -1, 1);
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  if (dragging) {
+    // Touch drag pans the parallax: half a screen of travel sweeps the full range.
+    tmx = clamp(dragStartTmx + (e.clientX - dragStartX) * (2 / viewportW), -1, 1);
+  } else {
+    tmx = clamp((e.clientX / viewportW) * 2 - 1, -1, 1);
+  }
+  ensureTicking();
+});
+
+window.addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "touch") return;
+  dragging = true;
+  dragStartX = e.clientX;
+  dragStartTmx = tmx;
   mouseX = e.clientX;
   mouseY = e.clientY;
   ensureTicking();
 });
-document.documentElement.addEventListener("pointerleave", () => {
-  tmx = 0;
+
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  if (e.pointerType === "touch") {
+    mouseX = -9999;
+    mouseY = -9999;
+  }
+}
+window.addEventListener("pointerup", endDrag);
+window.addEventListener("pointercancel", endDrag);
+
+document.documentElement.addEventListener("pointerleave", (e) => {
+  if (e.pointerType !== "touch") tmx = 0;
   mouseX = -9999;
   mouseY = -9999;
   ensureTicking();

@@ -309,12 +309,7 @@ function updateWind(now) {
   updateSwirl(now, dt);
 }
 
-window.addEventListener("pointermove", (e) => {
-  windMouseX = e.clientX;
-  windMouseY = e.clientY;
-  ensureTicking();
-});
-document.documentElement.addEventListener("pointerleave", () => {
+function resetWind() {
   windMouseX = -9999;
   windMouseY = -9999;
   windVx = 0;
@@ -327,5 +322,26 @@ document.documentElement.addEventListener("pointerleave", () => {
   shedLog.length = 0;
   wakeTrail.length = 0;
   lastWindT = 0;
+}
+
+window.addEventListener("pointermove", (e) => {
+  windMouseX = e.clientX;
+  windMouseY = e.clientY;
+  ensureTicking();
+});
+document.documentElement.addEventListener("pointerleave", () => {
+  resetWind();
+  ensureTicking();
+});
+// A lifted finger ends the touch rather than firing a reliable pointerleave,
+// so reset explicitly so the wind stops the moment the touch is released.
+window.addEventListener("pointerup", (e) => {
+  if (e.pointerType !== "touch") return;
+  resetWind();
+  ensureTicking();
+});
+window.addEventListener("pointercancel", (e) => {
+  if (e.pointerType !== "touch") return;
+  resetWind();
   ensureTicking();
 });

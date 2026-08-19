@@ -21,6 +21,7 @@
 html,
 body {
     height: 100%;
+    touch-action: none;
 }
 
 body {
@@ -39,6 +40,7 @@ body {
     box-shadow: 0 0 0 10px #2a1a08, 0 0 0 11px var(--frame);
     overflow: hidden;
     user-select: none;
+    touch-action: none;
     background:
         radial-gradient(64% 68% at 32% 40%, rgba(255, 244, 204, 0.98), rgba(255, 231, 173, 0.12) 72%),
         radial-gradient(76% 100% at 98% 28%, rgba(38, 20, 8, 0.72), rgba(83, 44, 16, 0.12) 60%, transparent 78%),
