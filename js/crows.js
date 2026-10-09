@@ -59,7 +59,17 @@ let mouseX = -9999, mouseY = -9999;
 let birdsRestLeft = 0;
 let birdsRestTop = 0;
 
+/* Wing-cycle sprite for a crow. A frame counter that has drifted negative or
+   non-finite would index off the end of the sheet, and that throw happens
+   inside the animation loop, which then never re-arms itself — so the sheet is
+   indexed defensively and an unusable sprite is skipped rather than fatal. */
+function wingFrame(frames, n) {
+  if (!frames.length || !Number.isFinite(n)) return frames[0];
+  return frames[((Math.floor(n) % frames.length) + frames.length) % frames.length];
+}
+
 function drawCrow(ctx, b, now, img, bottom) {
+  if (!img) return;
   const px = b.x * CELL.w;
   const py = (b.y + (b.bob ? Math.sin(b.bob + now * 0.003) * 0.7 : 0)) * CELL.h;
   ctx.save();
@@ -316,7 +326,9 @@ function birdPxRect(b) {
 function renderBirdsNear(now) {
   if (!nearFrames || !nearBirdsCtx) return;
   if (REDUCED_MOTION) return;
-  const dt = Math.min(0.05, lastNearBirdT ? (now - lastNearBirdT) / 1000 : 0.016);
+  // Clamped at both ends: a clock that steps backwards would otherwise run the
+  // wing cycle (and the flap/hop state machine) in reverse.
+  const dt = lastNearBirdT ? clamp((now - lastNearBirdT) / 1000, 0, 0.05) : 0.016;
   lastNearBirdT = now;
   if (now >= nextNearFlocksAt) spawnNearFlocks(now);
 
@@ -337,13 +349,13 @@ function renderBirdsNear(now) {
       // Approaching/departing crows are bottom-anchored so the crow settles
       // onto the branch without a visible snap.
       if (b.phase === "perched") drawCrow(ctx, b, now, nearPerchFrames[b.perchIdx], true);
-      else drawCrow(ctx, b, now, nearFrames[Math.floor(b.frame) % nearFrames.length], true);
+      else drawCrow(ctx, b, now, wingFrame(nearFrames, b.frame), true);
     } else {
       updateFlyer(b, now, dt);
       if (b.x < -20 || b.x > W_TOTAL + 20) { nearBirds.splice(i, 1); continue; }
       const img = b.phase === "glide"
         ? nearFrames[LARGE_GLIDE_FRAME]
-        : nearFrames[Math.floor(b.frame) % nearFrames.length];
+        : wingFrame(nearFrames, b.frame);
       drawCrow(ctx, b, now, img, false);
     }
     b.prevRect = birdPxRect(b);
@@ -396,7 +408,7 @@ function spawnFarFlocks(now) {
 function renderBirdsFar(now) {
   if (!farFrames || !farBirdsCtx) return;
   if (REDUCED_MOTION) return;
-  const dt = Math.min(0.05, lastFarBirdT ? (now - lastFarBirdT) / 1000 : 0.016);
+  const dt = lastFarBirdT ? clamp((now - lastFarBirdT) / 1000, 0, 0.05) : 0.016;
   lastFarBirdT = now;
   if (now >= nextFarFlocksAt) spawnFarFlocks(now);
 
@@ -433,7 +445,7 @@ function renderBirdsFar(now) {
       }
       img = b.small
         ? farFrames.smallGlide
-        : farFrames.medGlide[Math.floor(now / 1000) % farFrames.medGlide.length];
+        : wingFrame(farFrames.medGlide, now / 1000);
     } else {
       b.speed = Math.min(b.maxSpeed, b.speed + b.accel * dt);
       b.y -= b.climb * dt;
@@ -442,7 +454,7 @@ function renderBirdsFar(now) {
       const wingPhase = (b.frame % frames.length) / frames.length;
       const target = FLAP_LIFT.flap + Math.sin(wingPhase * Math.PI * 2) * FLAP_LIFT.bob;
       b.pitch += (target - b.pitch) * Math.min(1, dt * 10);
-      img = frames[Math.floor(b.frame) % frames.length];
+      img = wingFrame(frames, b.frame);
     }
     b.x += b.dir * b.speed * dt;
     b.y = clamp(b.y, 2, ROWS * 0.42);

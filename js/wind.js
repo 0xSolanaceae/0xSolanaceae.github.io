@@ -175,12 +175,32 @@ function ambientWindAt(x, y, now) {
   return { u: mean.u + turb.u, v: mean.v + turb.v };
 }
 
-/* Flow created only by the cursor (used for leaf glow/scatter). */
+/* Flow created only by the cursor (used for leaf glow/scatter). Inside an
+   active shaken tornado the pointer's own drag is spent driving the vortex, so
+   it is absorbed there and what remains is the inflow — which is what draws
+   leaves into the column instead of pushing them along with the hand. */
 function interactionWindAt(x, y, now) {
   const dip = dipoleWindAt(x, y);
   const bl = blobWindAt(x, y);
   const wk = wakeWindAt(x, y, now);
-  return { u: dip.u + bl.u + wk.u, v: dip.v + bl.v + wk.v };
+  let u = dip.u + bl.u + wk.u;
+  let v = dip.v + bl.v + wk.v;
+  if (windTornado > 0.02) {
+    const dx = x - windCx, dy = y - windCy;
+    const d = Math.hypot(dx, dy);
+    if (d < TORNADO_RANGE) {
+      const reach = 1 - d / TORNADO_RANGE;
+      const absorbed = windTornado * Math.min(1, reach * TORNADO_SWALLOW);
+      u *= 1 - absorbed;
+      v *= 1 - absorbed;
+      const inflow = TORNADO_INFLOW * windTornado * reach * Math.min(1, d / TORNADO_CORE);
+      if (d > 1) {
+        u -= (dx / d) * inflow;
+        v -= (dy / d) * inflow;
+      }
+    }
+  }
+  return { u, v };
 }
 
 function emitBlob(gamma, now) {
@@ -230,7 +250,59 @@ function updateBlobs(now, dt) {
   }
 }
 
-function updateSwirl(now, dt) {
+/* The updraft column has two ways in. A circulation is read off the vorticity
+   the hand sheds and stays where it was shed; a fast side-to-side shake has no
+   circulation to find, so it is read off the hand itself and its column is
+   dragged along with the pointer, which is what makes the tornado travel. */
+const SHIMMY_WINDOW = 900;      // ms the direction flips have to keep coming inside
+const SHIMMY_MIN_VX = 520;      // px/s of sideways speed that counts as a shake
+const SHIMMY_SIDEWAYS = 0.45;   // a shake is sideways: |vy| stays under this share of |vx|
+const SHIMMY_FLIPS = 3;         // flips inside the window that raise the tornado
+const SHIMMY_RATE = 7;          // 1/s the shake-driven tornado rises and dies at
+const SHIMMY_TRACK_RATE = 20;   // 1/s the travelling column keeps up with the hand
+const SHIMMY_AVERAGE = 1.5;     // 1/s the hand's recent travel is averaged over
+
+/* A shaken column is a tornado rather than a fan: the hand's own blast is what
+   feeds it, so inside the column that straight-line drag is swallowed up and
+   replaced by an inflow, and litter gets drawn in instead of shoved along with
+   the hand. */
+const TORNADO_RANGE = 420;      // px the inflow reaches out to
+const TORNADO_CORE = 70;        // px of dead air on the axis the inflow tapers to
+const TORNADO_SWALLOW = 3;      // how sharply the hand's blast is eaten with distance
+const TORNADO_INFLOW = 320;     // px/s the inflow carries at its strongest
+
+let shimmyDir = 0;
+const shimmyFlips = [];
+let shimmy = 0;
+let shimmyAcross = 0, shimmyAlong = 0;
+let windTornado = 0;            // 0..1 how tornado-like the column is (inflow, no circulation)
+
+function updateShimmy(now, dt) {
+  // Average the hand's travel: a shake is all sideways, whereas a circle covers
+  // as much ground up and down as across, so the two cannot be confused — and a
+  // circle's own velocity flips at the ends of its arc are ignored with it.
+  const k = 1 - Math.exp(-SHIMMY_AVERAGE * dt);
+  shimmyAcross += (Math.abs(windVx) - shimmyAcross) * k;
+  shimmyAlong += (Math.abs(windVy) - shimmyAlong) * k;
+
+  const sideways = shimmyAcross > SHIMMY_MIN_VX && shimmyAlong < shimmyAcross * SHIMMY_SIDEWAYS;
+  if (sideways) {
+    const dir = windVx > 0 ? 1 : -1;
+    if (dir !== shimmyDir) {
+      shimmyDir = dir;
+      shimmyFlips.push(now);
+    }
+  } else if (shimmyAcross < SHIMMY_MIN_VX * 0.5) {
+    shimmyDir = 0; // the hand stopped, so the next swing is a fresh flip
+  }
+  while (shimmyFlips.length && now - shimmyFlips[0] > SHIMMY_WINDOW) shimmyFlips.shift();
+  const want = clamp((shimmyFlips.length - SHIMMY_FLIPS + 1) / 3, 0, 1);
+  shimmy += (want - shimmy) * (1 - Math.exp(-SHIMMY_RATE * dt));
+  if (shimmy < 0.01) shimmy = 0; // a whisker of a value is not a shake, and must not own the column
+}
+
+function updateUpdraft(now, dt) {
+  updateShimmy(now, dt);
   while (shedLog.length && now - shedLog[0].t > SWIRL_WINDOW) shedLog.shift();
   let sum = 0, wsum = 0, cx = 0, cy = 0;
   for (const s of shedLog) {
@@ -240,7 +312,7 @@ function updateSwirl(now, dt) {
     cx += s.x * w;
     cy += s.y * w;
   }
-  let target = 0, spinT = 0;
+  let swirl = 0, spinT = 0;
   if (wsum > 0) {
     cx /= wsum;
     cy /= wsum;
@@ -251,16 +323,23 @@ function updateSwirl(now, dt) {
     }
     spread2 /= wsum;
     if (Math.sqrt(spread2) < SWIRL_TIGHT) {
-      target = clamp((Math.abs(sum) - 6000) / 24000, 0, 1);
+      swirl = clamp((Math.abs(sum) - 6000) / 24000, 0, 1);
       spinT = clamp(sum / (Math.PI * Math.max(spread2, 55 * 55)), -12, 12);
     }
   }
+  // Whichever is stronger owns the column; a shaken column trails the hand and
+  // carries no spin of its own. Without a pointer on the page there is nothing
+  // for it to trail, so only a circulation can hold the column then.
+  const travelling = windMouseX > -999 && shimmy > swirl;
+  const target = travelling ? shimmy : swirl;
   const k = 1 - Math.exp(-6 * dt);
   windVortex += (target - windVortex) * k;
-  windSpin += (spinT - windSpin) * k;
+  windSpin += ((travelling ? 0 : spinT) - windSpin) * k;
+  windTornado += ((travelling ? shimmy : 0) - windTornado) * k;
   if (target > 0) {
-    windCx += (cx - windCx) * k;
-    windCy += (cy - windCy) * k;
+    const kc = 1 - Math.exp(-(travelling ? SHIMMY_TRACK_RATE : 6) * dt);
+    windCx += ((travelling ? windMouseX : cx) - windCx) * kc;
+    windCy += ((travelling ? windMouseY : cy) - windCy) * kc;
   }
 }
 
@@ -272,7 +351,7 @@ function updateWind(now) {
     windSpeed = 0;
     // Keep lastWindT at 0 so the pointer's return can't register a phantom teleport.
     updateBlobs(now, dt);
-    updateSwirl(now, dt);
+    updateUpdraft(now, dt);
     return;
   }
   if (lastWindT) {
@@ -297,7 +376,7 @@ function updateWind(now) {
   lastWindX = windMouseX;
   lastWindY = windMouseY;
   updateBlobs(now, dt);
-  updateSwirl(now, dt);
+  updateUpdraft(now, dt);
 }
 
 function resetWind() {
@@ -308,6 +387,12 @@ function resetWind() {
   windSpeed = 0;
   windVortex = 0;
   windSpin = 0;
+  shimmyDir = 0;
+  shimmyFlips.length = 0;
+  shimmy = 0;
+  shimmyAcross = 0;
+  shimmyAlong = 0;
+  windTornado = 0;
   shedAcc = 0;
   wakeAcc = 0;
   shedLog.length = 0;
