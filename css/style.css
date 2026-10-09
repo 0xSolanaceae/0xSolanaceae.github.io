@@ -247,6 +247,12 @@ body {
     will-change: transform, opacity;
 }
 
+/* Focused only programmatically (tabindex="-1"), never a tab stop, so no ring
+   is needed; the links inside keep their own focus-visible styling. */
+#papercard-sheet:focus {
+    outline: none;
+}
+
 #papercard-paper {
     position: absolute;
     inset: 0;
@@ -316,10 +322,6 @@ body {
     text-decoration: underline;
     text-underline-offset: 3px;
     text-decoration-thickness: 1px;
-}
-
-.papercard-key {
-    color: inherit;
 }
 
 .papercard-val {

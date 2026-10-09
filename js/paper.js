@@ -2,7 +2,10 @@
 
 const PAPER_SEED = 401;     // fixed so the tatter/stain/scribble pattern is stable
 const PAPER_W_CELLS = 11;
-const PAPER_H_CELLS = 8.8;
+// The note is a portrait slip. A grid cell is ~1.29x taller than it is wide, so
+// sizing it in rows alone would make it read as square.
+const PAPER_NOTE_ROWS = 12;
+const PAPER_TATTER_ROWS = 8.8; // cell-rows the card scales its tatter and grain against
 const INK = "#231a0d";
 const INK_ALPHA = 0.8;
 
@@ -269,7 +272,7 @@ function renderNailedPaper(canvas, cellW, cellH, dpr, worldCells, rowsCells, anc
 
   const u = Math.max(6, cellH);
   const w = PAPER_W_CELLS * cellW;
-  const h = PAPER_H_CELLS * cellH;
+  const h = PAPER_NOTE_ROWS * cellH;
   const rng = seededRand(PAPER_SEED);
 
   const nailX = w * (0.46 + rng() * 0.08);

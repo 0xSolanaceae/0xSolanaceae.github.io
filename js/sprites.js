@@ -59,6 +59,7 @@ async function loadSprite(url) {
   if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
   const text = await res.text();
   const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
+  if (!lines.length) throw new Error(`${url} -> empty sprite`);
   const srcWidth = Math.max(...lines.map((l) => l.length));
   let rows = lines.map((l) => l.padEnd(srcWidth, EMPTY));
   if (SPRITE_UPSCALE > 1) rows = upscaleSpriteRows(rows, srcWidth, SPRITE_UPSCALE);
@@ -77,7 +78,7 @@ async function loadSprite(url) {
       cellsM.push([width - 1 - x, y, code]);
     }
   }
-  return { rows, width, height: rows.length, cells, cellsM };
+  return { width, height: rows.length, cells, cellsM };
 }
 
 function loadImage(url) {

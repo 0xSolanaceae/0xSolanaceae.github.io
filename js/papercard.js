@@ -5,7 +5,7 @@ const PAPERCARD_DATA = {
   github: "0xSolanaceae",
   discord: "0x_Solanaceae",
   discordUrl: "https://discord.com/users/1098339239432835162",
-  email: "solancaeae@duck.com",
+  email: "solanaceae@duck.com",
   pgpFile: "pgp.asc",
 };
 
@@ -17,6 +17,7 @@ const cardName = document.getElementById("papercard-name");
 const cardLinks = document.getElementById("papercard-links");
 
 let cardOpen = false;
+let lastFocus = null;
 
 function paperCenter() {
   const r = LAYER_ELS.paper.getBoundingClientRect();
@@ -71,8 +72,10 @@ function copyText(text, valEl) {
     ta.style.opacity = "0";
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand("copy"); done(); } catch (e) { /* ignore */ }
+    let ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
     document.body.removeChild(ta);
+    if (ok) done();
   };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done).catch(fallback);
@@ -107,7 +110,7 @@ function renderCardPaper() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  const u = Math.max(8, h / PAPER_H_CELLS);
+  const u = Math.max(8, h / PAPER_TATTER_ROWS);
   const margin = u * 0.5;
   const dw = Math.max(24, w - margin * 2);
   const dh = Math.max(24, h - margin * 2);
@@ -139,6 +142,7 @@ function renderCardPaper() {
 function openCard() {
   if (cardOpen || !PAPER_INFO) return;
   cardOpen = true;
+  lastFocus = document.activeElement;
 
   const base = card.getBoundingClientRect();
   const sw = cardSheet.offsetWidth;
@@ -150,20 +154,23 @@ function openCard() {
   cardSheet.style.transform = `translate(${endX}px, ${endY}px) scale(1)`;
   cardSheet.style.opacity = "1";
   cardBackdrop.style.opacity = "1";
-  card.classList.remove("closed");
   card.classList.add("open");
   card.setAttribute("aria-hidden", "false");
+  cardSheet.focus({ preventScroll: true }); // announce the note as a dialog without scrolling the stage
 }
 
 function closeCard() {
   if (!cardOpen) return;
   cardOpen = false;
   card.setAttribute("aria-hidden", "true");
-  card.classList.add("closed");
   card.classList.remove("open");
   cardSheet.style.transform = "";
   cardSheet.style.opacity = "";
   cardBackdrop.style.opacity = "0";
+  // Put focus back where it was rather than dropping it to the document.
+  if (lastFocus && lastFocus !== document.body && typeof lastFocus.focus === "function") lastFocus.focus();
+  else cardSheet.blur();
+  lastFocus = null;
 }
 
 stage.addEventListener("click", (e) => {

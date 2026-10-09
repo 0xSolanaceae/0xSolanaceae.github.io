@@ -155,8 +155,8 @@ function updateFlyer(b, now, dt) {
     if (now >= b.phaseEnd) {
       b.phase = "glide";
       b.glideT = 0;
-      b.glideDur = NEAR_GLIDE_MS[0] + Math.random() * (NEAR_GLIDE_MS[1] - NEAR_GLIDE_MS[0]);
-      b.phaseEnd = now + b.glideDur;
+      b.glideDur = (NEAR_GLIDE_MS[0] + Math.random() * (NEAR_GLIDE_MS[1] - NEAR_GLIDE_MS[0])) / 1000; // seconds
+      b.phaseEnd = now + b.glideDur * 1000;
     }
     const wingPhase = (b.frame % CROW_FLY_LARGE.length) / CROW_FLY_LARGE.length;
     const target = FLAP_LIFT.flap + Math.sin(wingPhase * Math.PI * 2) * FLAP_LIFT.bob;
@@ -246,9 +246,9 @@ function updateHopper(b, now, dt) {
   b.x = b.hopFrom.x + (b.hopTo.x - b.hopFrom.x) * t;
   b.y = lineY - Math.sin(t * Math.PI) * b.hopArc;
   b.frame += dt * b.flap;
-  b.pitch = t < 0.5
-    ? Math.sin(t * Math.PI) * 0.1
-    : -Math.sin((t - 0.5) * Math.PI * 2) * 0.06;
+  // Nose-up on the rise, nose-down on the fall, level at both take-off and
+  // touchdown, so the pitch never snaps at the apex or on landing.
+  b.pitch = (t < 0.5 ? 0.1 : 0.06) * Math.sin(t * Math.PI * 2);
   if (t >= 1) {
     b.x = b.hopTo.x; b.y = b.hopTo.y;
     b.p = b.hopTo;
@@ -355,7 +355,7 @@ function spawnFarCrow() {
   const small = Math.random() < 0.6; // mostly the tiny row-0 crows
   const cw = small ? CROW_FLY_SMALL[0][2] : CROW_FLY_MED[0][2];
   const ch = small ? CROW_FLY_SMALL[0][3] : CROW_FLY_MED[0][3];
-  const dw = (small ? 2.2 : 3.0) + Math.random() * 0.8; // cells wide (far smaller than near)
+  const dw = ((small ? 2.2 : 3.0) + Math.random() * 0.8) * CELL.w; // cells wide (far smaller than near)
   farBirds.push({
     x: fromLeft ? -20 : W_TOTAL + 20,
     y: 3 + Math.random() * (ROWS * 0.35),

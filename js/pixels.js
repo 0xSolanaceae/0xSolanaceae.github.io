@@ -1,30 +1,5 @@
 "use strict";
 
-// `fill` must match the layer's glyph set: mixing spaces with dot glyphs on
-// one row lets browsers use different fallback-font widths and shears the art.
-function makeGrid(w = W_TOTAL, h = ROWS, fill = " ") {
-  return Array.from({ length: h }, () => new Array(w).fill(fill));
-}
-
-function paint(grid, x, y, ch) {
-  if (x < 0 || x >= grid[0].length || y < 0 || y >= grid.length) return;
-  if (ch === " " || ch === EMPTY) return;
-  grid[y][x] = ch;
-}
-
-function putString(grid, x, y, s) {
-  for (let c = 0; c < s.length; c++) paint(grid, x + c, y, s[c]);
-}
-
-function putSprite(grid, rows, x, y) {
-  for (let r = 0; r < rows.length; r++) {
-    const gy = y + r;
-    if (gy < 0 || gy >= grid.length) continue;
-    const line = rows[r];
-    for (let c = 0; c < line.length; c++) paint(grid, x + c, gy, line[c]);
-  }
-}
-
 /* Dot layout, precomputed once: dot bit n -> (sub-column, sub-row) of the
  * 2x4 cell matrix (normal and mirrored). */
 const DOT_LAYOUT = [

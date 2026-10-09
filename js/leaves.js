@@ -74,19 +74,42 @@ function approachAngle(a, b, k) {
   return a + d * k;
 }
 
+/* Grounded litter is dragged by whatever air reaches it instead of switching
+   on at a threshold: the drag is smoothed into a velocity and capped by ground
+   friction, so a settled leaf scuds and tumbles with the wind, and when it is
+   finally snatched up it keeps the momentum it already had. */
+const REST_BREEZE_DRAG = 0.3;  // share of the ambient breeze a settled leaf follows
+const REST_CURSOR_DRAG = 0.45; // share of the pointer's flow a settled leaf follows
+const REST_DRAG_RATE = 5;      // 1/s to take up the surrounding air's speed
+const REST_MAX_SPEED = 6;      // cells/s — friction caps how fast litter scuds
+const REST_LIFT_SPEED = 60;    // px/s of local pointer flow that unsticks a leaf
+const REST_SCOUR = 6;          // cells/s of updraft a leaf is unstuck by
+const REST_LIFT_TIME = 0.4;    // s the updraft carries a freshly unstuck leaf
+const REST_UPDRAFT_RATE = 8;   // 1/s the updraft ramps in at (no velocity snap)
+const REST_TOPPLE_RATE = 5;    // 1/s a landing leaf topples onto its resting spot
+const REST_SEAT_RATE = 10;     // 1/s to settle back onto a drift surface that sank
+
 function beginSettle(l) {
   l.state = "settle";
   l.settleT = 0;
   l.settleDur = 0.35 + Math.random() * 0.3;
   l.restSquash = 0.3 + Math.random() * 0.35;
   l.restTilt = (Math.random() - 0.5) * 0.9;
-  l.x += (Math.random() * 2 - 1) * 1.6;
-  const top = groundTopAt(l);
-  l.restY = top + (0.3 + Math.random() * 1.0) - (l.dh * l.restSquash) / (2 * CELL.h);
+  // Where the leaf topples to as it settles, eased rather than jumped to.
+  l.settleX = l.x + (Math.random() * 2 - 1) * 1.6;
+  // How high above the drift surface this leaf comes to lie; kept for the whole
+  // rest so the leaf can be re-seated whenever the drift under it shifts.
+  l.restOffset = (0.3 + Math.random() * 1.0) - (l.dh * l.restSquash) / (2 * CELL.h);
+  // A leaf settles onto the drift, never up out of it: one that arrives below
+  // the surface stays where it landed instead of being hoisted into the air.
+  l.restY = Math.max(groundTopAt(l) + l.restOffset, l.y);
   l.restLife = (6 + Math.random() * 12) * l.cfg.restMul;
   l.fadeAlpha = 1;
   l.dead = false;
+  l.groundVx = 0;
+  l.vy = 0;
   deposit(l, 1); // this leaf joins the pile, raising it a little
+  l.pileX = l.x;
   l.piled = true;
 }
 
@@ -133,6 +156,27 @@ function resetLeaf(l, y0, cfg) {
   l.airLifeMax = l.airLife;
   l.piled = false;
   l.airFade = false;
+  l.groundVx = 0;
+  l.restOffset = 0;
+  l.pileX = undefined;
+  l.liftT = 0;
+  l.liftVy = 0;
+}
+
+/* Unstick a settled leaf. Nothing is added to its velocity here: it leaves the
+   floor with the speed it already had, and the updraft is handed over as a
+   target the fall then ramps towards (see updateLeaf), so the leaf rises off
+   the drift instead of being snapped into the air. */
+function liftLeaf(l, scour) {
+  l.state = "fall";
+  if (l.piled) unDeposit(l);
+  l.piled = false;
+  l.vx = l.groundVx;
+  l.liftT = REST_LIFT_TIME * (0.6 + 0.4 * scour);
+  l.liftVy = -REST_SCOUR * (0.35 + scour);
+  l.rotV += (Math.random() < 0.5 ? -1 : 1) * (2.5 + 4 * scour);
+  l.rot = l.restTilt;
+  l.squash = 1;
 }
 
 function updateLeaf(l, now, dt) {
@@ -149,7 +193,7 @@ function updateLeaf(l, now, dt) {
   if (l.state === "settle") {
     l.vx *= Math.exp(-6 * dt);
     l.vy *= Math.exp(-6 * dt);
-    l.x += l.vx * dt;
+    l.x += l.vx * dt + (l.settleX - l.x) * (1 - Math.exp(-REST_TOPPLE_RATE * dt));
     l.y += (l.restY - l.y) * (1 - Math.exp(-6 * dt));
     l.rot = approachAngle(l.rot, l.restTilt, 1 - Math.exp(-6 * dt));
     l.squash += (l.restSquash - l.squash) * (1 - Math.exp(-6 * dt));
@@ -159,55 +203,53 @@ function updateLeaf(l, now, dt) {
   }
 
   if (l.state === "rest") {
+    const cellPx = CELL.w || 1;
     const p = leafScreenPos(l);
     const amb = ambientWindAt(p.x, p.y, now);
-    const ambSpeed = Math.hypot(amb.u, amb.v) / (CELL.w || 1);
+    const ambSpeed = Math.hypot(amb.u, amb.v) / cellPx;
     const itx = interactionWindAt(p.x, p.y, now);
     const sp = Math.hypot(itx.u, itx.v);
 
+    // Every leaf on the floor feels the air passing over it, ambient breeze and
+    // pointer flow alike; friction caps how fast it can be shoved.
+    const drag = clamp(
+      (amb.u / cellPx) * REST_BREEZE_DRAG + (itx.u / cellPx) * REST_CURSOR_DRAG,
+      -REST_MAX_SPEED,
+      REST_MAX_SPEED
+    );
+    l.groundVx += (drag - l.groundVx) * (1 - Math.exp(-REST_DRAG_RATE * dt));
+
+    // Litter keeps landing on and blowing off the drift, so the surface beneath
+    // a settled leaf is never still. A leaf whose mound falls away settles back
+    // onto it rather than being left hanging in mid-air; one that is buried by
+    // later arrivals stays buried, which is what keeps the drift stacked. The
+    // drop is capped at the leaf's own fall speed so losing the drift under it
+    // reads as the leaf dropping, not as the leaf being yanked down.
+    const seat = groundTopAt(l) + l.restOffset;
+    if (l.y < seat) {
+      const close = (seat - l.y) * (1 - Math.exp(-REST_SEAT_RATE * dt));
+      l.y += Math.min(close, l.term * dt);
+    }
+
+    l.rot = l.restTilt + (noise1D(l.rotSeed + now * 0.0007) - 0.5) * 0.12;
+    l.x += l.groundVx * dt + Math.sin(now * 0.0004 + l.rotSeed) * 0.06 * dt;
+
+    let scour = null;
     if (mouseX > -999 && windVortex > 0.22) {
       const rx = p.x - windCx, ry = p.y - windCy;
       const r2 = rx * rx + ry * ry;
       const R = l.cfg.cursorR * 1.5;
-      if (r2 < R * R) {
-        const r = Math.sqrt(r2) || 1;
-        const fall = 1 - r / R;
-        l.state = "fall";
-        deposit(l, -1);
-        l.piled = false;
-        l.vy = -(7 + fall * 10);
-        l.vx = (itx.u / (CELL.w || 1)) * 0.3 - (rx / r) * (2 + fall * 4);
-        l.rotV += (Math.random() < 0.5 ? -1 : 1) * (6 + fall * 10);
-        l.rot = l.restTilt;
-        l.squash = 1;
-        return;
-      }
+      if (r2 < R * R) scour = 1 - Math.sqrt(r2) / R; // 1 at the vortex core
     }
-    if (sp > 60) {
-      l.state = "fall";
-      deposit(l, -1); // no longer part of the pile
-      l.piled = false;
-      const cellPx = CELL.w || 1;
-      l.vx = (itx.u / cellPx) * 0.5;
-      l.vy = -1.2 - Math.min(2.5, (sp / cellPx) * 0.12) + (itx.v / cellPx) * 0.4;
-      l.rotV += (Math.random() < 0.5 ? -1 : 1) * (4 + (sp / cellPx) * 0.05);
-      l.rot = l.restTilt;
-      l.squash = 1;
+    if (scour === null && sp > REST_LIFT_SPEED) scour = Math.min(1, sp / (REST_LIFT_SPEED * 2));
+    if (scour === null && l.loose && ambSpeed > 5.5 && Math.random() < (ambSpeed - 5.5) * 0.6 * dt) {
+      scour = Math.min(1, (ambSpeed - 5.5) / 4);
+    }
+    if (scour !== null) {
+      liftLeaf(l, scour);
       return;
     }
-    if (l.loose && ambSpeed > 5.5 && Math.random() < (ambSpeed - 5.5) * 0.6 * dt) {
-      l.state = "fall";
-      deposit(l, -1);
-      l.piled = false;
-      l.vx = (amb.u / (CELL.w || 1)) * 0.7;
-      l.vy = -1.5 - Math.random() * 1.5;
-      l.rotV += (Math.random() < 0.5 ? -1 : 1) * 4;
-      l.rot = l.restTilt;
-      l.squash = 1;
-      return;
-    }
-    l.rot = l.restTilt + (noise1D(l.rotSeed + now * 0.0007) - 0.5) * 0.12;
-    l.x += (amb.u / (CELL.w || 1)) * 0.02 * dt + Math.sin(now * 0.0004 + l.rotSeed) * 0.06 * dt;
+
     l.restLife -= dt;
     if (l.restLife <= 0) {
       l.state = "fade";
@@ -253,7 +295,17 @@ function updateLeaf(l, now, dt) {
   // Orientation-dependent drag: face-on falls slow, edge-on falls fast.
   const faceFrac = Math.cos(l.rot) ** 2;
   const termEff = l.term * (l.edgeFrac + (1 - l.edgeFrac) * faceFrac);
-  l.vy += (termEff + fieldVy * 0.7 - l.vy) * (1 - Math.exp(-l.vdrag * dt));
+  // Litter scoured off the ground is carried up by the airflow for a moment
+  // rather than launched: the updraft ramps in, then hands back to the fall,
+  // so the leaf is lifted up and set down instead of snapping off the floor.
+  let vyWant = termEff + fieldVy * 0.7;
+  let vyRate = l.vdrag;
+  if (l.liftT > 0) {
+    l.liftT -= dt;
+    vyWant = l.liftVy;
+    vyRate = REST_UPDRAFT_RATE;
+  }
+  l.vy += (vyWant - l.vy) * (1 - Math.exp(-vyRate * dt));
   l.y += l.vy * dt;
   const plateDrift = Math.sin(l.rot) * Math.cos(l.rot) * l.liftK * Math.abs(l.vy);
   l.vx += (fieldVx + plateDrift - l.vx) * (1 - Math.exp(-l.drag * dt));
@@ -307,7 +359,9 @@ function updateLeaf(l, now, dt) {
 
   if (l.cfg.ground > 0) {
     const top = groundTopAt(l);
-    if (l.y + l.dh / (2 * CELL.h) >= top) beginSettle(l);
+    // Only a leaf actually coming down can land: one scoured up off the drift
+    // starts out below the surface, and settling it there would undo the lift.
+    if (l.vy >= 0 && l.y + l.dh / (2 * CELL.h) >= top) beginSettle(l);
     else if (l.y > ROWS + 1) resetLeaf(l, undefined, l.cfg);
   } else if (l.y > ROWS + 1) {
     resetLeaf(l, undefined, l.cfg);
@@ -403,7 +457,7 @@ function renderLeaves(now) {
       if (cfg.leaves.length >= cfg.count + cfg.maxSettled) {
         const i = cfg.leaves.findIndex((l) => l.state === "rest" || l.state === "fade");
         if (i >= 0) {
-          if (cfg.leaves[i].piled) deposit(cfg.leaves[i], -1);
+          if (cfg.leaves[i].piled) unDeposit(cfg.leaves[i]);
           cfg.leaves.splice(i, 1);
         } else {
           continue;
@@ -415,7 +469,7 @@ function renderLeaves(now) {
     }
     for (let i = cfg.leaves.length - 1; i >= 0; i--) {
       if (cfg.leaves[i].dead) {
-        if (cfg.leaves[i].piled) deposit(cfg.leaves[i], -1);
+        if (cfg.leaves[i].piled) unDeposit(cfg.leaves[i]);
         cfg.leaves.splice(i, 1);
       }
     }
@@ -451,9 +505,12 @@ function setLeafRest(key, left, top) {
 function prefillLeaves(key) {
   const cfg = leafLayer(key);
   cfg.leaves = [];
+  // Spread the litter down to this layer's own drift line, not the bottom of
+  // the frame: a leaf seeded below its ground would settle inside the drift.
+  const span = cfg.ground > 0 ? cfg.ground : ROWS;
   for (let i = 0; i < cfg.count; i++) {
     const lf = {};
-    resetLeaf(lf, (i / cfg.count) * ROWS, cfg);
+    resetLeaf(lf, (i / cfg.count) * span, cfg);
     cfg.leaves.push(lf);
   }
 }
@@ -463,16 +520,27 @@ const PILE_BUMP = 1.5; // cells of height each leaf adds at its column
 const PILE_RADIUS = 3; // columns the bump spreads over (soft mound)
 const MAX_PILE = 9;    // cap so a drift can never tower unrealistically
 
-function deposit(l, sign) {
-  const h = l.cfg.height;
+function depositAt(cfg, x, sign) {
+  const h = cfg.height;
   if (!h) return;
-  const ix = clamp(Math.round(l.x), 0, h.length - 1);
+  const ix = clamp(Math.round(x), 0, h.length - 1);
   for (let dx = -PILE_RADIUS; dx <= PILE_RADIUS; dx++) {
     const j = ix + dx;
     if (j < 0 || j >= h.length) continue;
     const w = Math.exp(-0.5 * (dx / 1.6) * (dx / 1.6));
     h[j] = clamp(h[j] + sign * PILE_BUMP * w, 0, MAX_PILE);
   }
+}
+
+function deposit(l, sign) {
+  depositAt(l.cfg, l.x, sign);
+}
+
+/* Take this leaf's bump back out of the drift at the column it was laid down
+   on, not wherever the wind has since shoved the leaf: the drift records where
+   litter lands, so only the leaf's own contribution moves in and out of it. */
+function unDeposit(l) {
+  depositAt(l.cfg, l.pileX === undefined ? l.x : l.pileX, -1);
 }
 
 function groundTopAt(l) {

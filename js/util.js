@@ -1,7 +1,6 @@
 "use strict";
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const mod = (a, m) => ((a % m) + m) % m;
 const hash = (n) => {
   const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
   return s - Math.floor(s);

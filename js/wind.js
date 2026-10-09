@@ -183,15 +183,6 @@ function interactionWindAt(x, y, now) {
   return { u: dip.u + bl.u + wk.u, v: dip.v + bl.v + wk.v };
 }
 
-function windAt(x, y, now) {
-  const mean = ambientMean(now);
-  const turb = turbVector(x, y, now, mean);
-  const dip = dipoleWindAt(x, y);
-  const bl = blobWindAt(x, y);
-  const wk = wakeWindAt(x, y, now);
-  return { u: mean.u + turb.u + dip.u + bl.u + wk.u, v: mean.v + turb.v + dip.v + bl.v + wk.v };
-}
-
 function emitBlob(gamma, now) {
   const nx = windVx / (windSpeed || 1), ny = windVy / (windSpeed || 1);
   const bx = windMouseX - nx * 8 + (Math.random() * 8 - 4);

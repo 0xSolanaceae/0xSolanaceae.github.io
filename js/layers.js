@@ -124,6 +124,9 @@ function downsampledAlpha(cols, rows, ...sources) {
   return alpha;
 }
 
+/* Layout of the last successful build, so a no-op resize can be skipped. */
+let lastLayout = "";
+
 function buildAll() {
   const cell = measureCell();
   const rect = stage.getBoundingClientRect();
@@ -150,6 +153,13 @@ function buildAll() {
   CELL.w = cell.w;
   CELL.h = cell.h;
 
+  // A resize that leaves the cell metrics and the grid unchanged (a duplicate
+  // event, or a device-pixel-ratio change) needs no rebuild; skipping also
+  // keeps the current flock and leaf litter instead of resetting them.
+  const layout = `${CELL.w}|${CELL.h}|${W}|${ROWS}`;
+  if (layout === lastLayout) return;
+  lastLayout = layout;
+
   // Anchor every layer one wrap-margin left of the viewport so the visible
   // window sits in the middle of the framebuffer at rest. `--cw` is the
   // measured cell width: `1ch` only matches it for monospaced faces.
@@ -175,6 +185,10 @@ function buildAll() {
   nextNearFlocksAt = performance.now() + 4000;
   lastNearBirdT = performance.now();
   metas["birds-near"] = { el: nearEl, shift: 0, lastS: undefined };
+  // Measure from the rest transform. The inline transform left over from the
+  // previous build still carries the old shift and cell size, and crow hit
+  // testing (crowScreenX/isHovering) is expressed relative to the rest rect.
+  nearEl.style.transform = `translate3d(${-MARGIN * CELL.w}px, ${(-ROWS / 2) * CELL.h}px, 0)`;
   const birdsRect = nearEl.getBoundingClientRect();
   birdsRestLeft = birdsRect.left;
   birdsRestTop = birdsRect.top;
@@ -301,14 +315,16 @@ function buildAll() {
   metas.paper = { el: LAYER_ELS.paper };
   const paperTrunk = foreInstances[0];
   const paperAnchorX = paperTrunk.x + TRUNK_CENTER * paperTrunk.scale;
-  // ~40% up from the trunk's base, but always clamped inside its bark — on
-  // portrait phones the hero trunk's scale is clamped small, so anchoring by
-  // ROWS alone would nail the note above the wood.
+  // ~40% up from the trunk's base, but always clamped inside its bark — the
+  // note hangs half its height either side of the nail, and on portrait phones
+  // the hero trunk's scale is clamped small, so anchoring by ROWS alone would
+  // nail the note above the wood.
   const paperTrunkTop = paperTrunk.baseY - paperTrunk.sprite.height * paperTrunk.scale;
+  const paperHalfRows = PAPER_NOTE_ROWS / 2;
   const paperAnchorY = clamp(
     paperTrunk.baseY - ROWS * 0.4,
-    paperTrunkTop + 5,
-    paperTrunk.baseY - 4
+    paperTrunkTop + paperHalfRows + 0.6,
+    paperTrunk.baseY - paperHalfRows + 0.4
   );
   renderNailedPaper(LAYER_ELS.paper, cell.w, cell.h, dpr, W_TOTAL, ROWS, paperAnchorX, paperAnchorY);
 
