@@ -12,7 +12,7 @@ let fontReadyFlag = false;
 function fontLoadedPromise() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve(true);
   return document.fonts
-    .load('16px "Noto Sans Mono"')
+    .load('16px "Libron"')
     .then((faces) => {
       fontReadyFlag = faces.length > 0;
       return fontReadyFlag;

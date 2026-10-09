@@ -151,9 +151,11 @@ function buildAll() {
   CELL.h = cell.h;
 
   // Anchor every layer one wrap-margin left of the viewport so the visible
-  // window sits in the middle of the framebuffer at rest.
+  // window sits in the middle of the framebuffer at rest. `--cw` is the
+  // measured cell width: `1ch` only matches it for monospaced faces.
   for (const key of Object.keys(LAYER_ELS)) {
     LAYER_ELS[key].style.setProperty("--base", MARGIN);
+    LAYER_ELS[key].style.setProperty("--cw", `${CELL.w}px`);
   }
 
   const TREE_SINK = 4;
