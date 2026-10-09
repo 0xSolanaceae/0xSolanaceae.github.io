@@ -36,16 +36,12 @@ function hitPaper(px, py) {
   return Math.abs(rx) <= PAPER_INFO.w / 2 + slack && Math.abs(ry) <= PAPER_INFO.h / 2 + slack;
 }
 
-function makeItem(text, href, copyValue, downloadName) {
+function makeItem(text, href, downloadName) {
   const li = document.createElement("li");
-  const el = href ? document.createElement("a") : document.createElement("button");
-  if (href) {
-    el.href = href;
-    if (downloadName) el.setAttribute("download", downloadName);
-    else { el.target = "_blank"; el.rel = "noopener"; }
-  } else {
-    el.type = "button";
-  }
+  const el = document.createElement("a");
+  el.href = href;
+  if (downloadName) el.setAttribute("download", downloadName);
+  else { el.target = "_blank"; el.rel = "noopener"; }
   el.className = "papercard-link";
 
   const val = document.createElement("span");
@@ -53,35 +49,8 @@ function makeItem(text, href, copyValue, downloadName) {
   val.textContent = text;
 
   el.append(val);
-  if (!href) el.addEventListener("click", () => copyText(copyValue, val));
   li.appendChild(el);
   return li;
-}
-
-function copyText(text, valEl) {
-  const original = valEl.textContent;
-  const done = () => {
-    valEl.textContent = "copied!";
-    setTimeout(() => { valEl.textContent = original; }, 1200);
-  };
-  const fallback = () => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    let ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-    document.body.removeChild(ta);
-    if (ok) done();
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(done).catch(fallback);
-  } else {
-    fallback();
-  }
 }
 
 function buildCard() {
@@ -90,7 +59,7 @@ function buildCard() {
     makeItem("github.com/" + PAPERCARD_DATA.github, "https://github.com/" + PAPERCARD_DATA.github),
     makeItem("discord/" + PAPERCARD_DATA.discord, PAPERCARD_DATA.discordUrl),
     makeItem(PAPERCARD_DATA.email, "mailto:" + PAPERCARD_DATA.email),
-    makeItem(PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile, null, PAPERCARD_DATA.pgpFile),
+    makeItem(PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile),
   );
 }
 
