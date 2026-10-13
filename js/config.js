@@ -46,6 +46,13 @@ const CELL = { w: 0, h: 0 };
 // Parallax only slides MAX_SHIFT_X cells, so each side needs that much bleed.
 const MARGIN = MAX_SHIFT_X + 8; // bleed cells on each side of the viewport
 const DPR_CAP = 1;
+/* The scene is authored as a landscape grid. A narrow stage holds barely a
+ * third of its columns, which magnifies every tree, so it gets a smaller cell
+ * (and more rows) instead of a magnified crop. The bounds cap the build cost,
+ * which grows with both. */
+const MIN_COLS = 136; // fewest grid columns a stage may compose from
+const MIN_ROWS = 72;
+const MAX_ROWS = 240;
 
 const metas = {};
 

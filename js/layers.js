@@ -135,15 +135,28 @@ function buildAll() {
     return;
   }
   spriteCanvasCache.clear();
+
+  // The art is sized in grid cells, so the cell size decides how much of the
+  // scene a stage shows: sized off the width alone, a portrait phone holds a
+  // third of the columns a landscape one does and magnifies one trunk across
+  // the screen. Shrink the cell until the grid is wide enough to compose, and
+  // let the row count grow so the scene still fills the height.
+  const cellZoom = Math.min(
+    1,
+    Math.max(
+      rect.width / (cell.w * MIN_COLS), // widest cell that still composes
+      rect.height / (cell.h * MAX_ROWS) // smallest cell that bounds the rows
+    )
+  );
+  cell.w *= cellZoom;
+  cell.h *= cellZoom;
+
   W = Math.max(36, Math.floor(rect.width / cell.w) - 1);
-  ROWS = Math.max(72, Math.min(144, Math.floor(rect.height / cell.h)));
-  // Portrait zoom-to-fill: the grid is sized off the width (vmin), so on a
-  // tall portrait viewport the 144-row scene only fills ~half the screen and
-  // floats as a small strip in the middle. Scale the cell up so ROWS fills the
-  // stage height instead — this zooms the forest in to fill a phone screen
-  // (the wide landscape composition crops at the sides, which is natural on a
-  // portrait display).
-  if (rect.height > rect.width && Math.floor(rect.height / cell.h) > 144) {
+  ROWS = Math.max(MIN_ROWS, Math.min(MAX_ROWS, Math.floor(rect.height / cell.h)));
+
+  // A stage taller than the row cap allows would leave the grid floating as a
+  // strip in the middle, so scale the cell up until the rows fill it instead.
+  if (Math.floor(rect.height / cell.h) > ROWS) {
     const zoom = rect.height / (ROWS * cell.h);
     cell.w *= zoom;
     cell.h *= zoom;
@@ -294,14 +307,26 @@ function buildAll() {
   perchPoints = [];
 
   // Hero foreground trunks; placed by content center (TRUNK_CENTER), not
-  // sprite left edge.
+  // sprite left edge. They are sized against the grid's rows, like every other
+  // tree, so their height keeps its relationship to the forest behind them at
+  // any viewport; the width cap keeps one from overflowing a narrow stage.
   const TRUNK_CENTER = 51; // content center offset inside the 2x trunk sprite
-  const trunkScale = (frac) => clamp((W * frac) / trunkA.width, 0.45, 2.2);
+  const trunkScale = (sprite, rows, maxWidthFrac) =>
+    Math.min(
+      (ROWS * rows) / sprite.height,
+      (rect.width * maxWidthFrac) / (sprite.width * CELL.w)
+    );
   const placeTrunk = (sprite, frac, scale) => MARGIN + W * frac - TRUNK_CENTER * scale;
+  // Row targets are the landscape proportions the composition was tuned with;
+  // the width caps are the same proportions again, loosened to the most of the
+  // stage a trunk may take once the row target no longer fits.
+  const heroScale = trunkScale(trunkA, 0.95, 0.85);
+  const midScale = trunkScale(trunkB, 0.52, 0.47);
+  const sideScale = trunkScale(trunkA, 0.575, 0.51);
   const foreInstances = [
-    { sprite: trunkA, x: placeTrunk(trunkA, 0.72, trunkScale(0.4)), scale: trunkScale(0.4), mirror: false, baseY: ROWS - 18 },
-    { sprite: trunkB, x: placeTrunk(trunkB, 0.99, trunkScale(0.22)), scale: trunkScale(0.22), mirror: true, baseY: ROWS - 20 },
-    { sprite: trunkA, x: placeTrunk(trunkA, 0.10, trunkScale(0.24)), scale: trunkScale(0.24), mirror: true, baseY: ROWS - 20 },
+    { sprite: trunkA, x: placeTrunk(trunkA, 0.72, heroScale), scale: heroScale, mirror: false, baseY: ROWS - 18 },
+    { sprite: trunkB, x: placeTrunk(trunkB, 0.99, midScale), scale: midScale, mirror: true, baseY: ROWS - 20 },
+    { sprite: trunkA, x: placeTrunk(trunkA, 0.10, sideScale), scale: sideScale, mirror: true, baseY: ROWS - 20 },
   ];
   metas.fore = { el: LAYER_ELS.fore };
   const foreBase = foreInstances.map((i) => ({ ...i, sprite: i.sprite.solid }));
