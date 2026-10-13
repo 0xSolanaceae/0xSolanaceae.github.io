@@ -181,7 +181,7 @@ function liftLeaf(l, scour) {
 
 function updateLeaf(l, now, dt) {
   let glowTarget = 0;
-  if (mouseX > -999) {
+  if (pointerStirs()) {
     const p = leafScreenPos(l);
     const itx = interactionWindAt(p.x, p.y, now);
     glowTarget = smoothstep(30, 150, Math.hypot(itx.u, itx.v));
@@ -235,7 +235,7 @@ function updateLeaf(l, now, dt) {
     l.x += l.groundVx * dt + Math.sin(now * 0.0004 + l.rotSeed) * 0.06 * dt;
 
     let scour = null;
-    if (mouseX > -999 && windVortex > 0.22) {
+    if (pointerStirs() && windVortex > 0.22) {
       const rx = p.x - windCx, ry = p.y - windCy;
       const r2 = rx * rx + ry * ry;
       const R = l.cfg.cursorR * 1.5;
@@ -313,7 +313,7 @@ function updateLeaf(l, now, dt) {
 
   // Leaf tornado: inward suction + tangential spin + central updraft, with
   // the orbit's centripetal force supplied so leaves spiral inward.
-  if (mouseX > -999 && windVortex > 0.18) {
+  if (pointerStirs() && windVortex > 0.18) {
     const rx = p.x - windCx, ry = p.y - windCy;
     const r2 = rx * rx + ry * ry;
     const R = l.cfg.cursorR * 1.5;

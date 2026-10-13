@@ -175,6 +175,13 @@ function ambientWindAt(x, y, now) {
   return { u: mean.u + turb.u, v: mean.v + turb.v };
 }
 
+/* True while the pointer is held down and stirring the air. A mouse that is
+   only hovering is not a pointer here: the leaves answer to a press, not to a
+   hand passing over them. */
+function pointerStirs() {
+  return windMouseX > -999;
+}
+
 /* Flow created only by the cursor (used for leaf glow/scatter). Inside an
    active shaken tornado the pointer's own drag is spent driving the vortex, so
    it is absorbed there and what remains is the inflow — which is what draws
@@ -400,7 +407,20 @@ function resetWind() {
   lastWindT = 0;
 }
 
+// The hand moves air only while it is pressed down, so a bare hover stirs
+// nothing: the flow starts at the press and runs until the button (or finger)
+// comes up. Pointer events carry the button bitmask, which covers a held mouse
+// button and a touching finger alike.
 window.addEventListener("pointermove", (e) => {
+  if (!(e.buttons & 1)) return;
+  windMouseX = e.clientX;
+  windMouseY = e.clientY;
+  ensureTicking();
+});
+// Seed the pointer at the press so the first frame's flow is anchored where the
+// hand landed rather than at wherever it was last released.
+window.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0) return;
   windMouseX = e.clientX;
   windMouseY = e.clientY;
   ensureTicking();
@@ -409,15 +429,11 @@ document.documentElement.addEventListener("pointerleave", () => {
   resetWind();
   ensureTicking();
 });
-// A lifted finger ends the touch rather than firing a reliable pointerleave,
-// so reset explicitly so the wind stops the moment the touch is released.
-window.addEventListener("pointerup", (e) => {
-  if (e.pointerType !== "touch") return;
+// A lifted finger does not reliably fire a pointerleave, so a release resets
+// explicitly either way: the wind stops the moment the pointer lets go.
+function endPointerWind() {
   resetWind();
   ensureTicking();
-});
-window.addEventListener("pointercancel", (e) => {
-  if (e.pointerType !== "touch") return;
-  resetWind();
-  ensureTicking();
-});
+}
+window.addEventListener("pointerup", endPointerWind);
+window.addEventListener("pointercancel", endPointerWind);
