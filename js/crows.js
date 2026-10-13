@@ -83,6 +83,41 @@ function drawCrow(ctx, b, now, img, bottom) {
   ctx.restore();
 }
 
+/* Where a crow is committed to sit: the branch it is perched on, the branch it
+   is homing in on, or the branch it is hopping towards. Flyers have no slot. */
+function perchSlot(b) {
+  if (b.type !== "percher") return null;
+  if (b.phase === "approach") return { x: b.tx, y: b.ty };
+  if (b.phase === "hop") return b.hopTo;
+  return { x: b.x, y: b.y };
+}
+
+/* Two crows sharing a branch read as one doubled-up bird, so a candidate perch
+   is only offered when every other crow's drawn box is clear of it: both axes
+   must be clear, since two crows on branches directly above one another
+   overlap just as badly as two on the same one. */
+const PERCH_ASPECT = CROW_FLY_LARGE[0][3] / CROW_FLY_LARGE[0][2];
+
+function perchTaken(p, dw, self) {
+  const dh = dw * PERCH_ASPECT;
+  for (const o of nearBirds) {
+    if (o === self) continue;
+    const slot = perchSlot(o);
+    if (!slot) continue;
+    if (
+      Math.abs(p.x - slot.x) * CELL.w < (dw + o.dw) / 2 &&
+      Math.abs(p.y - slot.y) * CELL.h < (dh + o.dh) / 2
+    ) return true;
+  }
+  return false;
+}
+
+function pickPerchPoint(dw, self) {
+  const free = perchPoints.filter((p) => !perchTaken(p, dw, self));
+  if (!free.length) return null;
+  return free[Math.floor(Math.random() * free.length)];
+}
+
 function spawnNearFlyer() {
   const fromLeft = Math.random() < 0.5;
   const scale = 0.8 + Math.random() * 0.4;
@@ -117,11 +152,13 @@ function spawnNearFlyer() {
 }
 
 function spawnPercher() {
-  const p = perchPoints[Math.floor(Math.random() * perchPoints.length)];
-  const fromLeft = p.x > MARGIN + W / 2 ? Math.random() < 0.5 : true;
-  const scale = 0.75 + Math.random() * 0.4;
   const cw = CROW_FLY_LARGE[0][2], ch = CROW_FLY_LARGE[0][3];
+  const scale = 0.75 + Math.random() * 0.4;
   const dw = (cw * CELL.w) / 4.5 * scale;
+  // Every branch may already be taken; the caller flies a crow past instead.
+  const p = pickPerchPoint(dw, null);
+  if (!p) return false;
+  const fromLeft = p.x > MARGIN + W / 2 ? Math.random() < 0.5 : true;
   const x0 = fromLeft ? -20 : W_TOTAL + 20;
   const y0 = 12 + Math.random() * Math.max(4, p.y - 18);
   nearBirds.push({
@@ -141,6 +178,7 @@ function spawnPercher() {
     // which resting pose from the sheet (row 4) this crow sits in
     perchIdx: Math.floor(Math.random() * CROW_PERCH_POSES.length),
   });
+  return true;
 }
 
 function spawnNearFlocks(now) {
@@ -149,9 +187,11 @@ function spawnNearFlocks(now) {
   if (room <= 0) { nextNearFlocksAt = now + 6000; return; }
   const n = Math.min(room, 1 + Math.floor(Math.random() * 2));
   for (let i = 0; i < n; i++) {
-    // Most arrivals land on a branch; only occasionally does one fly across.
-    if (perchPoints.length && Math.random() < 0.85) spawnPercher();
-    else spawnNearFlyer();
+    // Most arrivals land on a branch; only occasionally does one fly across,
+    // and a canopy with no clear branch left is flown over rather than
+    // squeezed into a slot some other crow already holds.
+    const landed = perchPoints.length > 0 && Math.random() < 0.85 && spawnPercher();
+    if (!landed) spawnNearFlyer();
   }
   nextNearFlocksAt = now + (5000 + Math.random() * 4000);
 }
@@ -232,6 +272,7 @@ function pickHopTarget(b) {
     const dy = Math.abs(p.y - b.y);
     if (dx < 6 || dx > 32 || dy > 14) continue;
     if (p.x === b.p.x && p.y === b.p.y) continue;
+    if (perchTaken(p, b.dw, b)) continue; // never hop onto an occupied branch
     const score = dx + dy;
     if (score < bestScore) { bestScore = score; best = p; }
   }
