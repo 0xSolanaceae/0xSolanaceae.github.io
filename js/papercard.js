@@ -202,14 +202,12 @@ function hitPaper(px, py) {
 const PAPERCARD_VEIL_TOP =
   "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
   "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
-  "exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure " +
-  "dolor in reprehenderit in voluptate velit esse.";
+  "exercitation ullamco laboris nisi ut aliquip.";
 
 const PAPERCARD_VEIL_BOTTOM =
   "Dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
   "pariatur, excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia " +
-  "deserunt mollit anim id est laborum sed ut perspiciatis unde omnis iste natus error " +
-  "sit voluptatem accusantium doloremque laudantium.";
+  "deserunt mollit anim id est laborum sed ut perspiciatis unde omnis.";
 
 /* One line, written the way it would be on paper: a label, then the thing itself. */
 function makeItem(key, text, href, downloadName) {

@@ -12,7 +12,7 @@ const PAPER_NOTE_ROWS = 12;
 const PAPER_WRITE_TOP = 0.115;
 const PAPER_WRITE_BOTTOM = 0.07;
 const PAPER_WRITE_INSET_X = 0.085;  // of the width
-const PAPER_TEXT_ROWS = 16;
+const PAPER_TEXT_ROWS = 14;
 const INK = "#2b2113";
 const INK_ALPHA = 0.74;
 
