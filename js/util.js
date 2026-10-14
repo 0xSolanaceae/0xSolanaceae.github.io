@@ -13,6 +13,16 @@ const debounce = (fn, ms) => {
   };
 };
 
+/* #rrggbb (or #rgb) to the triple the canvas pixel loop wants. */
+function cssToRgb(css) {
+  let hex = css.trim();
+  if (hex[0] !== "#") return [0, 0, 0];
+  hex = hex.slice(1);
+  if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  const n = parseInt(hex, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 function haptic(ms) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }

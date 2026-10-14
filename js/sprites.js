@@ -89,7 +89,7 @@ function loadImage(url) {
   });
 }
 
-function tintSprite(sheet, src, color, alpha, keep = 0) {
+function tintSprite(sheet, src, color, alpha) {
   const c = document.createElement("canvas");
   c.width = src[2];
   c.height = src[3];
@@ -100,62 +100,68 @@ function tintSprite(sheet, src, color, alpha, keep = 0) {
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.globalCompositeOperation = "source-over";
-  if (keep > 0) {
-    ctx.globalAlpha = keep;
-    ctx.drawImage(sheet, src[0], src[1], src[2], src[3], 0, 0, src[2], src[3]);
-  }
   ctx.globalAlpha = 1;
   return c;
 }
 
-function dotMaskFromImage(sheet, src, cols, rows, cut, litLum) {
-  const dw = cols * 2;
-  const dh = rows * 4;
+/* Re-hue a sprite through a tonal ramp, keeping its drawing.
+ *
+ * A flat tint throws away everything the sprite says about itself: a beak, a
+ * leg, and most of all the eye, which is the one feature that identifies a bird
+ * at a distance. Photographing a dark bird against foliage is hard for exactly
+ * this reason — the answer is not more contrast around the silhouette but
+ * structure inside it. So each pixel is sorted into a tone by its own luminance
+ * and painted in the ramp's colour for that tone: the shading, the beak and
+ * legs, and the eye all survive, in the scene's own palette rather than the
+ * sprite's.
+ *
+ * Returns what the placement needs: the bottom of the bird's body (its feet, as
+ * opposed to the tail tip that hangs past them) and where a contact shadow
+ * belongs under that mass. */
+function rampSprite(sheet, src, thresholds, tones, minSpan) {
+  const w = src[2];
+  const h = src[3];
   const c = document.createElement("canvas");
-  c.width = dw;
-  c.height = dh;
+  c.width = w;
+  c.height = h;
   const ctx = c.getContext("2d");
-  ctx.drawImage(sheet, src[0], src[1], src[2], src[3], 0, 0, dw, dh);
-  const data = ctx.getImageData(0, 0, dw, dh).data;
-  const dots = [];
-  const lit = [];
-  const present = new Set();
-  let footRow = 0;
-  for (let y = 0; y < dh; y++) {
-    for (let x = 0; x < dw; x++) {
-      const i = (y * dw + x) * 4;
-      if (data[i + 3] < cut) continue;
-      dots.push([x, y]);
-      present.add(x + "," + y);
-      if (y > footRow) footRow = y;
-      const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
-      if (lum >= litLum) lit.push([x, y]);
+  ctx.drawImage(sheet, src[0], src[1], w, h, 0, 0, w, h);
+  const img = ctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  let inkBottom = -1;
+  const spanX0 = new Int16Array(h).fill(w);
+  const spanX1 = new Int16Array(h).fill(-1);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (d[i + 3] === 0) continue;
+      if (y > inkBottom) inkBottom = y;
+      if (x < spanX0[y]) spanX0[y] = x;
+      if (x > spanX1[y]) spanX1[y] = x;
+      const lum = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+      let tier = tones.length - 1;
+      for (let k = 0; k < thresholds.length; k++) {
+        if (lum < thresholds[k]) { tier = k; break; }
+      }
+      const tone = tones[tier];
+      d[i] = tone[0];
+      d[i + 1] = tone[1];
+      d[i + 2] = tone[2];
     }
   }
-  const rim = [];
-  for (let i = 0; i < dots.length; i++) {
-    const x = dots[i][0];
-    const y = dots[i][1];
-    if (x === 0 || y === 0) continue;
-    if (present.has((x - 1) + "," + y) && present.has(x + "," + (y - 1))) continue;
-    rim.push([x - 1, y - 1]);
+  /* A perched sprite's lowest ink is usually the tail tip, which hangs past the
+     branch. Standing on it would lift the feet off the surface, so the anchor is
+     the lowest row that is still a body — a solid span rather than a loner. */
+  let bodyBottom = inkBottom;
+  for (let y = inkBottom; y >= 0; y--) {
+    if (spanX1[y] - spanX0[y] + 1 >= minSpan) { bodyBottom = y; break; }
   }
-  let fx0 = dw;
-  let fx1 = -1;
-  for (let i = 0; i < lit.length; i++) {
-    if (lit[i][1] < footRow - 2) continue;
-    if (lit[i][0] < fx0) fx0 = lit[i][0];
-    if (lit[i][0] > fx1) fx1 = lit[i][0];
-  }
-  if (fx1 < 0) {
-    fx0 = Math.round(dw * 0.4);
-    fx1 = Math.round(dw * 0.6);
-  }
+  const x0 = spanX0[bodyBottom];
+  const x1 = spanX1[bodyBottom];
+  ctx.putImageData(img, 0, 0);
   return {
-    dots, lit, rim,
-    footRow,
-    footSpan: [fx0, fx1],
-    dotCols: dw,
-    dotRows: dh,
+    canvas: c, w, h, bodyBottom,
+    contactMid: (x0 + x1 + 1) / 2,
+    contactHalf: Math.max(1, (x1 - x0 + 1) * 0.225),
   };
 }

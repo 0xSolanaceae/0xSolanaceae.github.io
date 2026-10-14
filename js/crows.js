@@ -44,11 +44,14 @@ let crowImg = null;
 let farFrames = null;
 let crowArt = null;
 
+/* Tonal ladder for the near crows, deepest first: body, its shading, the beak
+   and legs, and the eye. Cuts come from the sprite's own values, which fall into
+   four distinct tones (black, #222034, #696a6a, #cbdbfc). */
+const CROW_CUTS = [0.08, 0.3, 0.62];
 const CROW_COLS = 11;
 const CROW_ROWS = 6;
-const CROW_DOT_CUT = 40;
-const CROW_LIT_LUM = 0.3;
-const CROW_OCCLUDE_DOTS = 2;
+const CROW_SOLID_SPAN = 5;
+let crowTones = null;
 
 const MAX_NEAR_BIRDS = 6;
 const MAX_FAR_BIRDS = 6;
@@ -81,32 +84,26 @@ function crowMetrics(scale) {
 function buildCrowArt() {
   const nearCss = getComputedStyle(LAYER_ELS["birds-near"]);
   const farColor = getComputedStyle(LAYER_ELS["birds-far"]).color;
-  const mask = (r) => dotMaskFromImage(crowImg, r, CROW_COLS, CROW_ROWS, CROW_DOT_CUT, CROW_LIT_LUM);
+  const read = (name, fallback) => nearCss.getPropertyValue(name).trim() || fallback;
+  crowTones = [
+    read("--crow-dark", "#1b1710"),
+    read("--crow-mid", "#2e281e"),
+    read("--crow-detail", "#7d7462"),
+    read("--crow-glint", "#e6dcc6"),
+  ].map(cssToRgb);
+  const paint = (r) => rampSprite(crowImg, r, CROW_CUTS, crowTones, CROW_SOLID_SPAN);
   crowArt = {
-    body: nearCss.color,
-    lit: nearCss.getPropertyValue("--crow-lit").trim() || nearCss.color,
-    rim: nearCss.getPropertyValue("--crow-rim").trim() || nearCss.color,
-    shade: nearCss.getPropertyValue("--crow-shade").trim() || "rgba(24, 16, 6, 0.38)",
-    perch: CROW_PERCH_POSES.map(mask),
-    fly: CROW_FLY_LARGE.map(mask),
+    contact: read("--crow-contact", "rgba(18, 11, 4, 0.45)"),
+    perch: CROW_PERCH_POSES.map(paint),
+    fly: CROW_FLY_LARGE.map(paint),
   };
   crowArt.glide = crowArt.fly[LARGE_GLIDE_FRAME];
   farFrames = {
-    small: CROW_FLY_SMALL.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
-    smallGlide: tintSprite(crowImg, CROW_SMALL_GLIDE, farColor, 0.85, 0.2),
-    med: CROW_FLY_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
-    medGlide: CROW_GLIDE_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
+    small: CROW_FLY_SMALL.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
+    smallGlide: tintSprite(crowImg, CROW_SMALL_GLIDE, farColor, 0.85),
+    med: CROW_FLY_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
+    medGlide: CROW_GLIDE_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
   };
-}
-
-function dotPass(ctx, dots, left, top, dotW, dotH, color) {
-  if (!dots.length) return;
-  ctx.fillStyle = color;
-  const batcher = pathBatcher(ctx);
-  for (let i = 0; i < dots.length; i++) {
-    batcher.rect(left + dots[i][0] * dotW, top + dots[i][1] * dotH, dotW, dotH);
-  }
-  batcher.flush();
 }
 
 function crowPose(ctx, b, px, py) {
@@ -115,49 +112,57 @@ function crowPose(ctx, b, px, py) {
   if (b.dir < 0) ctx.scale(-1, 1);
 }
 
+/* The canopy, blitted back over part of a bird.
+ *
+ * Both layers are built to the same geometry — same canvas size, same dpr, same
+ * rest transform — so a region of one maps 1:1 onto the other and the treetops
+ * can be laid over a bird without any coordinate arithmetic. A leaf or two
+ * crossing the bird's base is what puts it in the tree rather than in front of
+ * it: depth order is the only cue that says two things occupy one place. */
 function canopyOver(ctx, x, y, w, h) {
   const src = LAYER_ELS["mid-near"];
   if (!src.width || w <= 0 || h <= 0) return;
   const k = ctx.getTransform().a;
   const sx = x * k;
   const sy = y * k;
-  if (sx < 0 || sy < 0 || sx + w * k > src.width || sy + h * k > src.height) return;
+  const sw = w * k;
+  const sh = h * k;
+  if (sx < 0 || sy < 0 || sx + sw > src.width || sy + sh > src.height) return;
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, h);
   ctx.clip();
   ctx.globalCompositeOperation = "source-atop";
-  ctx.drawImage(src, sx, sy, w * k, h * k, x, y, w, h);
+  ctx.drawImage(src, sx, sy, sw, sh, x, y, w, h);
   ctx.restore();
 }
 
-function drawNearCrow(ctx, b, now, mask, perched) {
-  if (!mask || !crowArt) return;
+/* A perched bird sits on the surface it grips, so the anchor is the bottom of its
+ * body — not the tail tip, which hangs past the branch, and not the sprite box.
+ * The contact shadow on the leaves under it and the foliage laid back over its
+ * base are what weld the bird to the tree; without them a correctly placed bird
+ * still reads as hovering, because nothing marks where the two surfaces meet. */
+function drawNearCrow(ctx, b, now, art, perched) {
+  if (!art || !crowArt) return;
   const px = b.x * CELL.w;
   const py = (b.y + (b.bob ? Math.sin(b.bob + now * 0.003) * 0.7 : 0)) * CELL.h;
-  const dotW = b.dw / mask.dotCols;
-  const dotH = b.dh / mask.dotRows;
+  const sx = b.dw / art.w;
+  const sy = b.dh / art.h;
   const left = -b.dw / 2;
-  const top = perched ? -(mask.footRow + 1) * dotH : -b.dh / 2;
+  const top = perched ? -art.bodyBottom * sy : -b.dh / 2;
 
   ctx.save();
   crowPose(ctx, b, px, py);
-  dotPass(ctx, mask.rim, left - dotW, top - dotH, dotW, dotH, crowArt.rim);
-  dotPass(ctx, mask.dots, left, top, dotW, dotH, crowArt.body);
+  if (perched) {
+    ctx.fillStyle = crowArt.contact;
+    ctx.beginPath();
+    ctx.ellipse(left + art.contactMid * sx, sy * 0.7, art.contactHalf * sx, sy * 1.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.drawImage(art.canvas, 0, 0, art.w, art.h, left, top, b.dw, b.dh);
   ctx.restore();
 
-  if (perched) {
-    canopyOver(ctx, px - b.dw / 2 - dotW, py - CROW_OCCLUDE_DOTS * dotH, b.dw + dotW * 2, (CROW_OCCLUDE_DOTS + 1) * dotH);
-  }
-
-  ctx.save();
-  crowPose(ctx, b, px, py);
-  dotPass(ctx, mask.lit, left, top, dotW, dotH, crowArt.lit);
-  if (perched) {
-    ctx.fillStyle = crowArt.shade;
-    ctx.fillRect(left + (mask.footSpan[0] - 1) * dotW, 0, (mask.footSpan[1] - mask.footSpan[0] + 3) * dotW, dotH);
-  }
-  ctx.restore();
+  if (perched) canopyOver(ctx, px - b.dw / 2 - 3, py, b.dw + 6, 2.4);
 }
 
 function drawCrow(ctx, b, now, img, bottom) {
@@ -464,8 +469,8 @@ function renderBirdsNear(now) {
     } else {
       updateFlyer(b, now, dt);
       if (b.x < -20 || b.x > W_TOTAL + 20) { nearBirds.splice(i, 1); continue; }
-      const mask = b.phase === "glide" ? crowArt.glide : wingFrame(crowArt.fly, b.frame);
-      drawNearCrow(ctx, b, now, mask, false);
+      const art = b.phase === "glide" ? crowArt.glide : wingFrame(crowArt.fly, b.frame);
+      drawNearCrow(ctx, b, now, art, false);
     }
     b.prevRect = birdPxRect(b);
   }

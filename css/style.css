@@ -112,9 +112,11 @@ body {
 #layer-birds-near  {
     color: #26221b;
     z-index: 8;
-    --crow-lit: #6f6757;
-    --crow-rim: #b5945f;
-    --crow-shade: rgba(24, 16, 6, 0.38);
+    --crow-dark: #1b1710;
+    --crow-mid: #2e281e;
+    --crow-detail: #7c7360;
+    --crow-glint: #e6dcc6;
+    --crow-contact: rgba(16, 10, 3, 0.5);
 }
 #layer-mid-far     { color: #887044; z-index: 5; }
 #layer-land-mid    { color: #75603a; z-index: 6; }

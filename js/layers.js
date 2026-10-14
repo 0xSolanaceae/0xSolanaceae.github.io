@@ -327,7 +327,7 @@ function buildAll() {
     const RUN = 6;
     const RUN_BELOW = 4;
     const MIN_PERCH_DOT_Y = 26;
-    const LEDGE_SCAN_DOTS = 24;
+    const LEDGE_SCAN_DOTS = 40;
     const LEDGE_FIRST_DOT = 4;
     const solid = (dx, dy) => dx >= 0 && dx < DOT_COLS && dy >= 0 && dy < DOT_ROWS && nearDots[dy * DOT_COLS + dx] >= SOLID;
     const runAt = (dx, dy) => {
@@ -354,6 +354,14 @@ function buildAll() {
       if (ledge < 0) continue;
       const cx = Math.round(dx / 2);
       const cy = Math.round(ledge / 4);
+      // A bird on the canopy's outer rim is silhouetted against open sky, which
+      // reads as flight. Perching wants leaves above it as well as below, so the
+      // spot has to sit inside the crown.
+      let above = 0, aboveN = 0;
+      for (let dy = Math.max(0, ledge - 24); dy <= ledge - 4; dy++) {
+        for (let k = dx - 10; k <= dx + 10; k++) { aboveN++; if (solid(k, dy)) above++; }
+      }
+      if (aboveN < 40 || above / aboveN < 0.3) continue;
       const ox0 = Math.max(0, cx - 4);
       const ox1 = Math.min(W_TOTAL - 1, cx + 4);
       const oy0 = Math.max(0, cy - 8);
