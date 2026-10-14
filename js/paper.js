@@ -3,8 +3,17 @@
 const PAPER_SEED = 401;
 const PAPER_W_CELLS = 11;
 const PAPER_NOTE_ROWS = 12;
-const INK = "#231a0d";
-const INK_ALPHA = 0.8;
+const INK = "#2b2113";
+const INK_ALPHA = 0.74;
+
+/* The sheet has been pinned to a tree for years: the pulp has yellowed, damp has
+ * marked it and left tide rings, foxing has spotted it, and dirt has gathered
+ * where the edges were handled. All of it is drawn from u, the height of one row
+ * of the note, so the note in the tree and the card that opens from it are the
+ * same paper at two sizes rather than two papers. */
+const PAPER_PULP = "#e7d9b4";
+const PAPER_GRIME = "104, 78, 40";
+const PAPER_FOX = "139, 95, 47";
 
 let PAPER_INFO = null;
 
@@ -187,25 +196,91 @@ function drawNail(ctx, nx, ny, u) {
 }
 
 function paintPaperSheet(ctx, sheet, w, h, u, rng) {
-  ctx.fillStyle = "#f3ead2";
+  ctx.fillStyle = PAPER_PULP;
   ctx.fill(sheet);
   ctx.save();
   ctx.clip(sheet);
 
+  // Grime creeps in from every edge, because the borders of a sheet are what gets
+  // handled. Drawn as one band per edge, so the corners — where two bands meet —
+  // come out dirtiest, the way they do on paper that has sat out.
+  const band = Math.min(w, h) * 0.3;
+  const edgeBand = (x0, y0, x1, y1) => {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, `rgba(${PAPER_GRIME}, 0.29)`);
+    g.addColorStop(0.45, `rgba(${PAPER_GRIME}, 0.10)`);
+    g.addColorStop(1, `rgba(${PAPER_GRIME}, 0)`);
+    return g;
+  };
+  const bands = [
+    [0, 0, 0, band, 0, 0, w, band],
+    [0, h, 0, h - band, 0, h - band, w, band],
+    [0, 0, band, 0, 0, 0, band, h],
+    [w, 0, w - band, 0, w - band, 0, band, h],
+  ];
+  for (const [gx0, gy0, gx1, gy1, rx, ry, rw, rh] of bands) {
+    ctx.fillStyle = edgeBand(gx0, gy0, gx1, gy1);
+    ctx.fillRect(rx, ry, rw, rh);
+  }
+
+  // Sun from one side, which is what bleached the sheet unevenly in the first place.
   const light = ctx.createLinearGradient(0, 0, w, h);
-  light.addColorStop(0, "rgba(255, 251, 235, 0.55)");
+  light.addColorStop(0, "rgba(255, 251, 235, 0.3)");
   light.addColorStop(0.45, "rgba(0, 0, 0, 0)");
-  light.addColorStop(1, "rgba(120, 92, 52, 0.28)");
+  light.addColorStop(1, "rgba(120, 92, 52, 0.2)");
   ctx.fillStyle = light;
   ctx.fillRect(-u, -u, w + u * 2, h + u * 2);
 
-  for (let i = 0; i < 9; i++) {
+  // Broad staining.
+  for (let i = 0; i < 14; i++) {
     const x = rng() * w, y = rng() * h;
-    const r = u * (0.5 + rng() * 1.4);
+    const r = u * (0.5 + rng() * 1.6);
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    const dark = rng() < 0.6;
-    g.addColorStop(0, dark ? "rgba(150, 118, 72, 0.10)" : "rgba(255, 250, 230, 0.10)");
+    const dark = rng() < 0.66;
+    g.addColorStop(0, dark ? `rgba(${PAPER_GRIME}, 0.13)` : "rgba(255, 250, 230, 0.09)");
     g.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = g;
+    ctx.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+
+  // Rain that dried on the sheet, leaving a dark rim where the water stopped. The
+  // rim wanders, because a circle on paper reads as a drawn circle, not weather.
+  const rings = 1 + Math.floor(rng() * 2);
+  for (let i = 0; i < rings; i++) {
+    const cx = rng() * w;
+    const cy = rng() * h;
+    const r = u * (1.0 + rng() * 1.4);
+    const n = 16;
+    const pts = [];
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2;
+      const rr = r * (0.8 + rng() * 0.4);
+      pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]);
+    }
+    ctx.save();
+    ctx.filter = "blur(" + Math.max(1, u * 0.12).toFixed(1) + "px)";
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k <= n; k++) ctx.lineTo(pts[k % n][0], pts[k % n][1]);
+    ctx.closePath();
+    // Paler inside the rim: water carries the grime out to where it stopped.
+    ctx.fillStyle = `rgba(${PAPER_GRIME}, 0.05)`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${PAPER_GRIME}, 0.15)`;
+    ctx.lineWidth = u * 0.2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Foxing: the small rust-brown spots that bloom on old paper.
+  const fox = 7 + Math.round(rng() * 7);
+  for (let i = 0; i < fox; i++) {
+    const x = rng() * w, y = rng() * h;
+    const r = u * (0.08 + rng() * 0.26);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${PAPER_FOX}, 0.34)`);
+    g.addColorStop(0.5, `rgba(${PAPER_FOX}, 0.17)`);
+    g.addColorStop(1, `rgba(${PAPER_FOX}, 0)`);
     ctx.fillStyle = g;
     ctx.fillRect(x - r, y - r, r * 2, r * 2);
   }
@@ -214,33 +289,41 @@ function paintPaperSheet(ctx, sheet, w, h, u, rng) {
   for (let i = 0; i < streaks; i++) {
     const x = rng() * w, y = rng() * h;
     const len = u * (0.15 + rng() * 0.35);
-    ctx.fillStyle = rng() < 0.7 ? "rgba(255, 250, 232, 0.06)" : "rgba(130, 104, 66, 0.07)";
+    ctx.fillStyle = rng() < 0.6 ? "rgba(255, 250, 232, 0.05)" : `rgba(130, 104, 66, 0.10)`;
     ctx.fillRect(x, y, len, Math.max(0.5, u * 0.025));
   }
   const flecks = Math.round((w * h) / (u * u * 10));
   for (let i = 0; i < flecks; i++) {
     const x = rng() * w, y = rng() * h;
-    ctx.fillStyle = "rgba(110, 88, 52, 0.08)";
+    ctx.fillStyle = rng() < 0.7 ? `rgba(110, 88, 52, 0.11)` : `rgba(${PAPER_FOX}, 0.16)`;
     ctx.fillRect(x, y, Math.max(0.6, u * 0.05), Math.max(0.6, u * 0.05));
   }
 
-  ctx.save();
-  ctx.filter = "blur(" + Math.max(1.5, u * 0.14).toFixed(1) + "px)";
-  ctx.strokeStyle = "rgba(120, 94, 56, 0.16)";
-  ctx.lineWidth = u * 0.06;
-  ctx.beginPath();
-  ctx.moveTo(w * 0.46, -u);
-  ctx.lineTo(w * 0.4, h + u);
-  ctx.stroke();
-  ctx.restore();
+  // Creases from a life spent folded, and the shadow each fold catches.
+  const creases = [
+    [w * 0.44 + (rng() - 0.5) * u, -u, w * 0.38 + (rng() - 0.5) * u, h + u, 0.19, 0.15],
+    [-u, h * 0.66 + (rng() - 0.5) * u, w + u, h * 0.60 + (rng() - 0.5) * u, 0.11, 0.22],
+  ];
+  for (const [x0, y0, x1, y1, alpha, blur] of creases) {
+    ctx.save();
+    ctx.filter = "blur(" + Math.max(1.1, u * blur).toFixed(1) + "px)";
+    ctx.strokeStyle = `rgba(112, 86, 50, ${alpha})`;
+    ctx.lineWidth = u * 0.07;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
+    ctx.stroke();
+    ctx.restore();
+  }
 
-  ctx.strokeStyle = "rgba(255, 250, 232, 0.55)";
+  // A last pale edge, so the sheet still reads as a surface rather than a stain.
+  ctx.strokeStyle = "rgba(255, 250, 232, 0.24)";
   ctx.lineWidth = Math.max(1, u * 0.14);
   ctx.stroke(sheet);
 
   ctx.restore();
 
-  ctx.strokeStyle = "rgba(128, 102, 62, 0.30)";
+  ctx.strokeStyle = `rgba(104, 78, 40, 0.42)`;
   ctx.lineWidth = Math.max(0.5, u * 0.04);
   ctx.stroke(sheet);
 }
