@@ -2,6 +2,7 @@
     --parchment: #f4e3b8;
     --parchment-deep: #e0b877;
     --frame: #140d05;
+    --ink: #43331e;
     --fs: clamp(6px, 0.85vmin, 10px);
 }
 
@@ -9,6 +10,15 @@
     font-family: "Libron";
     src: url("../fonts/Libron-Regular.woff2") format("woff2");
     font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* The card's face: handwriting, for a note that was written rather than set. */
+@font-face {
+    font-family: "Caveat";
+    src: url("../fonts/Caveat-Variable.woff2") format("woff2");
+    font-weight: 400 700;
     font-style: normal;
     font-display: swap;
 }
@@ -263,11 +273,15 @@ body {
     top: 0;
     display: flex;
     align-items: center;
-    width: min(28rem, 88vw);
-    min-height: min(38rem, 92vh);
-    color: #2a2012;
+    /* Width and height come from sizeCardSheet: the note keeps the proportions of
+       the slip in the tree rather than the viewport's. */
+    color: var(--ink);
 }
 
+/* The aged sheet lies behind the writing. A grain multiplied over the top was
+   meant to sink the ink into the paper, but at this size the pattern's own
+   repeat reads as a ripple across the sheet, so the ageing stays where it
+   belongs: in the parchment, under the text. */
 #papercard-sheet:focus {
     outline: none;
 }
@@ -280,28 +294,17 @@ body {
     pointer-events: none;
 }
 
+/* The margins and the spread of the lines follow the ink on the note in the tree,
+   whose four scribbled lines these four replace. */
 #papercard-content {
     position: relative;
     z-index: 1;
+    align-self: stretch;
+    display: flex;
     width: 100%;
-    padding: 3em 2.75em;
+    padding: 19% 9%;
     text-transform: lowercase;
-    text-align: center;
-}
-
-#papercard-name {
-    display: inline-block;
-    margin: 0 0 18px;
-    font-family: "Libron", serif;
-    font-size: clamp(1.15rem, 3.2vmin, 1.5rem);
-    font-weight: 400;
-    line-height: 1.15;
-    letter-spacing: -0.01em;
     text-align: left;
-    color: #2a2012;
-    text-shadow:
-        0 0.4px 0.7px rgba(42, 32, 18, 0.28),
-        0 0 1.6px rgba(42, 32, 18, 0.14);
 }
 
 #papercard-links {
@@ -309,9 +312,9 @@ body {
     margin: 0;
     padding: 0;
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
-    align-items: center;
-    gap: 12px;
+    justify-content: space-between;
 }
 
 #papercard-links li {
@@ -319,38 +322,55 @@ body {
 }
 
 .papercard-link {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    width: 100%;
-    padding: 2px 4px;
-    border: 0;
-    background: transparent;
-    font-family: "Libron", serif;
-    font-size: clamp(0.8125rem, 2.4vmin, 1rem);
-    line-height: 1.4;
-    letter-spacing: 0.01em;
-    color: #2a2012;
-    text-align: left;
+    display: block;
+    font-family: "Caveat", "Segoe Script", cursive;
+    font-size: clamp(1.2rem, 3.4vmin, 1.85rem);
+    line-height: 1.25;
+    letter-spacing: 0;
+    color: inherit;
     text-decoration: none;
     cursor: pointer;
+    transform-origin: left center;
+    transition: color 140ms ease-out, opacity 140ms ease-out;
 }
 
-.papercard-link:hover,
-.papercard-link:focus-visible,
-.papercard-link:hover .papercard-val,
-.papercard-link:focus-visible .papercard-val {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    text-decoration-thickness: 1px;
+/* Written, not typeset: no two lines start at quite the same place or sit at
+   quite the same angle, and the pen runs lighter and darker down the sheet. */
+#papercard-links li:nth-child(1) .papercard-link {
+    transform: translateY(-1px) rotate(-0.35deg);
+}
+
+#papercard-links li:nth-child(2) .papercard-link {
+    transform: translate(0.1em, 1px) rotate(0.25deg);
+    opacity: 0.93;
+}
+
+#papercard-links li:nth-child(3) .papercard-link {
+    transform: translate(-0.05em, -0.5px) rotate(-0.2deg);
+    opacity: 0.88;
+}
+
+#papercard-links li:nth-child(4) .papercard-link {
+    transform: translate(0.16em, 0.8px) rotate(0.3deg);
+    opacity: 0.96;
+}
+
+.papercard-link:hover {
+    color: #2b1e0e;
+}
+
+/* A press pushes the ink into the paper, so the line darkens where it is held. */
+.papercard-link:active {
+    opacity: 0.7;
+}
+
+.papercard-link:focus-visible {
+    outline: 1px dashed rgba(67, 51, 30, 0.75);
+    outline-offset: 0.12em;
 }
 
 .papercard-val {
-    word-break: break-all;
-    color: #2a2012;
-    text-shadow:
-        0 0.4px 0.7px rgba(42, 32, 18, 0.28),
-        0 0 1.6px rgba(42, 32, 18, 0.14);
+    word-break: break-word;
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -383,14 +403,12 @@ body {
         background: rgba(6, 4, 1, 0.94);
     }
 
-    #papercard-name,
-    .papercard-val {
+    .papercard-link {
         color: #140e06;
-        text-shadow: none;
+        opacity: 1;
     }
 
     .papercard-link:focus-visible {
         outline: 2px solid #140e06;
-        outline-offset: 2px;
     }
 }

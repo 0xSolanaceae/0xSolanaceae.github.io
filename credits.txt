@@ -6,3 +6,6 @@ https://scratch.mit.edu/projects/48787568/
 
 Libron (SIL Open Font License 1.1)
 https://github.com/nicoverbruggen/libron
+
+Caveat (SIL Open Font License 1.1)
+https://github.com/googlefonts/caveat

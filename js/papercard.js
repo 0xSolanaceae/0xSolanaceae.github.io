@@ -13,7 +13,6 @@ const card = document.getElementById("papercard");
 const cardSheet = document.getElementById("papercard-sheet");
 const cardPaper = document.getElementById("papercard-paper");
 const cardBackdrop = document.getElementById("papercard-backdrop");
-const cardName = document.getElementById("papercard-name");
 const cardLinks = document.getElementById("papercard-links");
 const noteLayer = document.getElementById("layer-paper");
 
@@ -23,13 +22,30 @@ let cardRaf = 0;
 let cardLast = 0;
 let lastFocus = null;
 let hoveringNote = false;
-
 const cardSpring = makeSpring({
   damping: 1, response: 0.35, restDistance: 0.002, restVelocity: 0.02,
 });
 const CARD_NAIL_ROWS = 1.05;
-const CARD_ARRIVE = 5;
+const CARD_MAX_H = 0.74;  // share of the viewport's height the note may take
+const CARD_MAX_W = 0.84;
+const CARD_ARRIVE = 5;       // progress at which the sheet is fully there (and the note fully gone)
 const HAPTIC_COMMIT = 8;
+
+/* The note is a slip of paper, not a panel: it keeps the proportions of the one
+ * pinned in the tree — same eleven columns, same twelve rows — and only its size
+ * follows the viewport. Its writing is set against that, so the paper is what
+ * decides the shape and the text fits itself to the paper. */
+function sizeCardSheet() {
+  if (!CELL.w || !CELL.h) return;
+  const ratio = (PAPER_W_CELLS * CELL.w) / (PAPER_NOTE_ROWS * CELL.h);
+  const maxW = Math.min(window.innerWidth * CARD_MAX_W, 26 * 16);
+  const maxH = window.innerHeight * CARD_MAX_H;
+  let w = maxH * ratio;
+  if (w > maxW) w = maxW;
+  w = Math.round(w);
+  cardSheet.style.width = w + "px";
+  cardSheet.style.height = Math.round(w / ratio) + "px";
+}
 
 function setNoteHover(on) {
   if (on === hoveringNote) return;
@@ -42,7 +58,7 @@ function measureCard() {
   const sw = cardSheet.offsetWidth;
   const sh = cardSheet.offsetHeight;
   const layer = LAYER_ELS.paper.getBoundingClientRect();
-  const u = Math.max(8, sh / PAPER_TATTER_ROWS);
+  const u = Math.max(8, sh / PAPER_NOTE_ROWS);
   const ox = sw / 2;
   const oy = u * CARD_NAIL_ROWS;
   const nailX = layer.left + PAPER_INFO.nx - base.left;
@@ -107,6 +123,7 @@ function aimCard(target) {
 function beginCard() {
   cardPhase = "pressing";
   lastFocus = document.activeElement;
+  sizeCardSheet();
   renderCardPaper();
   cardGeom = measureCard();
   cardSheet.style.transformOrigin = `${cardGeom.ox}px ${cardGeom.oy}px`;
@@ -162,7 +179,8 @@ function hitPaper(px, py) {
   return Math.abs(rx) <= PAPER_INFO.w / 2 + slack && Math.abs(ry) <= PAPER_INFO.h / 2 + slack;
 }
 
-function makeItem(text, href, downloadName) {
+/* One line, written the way it would be on paper: a label, then the thing itself. */
+function makeItem(key, text, href, downloadName) {
   const li = document.createElement("li");
   const el = document.createElement("a");
   el.href = href;
@@ -170,22 +188,26 @@ function makeItem(text, href, downloadName) {
   else { el.target = "_blank"; el.rel = "noopener"; }
   el.className = "papercard-link";
 
+  const name = document.createElement("span");
+  name.className = "papercard-key";
+  name.textContent = key;
+
   const val = document.createElement("span");
   val.className = "papercard-val";
   val.textContent = text;
 
-  el.append(val);
+  el.append(name, " ", val);
   li.appendChild(el);
   return li;
 }
 
 function buildCard() {
-  cardName.textContent = PAPERCARD_DATA.name;
+  card.setAttribute("aria-label", PAPERCARD_DATA.name);
   cardLinks.append(
-    makeItem("github.com/" + PAPERCARD_DATA.github, "https://github.com/" + PAPERCARD_DATA.github),
-    makeItem("discord/" + PAPERCARD_DATA.discord, PAPERCARD_DATA.discordUrl),
-    makeItem(PAPERCARD_DATA.email, "mailto:" + PAPERCARD_DATA.email),
-    makeItem(PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile),
+    makeItem("github:", PAPERCARD_DATA.github, "https://github.com/" + PAPERCARD_DATA.github),
+    makeItem("discord:", PAPERCARD_DATA.discord, PAPERCARD_DATA.discordUrl),
+    makeItem("email:", PAPERCARD_DATA.email, "mailto:" + PAPERCARD_DATA.email),
+    makeItem("pgp:", "public key", PAPERCARD_DATA.pgpFile, PAPERCARD_DATA.pgpFile),
   );
 }
 
@@ -204,14 +226,17 @@ function renderCardPaper() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  const u = Math.max(8, h / PAPER_TATTER_ROWS);
+  // The note in the tree's own torn outline, at a gentler amplitude: a tear is a
+  // fine thing on a slip this size, and the note's proportion of a much smaller
+  // one would read as a saw blade scaled up to here.
+  const u = Math.max(8, h / PAPER_NOTE_ROWS);
   const margin = u * 0.5;
   const dw = Math.max(24, w - margin * 2);
   const dh = Math.max(24, h - margin * 2);
   const edges = PAPER_EDGES || makeSheetEdges(dw, dh, u, seededRand(PAPER_SEED));
   const soft = { top: [], right: [], bottom: [], left: [] };
   for (const key of Object.keys(edges)) {
-    soft[key] = edges[key].map(([t, o]) => [t, o * 0.3]);
+    soft[key] = edges[key].map(([t, o]) => [t, o * 0.42]);
   }
   const sheet = buildSheetPath(dw, dh, u, soft);
   const rng = seededRand(PAPER_SEED);
@@ -270,6 +295,7 @@ document.addEventListener("keydown", (e) => {
 
 window.addEventListener("resize", () => {
   if (cardPhase === "closed") return;
+  sizeCardSheet();
   cardGeom = measureCard();
   cardSheet.style.transformOrigin = `${cardGeom.ox}px ${cardGeom.oy}px`;
   applyCard(cardSpring.value);

@@ -3,7 +3,6 @@
 const PAPER_SEED = 401;
 const PAPER_W_CELLS = 11;
 const PAPER_NOTE_ROWS = 12;
-const PAPER_TATTER_ROWS = 8.8;
 const INK = "#231a0d";
 const INK_ALPHA = 0.8;
 
