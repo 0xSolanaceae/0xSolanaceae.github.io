@@ -317,13 +317,19 @@ function paintPaperSheet(ctx, sheet, w, h, u, rng) {
     g.addColorStop(1, `rgba(${PAPER_GRIME}, 0)`);
     return g;
   };
-  const bands = [
-    [0, 0, 0, band, 0, 0, w, band],
-    [0, h, 0, h - band, 0, h - band, w, band],
-    [0, 0, band, 0, 0, 0, band, h],
-    [w, 0, w - band, 0, w - band, 0, band, h],
+  // The rects overhang the sheet by this much. The torn edge bulges outward past
+  // its nominal line, and a band stopping at that line would leave the tips of
+  // those bulges unpainted — pale spikes along a tear that is meant to be its
+  // dirtiest part. The gradient clamps outside its axis, so the overhang simply
+  // gets the outermost colour. Clipping to the sheet keeps it off the background.
+  const over = u * 2;
+  const edgeBands = [
+    [[0, 0], [0, band], [-over, -over, w + over * 2, band + over]],
+    [[0, h], [0, h - band], [-over, h - band, w + over * 2, band + over]],
+    [[0, 0], [band, 0], [-over, -over, band + over, h + over * 2]],
+    [[w, 0], [w - band, 0], [w - band, -over, band + over, h + over * 2]],
   ];
-  for (const [gx0, gy0, gx1, gy1, rx, ry, rw, rh] of bands) {
+  for (const [[gx0, gy0], [gx1, gy1], [rx, ry, rw, rh]] of edgeBands) {
     ctx.fillStyle = edgeBand(gx0, gy0, gx1, gy1);
     ctx.fillRect(rx, ry, rw, rh);
   }
@@ -332,9 +338,11 @@ function paintPaperSheet(ctx, sheet, w, h, u, rng) {
 
   // The rim of a sheet that has sat out is its dirtiest part, so the edge is
   // darkened here rather than highlighted — a pale line along a tear reads as
-  // new paper, which is the one thing this sheet is not.
-  ctx.strokeStyle = `rgba(88, 64, 32, 0.5)`;
-  ctx.lineWidth = Math.max(0.6, u * 0.05);
+  // new paper, which is the one thing this sheet is not. It is also the last
+  // thing drawn on the bare edge, which is what keeps the tear's sharp tips from
+  // showing the pale pulp underneath everything else.
+  ctx.strokeStyle = `rgba(74, 52, 26, 0.66)`;
+  ctx.lineWidth = Math.max(0.8, u * 0.07);
   ctx.stroke(sheet);
 }
 
