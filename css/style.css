@@ -302,7 +302,7 @@ body {
     align-self: stretch;
     display: flex;
     width: 100%;
-    padding: 19% 9%;
+    padding: 13% 10%;
     text-transform: lowercase;
     text-align: left;
 }
@@ -314,20 +314,25 @@ body {
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
 }
 
 #papercard-links li {
     display: block;
 }
 
+/* Handwriting sits on its own rhythm — the lines of a note nearly touch, the way
+   they do when a hand writes them in one sitting. Spreading them to fill the page
+   is what made this read as a form. */
 .papercard-link {
     display: block;
     font-family: "Caveat", "Segoe Script", cursive;
-    font-size: clamp(1.2rem, 3.4vmin, 1.85rem);
-    line-height: 1.25;
+    font-size: var(--card-fs, 1.5rem);
+    line-height: 1.5;
     letter-spacing: 0;
     color: inherit;
+    /* Ink wicking into rough paper: a hairline of bleed, not a drop shadow. */
+    text-shadow: 0 0 0.045em rgba(67, 51, 30, 0.45);
     text-decoration: none;
     cursor: pointer;
     transform-origin: left center;

@@ -45,6 +45,9 @@ function sizeCardSheet() {
   w = Math.round(w);
   cardSheet.style.width = w + "px";
   cardSheet.style.height = Math.round(w / ratio) + "px";
+  // The writing is sized off the paper, not the viewport, so the note is the same
+  // note at any size — and the lines keep a hand's spacing at every size.
+  cardSheet.style.setProperty("--card-fs", (w * 0.078).toFixed(2) + "px");
 }
 
 function setNoteHover(on) {
