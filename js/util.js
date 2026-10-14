@@ -13,9 +13,6 @@ const debounce = (fn, ms) => {
   };
 };
 
-/* A tick of feedback you can feel. Reserved for moments that mean something —
- * a commit, a thing forming — because feedback on everything trains people to
- * ignore all of it. Unsupported browsers (and desktops) simply do nothing. */
 function haptic(ms) {
   if (navigator.vibrate) navigator.vibrate(ms);
 }
@@ -36,5 +33,5 @@ function perlin1D(x, octaves = 3) {
     amp *= 0.5;
     freq *= 2;
   }
-  return total / norm; // ~0..1, smooth
+  return total / norm;
 }

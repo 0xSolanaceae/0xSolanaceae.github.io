@@ -6,8 +6,6 @@ let trunkA = null;
 let trunkB = null;
 const loading = document.getElementById("loading");
 
-/* Records whether the webfont arrived in time; if not, build with fallback
- * metrics and re-measure once the face lands. */
 let fontReadyFlag = false;
 function fontLoadedPromise() {
   if (!document.fonts || !document.fonts.load) return Promise.resolve(true);
@@ -74,14 +72,12 @@ async function init() {
     return;
   }
 
-  // Never hold first paint open on the webfont: build with fallback metrics
-  // if it hasn't arrived within the budget, and re-measure when it lands.
   await Promise.all([
     firstPaint,
     Promise.race([fontPromise, new Promise((r) => setTimeout(r, 150))]),
   ]);
 
-  const builtWithRealFont = fontReadyFlag; // snapshot BEFORE the build
+  const builtWithRealFont = fontReadyFlag;
   buildAll();
   loading.classList.add("hidden");
   window.addEventListener("resize", debounce(buildAll, 150));

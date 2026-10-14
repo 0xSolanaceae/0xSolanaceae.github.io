@@ -1,45 +1,39 @@
 "use strict";
 
 let windVx = 0, windVy = 0;
-let windSpeed = 0;            // its magnitude, shared with leaves.js
+let windSpeed = 0;
 let lastWindX = -9999, lastWindY = -9999, lastWindT = 0;
-const VMAX = 8000;            // px/s — no real hand moves faster; rejects teleports
+const VMAX = 8000;
 
 let windVortex = 0;
 let windSpin = 0;
 let windCx = 0, windCy = 0;
 
-// The pointer as a translating circular body:
-const PTR_RADIUS = 13;      // px — effective radius of the "body"
+const PTR_RADIUS = 13;
 const DIPOLE_RANGE = 300;
-// Shed vortex blobs (Lamb–Oseen):
 const BLOB_RC0 = 16;
-const BLOB_NU = 480;        // px²/s — viscous diffusion (rc² grows by 4ν·t)
+const BLOB_NU = 480;
 const BLOB_TAU = 2.0;
 const BLOB_MAX = 44;
 const BLOB_CUT = 520;
-// Turning sheds circulation proportional to V × a (wing-like):
 const SHED_K = 0.018;
 const SHED_MIN = 5200;
 const SHED_MAX = 14000;
 const SHED_SPEED_MIN = 140;
 const SHED_CROSS_MIN = 20000;
-// Fast straight motion trails a Strouhal wake of alternating eddies:
-const WAKE_ST = 0.2;        // Strouhal number (~0.2 for a cylinder)
+const WAKE_ST = 0.2;
 const WAKE_K = 0.028;
 const WAKE_MIN = 2600;
 const WAKE_MAX = 6500;
-// Momentum wake: the air pushed along the pointer's recent path.
 const WAKE_SIGMA0 = 26;
 const WAKE_SIGMA_RATE = 90;
 const WAKE_TAU = 0.3;
-const WAKE_GAIN = 0.3;      // fraction of the pointer's speed felt at the trail core
+const WAKE_GAIN = 0.3;
 const WAKE_TRAIL_MS = 900;
-// Tornado detector (derived from what was actually shed):
 const SWIRL_WINDOW = 1100;
 const SWIRL_TIGHT = 160;
-const TORNADO_FELT = 0.35;  // strength at which the column reads as one, and is felt
-const HAPTIC_TORNADO = 18;  // ms
+const TORNADO_FELT = 0.35;
+const HAPTIC_TORNADO = 18;
 const AMB_BASE = 1.4;
 const AMB_GUST = 8.2;
 
@@ -89,7 +83,6 @@ function ambientMean(now) {
   return { u: Math.cos(theta) * speed, v: Math.sin(theta) * speed * 0.75 };
 }
 
-/* 2D value noise so turbulence varies across the column as well as in time. */
 function vnoise2(x, y) {
   const xi = Math.floor(x), yi = Math.floor(y);
   const xf = x - xi, yf = y - yi;
@@ -104,7 +97,6 @@ function vnoise2(x, y) {
   return ab + (cd - ab) * v;
 }
 
-/* Turbulence advected with the mean wind, scaled by wind speed. */
 function turbVector(x, y, now, mean) {
   const S = Math.hypot(mean.u, mean.v);
   if (S < 1) return { u: 0, v: 0 };
@@ -119,7 +111,6 @@ function turbVector(x, y, now, mean) {
   };
 }
 
-/* Potential-flow dipole field of the pointer as a translating body. */
 function dipoleWindAt(x, y) {
   if (!pointerStirs()) return { u: 0, v: 0 };
   const dx = x - PTR.x, dy = y - PTR.y;
@@ -139,7 +130,6 @@ function dipoleWindAt(x, y) {
   };
 }
 
-/* A shed Lamb–Oseen vortex blob (core spreads by diffusion, γ decays). */
 function blobWindAt(x, y) {
   let u = 0, v = 0;
   for (const b of blobs) {
@@ -176,10 +166,6 @@ function ambientWindAt(x, y, now) {
   return { u: mean.u + turb.u, v: mean.v + turb.v };
 }
 
-/* Flow created only by the cursor (used for leaf glow/scatter). Inside an
-   active shaken tornado the pointer's own drag is spent driving the vortex, so
-   it is absorbed there and what remains is the inflow — which is what draws
-   leaves into the column instead of pushing them along with the hand. */
 function interactionWindAt(x, y, now) {
   const dip = dipoleWindAt(x, y);
   const bl = blobWindAt(x, y);
@@ -251,37 +237,26 @@ function updateBlobs(now, dt) {
   }
 }
 
-/* The updraft column has two ways in. A circulation is read off the vorticity
-   the hand sheds and stays where it was shed; a fast side-to-side shake has no
-   circulation to find, so it is read off the hand itself and its column is
-   dragged along with the pointer, which is what makes the tornado travel. */
-const SHIMMY_WINDOW = 900;      // ms the direction flips have to keep coming inside
-const SHIMMY_MIN_VX = 520;      // px/s of sideways speed that counts as a shake
-const SHIMMY_SIDEWAYS = 0.45;   // a shake is sideways: |vy| stays under this share of |vx|
-const SHIMMY_FLIPS = 3;         // flips inside the window that raise the tornado
-const SHIMMY_RATE = 7;          // 1/s the shake-driven tornado rises and dies at
-const SHIMMY_TRACK_RATE = 20;   // 1/s the travelling column keeps up with the hand
-const SHIMMY_AVERAGE = 1.5;     // 1/s the hand's recent travel is averaged over
+const SHIMMY_WINDOW = 900;
+const SHIMMY_MIN_VX = 520;
+const SHIMMY_SIDEWAYS = 0.45;
+const SHIMMY_FLIPS = 3;
+const SHIMMY_RATE = 7;
+const SHIMMY_TRACK_RATE = 20;
+const SHIMMY_AVERAGE = 1.5;
 
-/* A shaken column is a tornado rather than a fan: the hand's own blast is what
-   feeds it, so inside the column that straight-line drag is swallowed up and
-   replaced by an inflow, and litter gets drawn in instead of shoved along with
-   the hand. */
-const TORNADO_RANGE = 420;      // px the inflow reaches out to
-const TORNADO_CORE = 70;        // px of dead air on the axis the inflow tapers to
-const TORNADO_SWALLOW = 3;      // how sharply the hand's blast is eaten with distance
-const TORNADO_INFLOW = 320;     // px/s the inflow carries at its strongest
+const TORNADO_RANGE = 420;
+const TORNADO_CORE = 70;
+const TORNADO_SWALLOW = 3;
+const TORNADO_INFLOW = 320;
 
 let shimmyDir = 0;
 const shimmyFlips = [];
 let shimmy = 0;
 let shimmyAcross = 0, shimmyAlong = 0;
-let windTornado = 0;            // 0..1 how tornado-like the column is (inflow, no circulation)
+let windTornado = 0;
 
 function updateShimmy(now, dt) {
-  // Average the hand's travel: a shake is all sideways, whereas a circle covers
-  // as much ground up and down as across, so the two cannot be confused — and a
-  // circle's own velocity flips at the ends of its arc are ignored with it.
   const k = 1 - Math.exp(-SHIMMY_AVERAGE * dt);
   shimmyAcross += (Math.abs(windVx) - shimmyAcross) * k;
   shimmyAlong += (Math.abs(windVy) - shimmyAlong) * k;
@@ -294,12 +269,12 @@ function updateShimmy(now, dt) {
       shimmyFlips.push(now);
     }
   } else if (shimmyAcross < SHIMMY_MIN_VX * 0.5) {
-    shimmyDir = 0; // the hand stopped, so the next swing is a fresh flip
+    shimmyDir = 0;
   }
   while (shimmyFlips.length && now - shimmyFlips[0] > SHIMMY_WINDOW) shimmyFlips.shift();
   const want = clamp((shimmyFlips.length - SHIMMY_FLIPS + 1) / 3, 0, 1);
   shimmy += (want - shimmy) * (1 - Math.exp(-SHIMMY_RATE * dt));
-  if (shimmy < 0.01) shimmy = 0; // a whisker of a value is not a shake, and must not own the column
+  if (shimmy < 0.01) shimmy = 0;
 }
 
 function updateUpdraft(now, dt) {
@@ -328,9 +303,6 @@ function updateUpdraft(now, dt) {
       spinT = clamp(sum / (Math.PI * Math.max(spread2, 55 * 55)), -12, 12);
     }
   }
-  // Whichever is stronger owns the column; a shaken column trails the hand and
-  // carries no spin of its own. Without a pointer on the page there is nothing
-  // for it to trail, so only a circulation can hold the column then.
   const travelling = pointerStirs() && shimmy > swirl;
   const target = travelling ? shimmy : swirl;
   const k = 1 - Math.exp(-6 * dt);
@@ -338,8 +310,6 @@ function updateUpdraft(now, dt) {
   windVortex += (target - windVortex) * k;
   windSpin += ((travelling ? 0 : spinT) - windSpin) * k;
   windTornado += ((travelling ? shimmy : 0) - windTornado) * k;
-  // The moment the column forms is the one worth feeling, and it has to land on
-  // the frame the leaves actually fly — same tick, same instant.
   if (wasTornado <= TORNADO_FELT && windTornado > TORNADO_FELT) haptic(HAPTIC_TORNADO);
   if (target > 0) {
     const kc = 1 - Math.exp(-(travelling ? SHIMMY_TRACK_RATE : 6) * dt);
@@ -354,7 +324,6 @@ function updateWind(now) {
     windVx = 0;
     windVy = 0;
     windSpeed = 0;
-    // Keep lastWindT at 0 so the pointer's return can't register a phantom teleport.
     updateBlobs(now, dt);
     updateUpdraft(now, dt);
     return;
@@ -403,20 +372,12 @@ function resetWind() {
   lastWindT = 0;
 }
 
-// The hand moves air only while it is pressed down, so a bare hover stirs
-// nothing: the flow starts at the press and runs until the button (or finger)
-// comes up. PTR carries the button state, which covers a held mouse button and
-// a touching finger alike.
 onPointer("move", () => {
   if (!PTR.down) return;
   ensureTicking();
 });
-// Seed the position at the press rather than at wherever the hand was last
-// released: pointer.js has already moved PTR there by the time this runs.
 onPointer("press", ensureTicking);
 onPointer("leave", endPointerWind);
-// A lifted finger does not reliably fire a pointerleave, so a release resets
-// explicitly either way: the wind stops the moment the pointer lets go.
 onPointer("release", endPointerWind);
 
 function endPointerWind() {

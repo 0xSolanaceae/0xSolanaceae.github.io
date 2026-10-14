@@ -1,15 +1,12 @@
 "use strict";
 
-const PAPER_SEED = 401;     // fixed so the tatter/stain/scribble pattern is stable
+const PAPER_SEED = 401;
 const PAPER_W_CELLS = 11;
-// The note is a portrait slip. A grid cell is ~1.29x taller than it is wide, so
-// sizing it in rows alone would make it read as square.
 const PAPER_NOTE_ROWS = 12;
-const PAPER_TATTER_ROWS = 8.8; // cell-rows the card scales its tatter and grain against
+const PAPER_TATTER_ROWS = 8.8;
 const INK = "#231a0d";
 const INK_ALPHA = 0.8;
 
-/* The note's position/size/lean in its layer canvas, for papercard.js. */
 let PAPER_INFO = null;
 
 function seededRand(seed) {
@@ -22,8 +19,6 @@ function seededRand(seed) {
   };
 }
 
-/* One ragged edge: [t, offsetRatio] pairs in normalized coordinates, so it
-   can be scaled to any sheet size and the card reuses the note's tears. */
 function edgeOffsets(len, u, rng) {
   const step = Math.max(0.8, Math.min(len / 34, u * 0.16));
   const n = Math.max(5, Math.round(len / step));
@@ -46,7 +41,6 @@ function edgeOffsets(len, u, rng) {
   return off.map((o, i) => [i / n, o]);
 }
 
-/* The note's torn-edge data, reused by the card. */
 let PAPER_EDGES = null;
 
 function makeSheetEdges(w, h, u, rng) {
@@ -173,7 +167,6 @@ function drawInk(ctx, w, h, u, rng) {
 }
 
 function drawNail(ctx, nx, ny, u) {
-  // Pixel-art nail: hard square pixels, scaled to the scene's cell grid.
   const s = Math.max(1, Math.round(u * 0.055));
   const M = "#6d6860", L = "#e8e2d8", D = "#332f2a";
   const grid = [
@@ -183,7 +176,6 @@ function drawNail(ctx, nx, ny, u) {
     [M, M, M, D, M],
     [0, M, M, M, 0],
   ];
-  // One-pixel drop shadow, offset down-right.
   ctx.fillStyle = "rgba(40, 28, 12, 0.35)";
   ctx.fillRect(nx - s, ny - s, s * 5, s * 5);
   for (let y = 0; y < grid.length; y++) {
@@ -195,8 +187,6 @@ function drawNail(ctx, nx, ny, u) {
   }
 }
 
-/* Paint the torn sheet itself (fill, lighting, staining, grain, fringe).
-   Shared by the note and the card so they match. */
 function paintPaperSheet(ctx, sheet, w, h, u, rng) {
   ctx.fillStyle = "#f3ead2";
   ctx.fill(sheet);
@@ -285,9 +275,6 @@ function renderNailedPaper(canvas, cellW, cellH, dpr, worldCells, rowsCells, anc
     const cos = Math.cos(tilt), sin = Math.sin(tilt);
     const dx = w / 2 - nailX;
     const dy = h / 2 - nailY;
-    // cx/cy is the note's centre and nx/ny its nail, both in this canvas's
-    // local px: papercard.js grows the card out of the nail, so it needs the
-    // exact point the note is pinned by, not just where it sits.
     PAPER_INFO = {
       cx: anchorXCell * cellW + (dx * cos - dy * sin - dx),
       cy: anchorYCell * cellH + (dx * sin + dy * cos - dy),

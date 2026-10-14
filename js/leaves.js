@@ -1,6 +1,5 @@
 "use strict";
 
-/* Five leaf sprites across the 80x16 sheet: [sx, sy, sw, sh] source rects. */
 const LEAF_FRAMES = [
   [5, 5, 7, 6],
   [23, 4, 4, 8],
@@ -9,11 +8,8 @@ const LEAF_FRAMES = [
   [67, 6, 6, 5],
 ];
 
-/* Cap on how bright a leaf's glow can get (soft layering, no white-out). */
 const MAX_GLOW = 1.0;
 
-/* One leaf population per parallax layer: own canvas, fall and ground row.
-   The multipliers make distant leaves smaller, hazier and slower. */
 const LEAF_LAYERS = [
   {
     key: "leaves-far", depth: 0.4, count: 20,
@@ -50,7 +46,6 @@ const smoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 
-/* Standard-normal sample (Box-Muller) for Gaussian pile spread. */
 function gaussian() {
   let u = 0;
   while (u === 0) u = Math.random();
@@ -66,7 +61,6 @@ function pickLeafSpec(cfg) {
   return { frame, dw, dh };
 }
 
-/* Step `a` toward `b` by fraction `k` along the shortest angular path. */
 function approachAngle(a, b, k) {
   let d = (b - a) % (Math.PI * 2);
   if (d > Math.PI) d -= Math.PI * 2;
@@ -74,20 +68,16 @@ function approachAngle(a, b, k) {
   return a + d * k;
 }
 
-/* Grounded litter is dragged by whatever air reaches it instead of switching
-   on at a threshold: the drag is smoothed into a velocity and capped by ground
-   friction, so a settled leaf scuds and tumbles with the wind, and when it is
-   finally snatched up it keeps the momentum it already had. */
-const REST_BREEZE_DRAG = 0.3;  // share of the ambient breeze a settled leaf follows
-const REST_CURSOR_DRAG = 0.45; // share of the pointer's flow a settled leaf follows
-const REST_DRAG_RATE = 5;      // 1/s to take up the surrounding air's speed
-const REST_MAX_SPEED = 6;      // cells/s — friction caps how fast litter scuds
-const REST_LIFT_SPEED = 60;    // px/s of local pointer flow that unsticks a leaf
-const REST_SCOUR = 6;          // cells/s of updraft a leaf is unstuck by
-const REST_LIFT_TIME = 0.4;    // s the updraft carries a freshly unstuck leaf
-const REST_UPDRAFT_RATE = 8;   // 1/s the updraft ramps in at (no velocity snap)
-const REST_TOPPLE_RATE = 5;    // 1/s a landing leaf topples onto its resting spot
-const REST_SEAT_RATE = 10;     // 1/s to settle back onto a drift surface that sank
+const REST_BREEZE_DRAG = 0.3;
+const REST_CURSOR_DRAG = 0.45;
+const REST_DRAG_RATE = 5;
+const REST_MAX_SPEED = 6;
+const REST_LIFT_SPEED = 60;
+const REST_SCOUR = 6;
+const REST_LIFT_TIME = 0.4;
+const REST_UPDRAFT_RATE = 8;
+const REST_TOPPLE_RATE = 5;
+const REST_SEAT_RATE = 10;
 
 function beginSettle(l) {
   l.state = "settle";
@@ -95,20 +85,15 @@ function beginSettle(l) {
   l.settleDur = 0.35 + Math.random() * 0.3;
   l.restSquash = 0.3 + Math.random() * 0.35;
   l.restTilt = (Math.random() - 0.5) * 0.9;
-  // Where the leaf topples to as it settles, eased rather than jumped to.
   l.settleX = l.x + (Math.random() * 2 - 1) * 1.6;
-  // How high above the drift surface this leaf comes to lie; kept for the whole
-  // rest so the leaf can be re-seated whenever the drift under it shifts.
   l.restOffset = (0.3 + Math.random() * 1.0) - (l.dh * l.restSquash) / (2 * CELL.h);
-  // A leaf settles onto the drift, never up out of it: one that arrives below
-  // the surface stays where it landed instead of being hoisted into the air.
   l.restY = Math.max(groundTopAt(l) + l.restOffset, l.y);
   l.restLife = (6 + Math.random() * 12) * l.cfg.restMul;
   l.fadeAlpha = 1;
   l.dead = false;
   l.groundVx = 0;
   l.vy = 0;
-  deposit(l, 1); // this leaf joins the pile, raising it a little
+  deposit(l, 1);
   l.pileX = l.x;
   l.piled = true;
 }
@@ -148,7 +133,7 @@ function resetLeaf(l, y0, cfg) {
   l.baseAlpha = l.alpha;
   l.glow = 0;
   l.loose = Math.random() < 0.6;
-  l.state = "fall"; // fall -> settle -> rest -> fade (then removed)
+  l.state = "fall";
   l.squash = 1;
   l.dead = false;
   l.prevRect = undefined;
@@ -163,10 +148,6 @@ function resetLeaf(l, y0, cfg) {
   l.liftVy = 0;
 }
 
-/* Unstick a settled leaf. Nothing is added to its velocity here: it leaves the
-   floor with the speed it already had, and the updraft is handed over as a
-   target the fall then ramps towards (see updateLeaf), so the leaf rises off
-   the drift instead of being snapped into the air. */
 function liftLeaf(l, scour) {
   l.state = "fall";
   if (l.piled) unDeposit(l);
@@ -186,7 +167,7 @@ function updateLeaf(l, now, dt) {
     const itx = interactionWindAt(p.x, p.y, now);
     glowTarget = smoothstep(30, 150, Math.hypot(itx.u, itx.v));
   }
-  const gk = glowTarget > l.glow ? 9 : 2.8; // rise fast, fade gracefully
+  const gk = glowTarget > l.glow ? 9 : 2.8;
   l.glow = Math.min(MAX_GLOW, l.glow + (glowTarget - l.glow) * (1 - Math.exp(-gk * dt)));
   if (l.glow < 0.004) l.glow = 0;
 
@@ -210,8 +191,6 @@ function updateLeaf(l, now, dt) {
     const itx = interactionWindAt(p.x, p.y, now);
     const sp = Math.hypot(itx.u, itx.v);
 
-    // Every leaf on the floor feels the air passing over it, ambient breeze and
-    // pointer flow alike; friction caps how fast it can be shoved.
     const drag = clamp(
       (amb.u / cellPx) * REST_BREEZE_DRAG + (itx.u / cellPx) * REST_CURSOR_DRAG,
       -REST_MAX_SPEED,
@@ -219,12 +198,6 @@ function updateLeaf(l, now, dt) {
     );
     l.groundVx += (drag - l.groundVx) * (1 - Math.exp(-REST_DRAG_RATE * dt));
 
-    // Litter keeps landing on and blowing off the drift, so the surface beneath
-    // a settled leaf is never still. A leaf whose mound falls away settles back
-    // onto it rather than being left hanging in mid-air; one that is buried by
-    // later arrivals stays buried, which is what keeps the drift stacked. The
-    // drop is capped at the leaf's own fall speed so losing the drift under it
-    // reads as the leaf dropping, not as the leaf being yanked down.
     const seat = groundTopAt(l) + l.restOffset;
     if (l.y < seat) {
       const close = (seat - l.y) * (1 - Math.exp(-REST_SEAT_RATE * dt));
@@ -239,7 +212,7 @@ function updateLeaf(l, now, dt) {
       const rx = p.x - windCx, ry = p.y - windCy;
       const r2 = rx * rx + ry * ry;
       const R = l.cfg.cursorR * 1.5;
-      if (r2 < R * R) scour = 1 - Math.sqrt(r2) / R; // 1 at the vortex core
+      if (r2 < R * R) scour = 1 - Math.sqrt(r2) / R;
     }
     if (scour === null && sp > REST_LIFT_SPEED) scour = Math.min(1, sp / (REST_LIFT_SPEED * 2));
     if (scour === null && l.loose && ambSpeed > 5.5 && Math.random() < (ambSpeed - 5.5) * 0.6 * dt) {
@@ -270,9 +243,6 @@ function updateLeaf(l, now, dt) {
     return;
   }
 
-  // The leaf feels wind.js's airflow: ambient breeze (low-passed per leaf,
-  // scaled by windMul) plus the pointer's flow acting straight through
-  // momentum.
   const p = leafScreenPos(l);
   const amb = ambientWindAt(p.x, p.y, now);
   const itx = interactionWindAt(p.x, p.y, now);
@@ -292,12 +262,8 @@ function updateLeaf(l, now, dt) {
   const fieldVx = l.ambientWind * l.windAffinity + (itx.u / cellPx) * l.cfg.windMul;
   const fieldVy = (itx.v / cellPx) * l.cfg.windMul;
 
-  // Orientation-dependent drag: face-on falls slow, edge-on falls fast.
   const faceFrac = Math.cos(l.rot) ** 2;
   const termEff = l.term * (l.edgeFrac + (1 - l.edgeFrac) * faceFrac);
-  // Litter scoured off the ground is carried up by the airflow for a moment
-  // rather than launched: the updraft ramps in, then hands back to the fall,
-  // so the leaf is lifted up and set down instead of snapping off the floor.
   let vyWant = termEff + fieldVy * 0.7;
   let vyRate = l.vdrag;
   if (l.liftT > 0) {
@@ -311,15 +277,13 @@ function updateLeaf(l, now, dt) {
   l.vx += (fieldVx + plateDrift - l.vx) * (1 - Math.exp(-l.drag * dt));
   l.x += l.vx * dt;
 
-  // Leaf tornado: inward suction + tangential spin + central updraft, with
-  // the orbit's centripetal force supplied so leaves spiral inward.
   if (pointerStirs() && windVortex > 0.18) {
     const rx = p.x - windCx, ry = p.y - windCy;
     const r2 = rx * rx + ry * ry;
     const R = l.cfg.cursorR * 1.5;
     if (r2 < R * R) {
       const r = Math.sqrt(r2) || 1;
-      const fall = 1 - r / R; // 0 at the rim → 1 at the core
+      const fall = 1 - r / R;
       const fall2 = fall * fall;
       const dir = windSpin >= 0 ? 1 : -1;
       const cellPx = CELL.w || 1;
@@ -329,25 +293,22 @@ function updateLeaf(l, now, dt) {
       const lift = g0 * fall2 * 0.7;
       const tx = (-ry / r) * dir, ty = (rx / r) * dir;
       const nx = -rx / r, ny = -ry / r;
-      // Hold the orbit with the centripetal force it needs (capped).
       const vtx = (l.vx * cellPx) * tx + (l.vy * cellPx) * ty;
       const centrip = Math.min((vtx * vtx) / Math.max(r, 12) / cellPx, 170);
       const pull = suck + centrip;
       l.vx += (tx * tang + nx * pull) * dt;
       l.vy += (ty * tang + ny * pull - lift) * dt;
-      if (l.vy < -48) l.vy = -48; // the updraft tops out: a coherent column
+      if (l.vy < -48) l.vy = -48;
       l.rotV += (Math.random() * 2 - 1) * tang * 0.4 * dt;
     }
   }
 
-  // −sin(2r) restores the leaf broadside; turbulence scales with airspeed.
   const airspeed = Math.hypot(l.vx, l.vy);
   const restore = -Math.sin(2 * l.rot) * (0.9 + airspeed * 0.45);
   const stir = (noise1D(l.rotSeed + now * 0.0005) - 0.5) * l.torque * Math.max(0.35, airspeed * 0.12);
   l.rotV += (restore + stir) * dt;
   l.rotV *= Math.exp(-l.rotDamp * dt);
   l.rot += l.rotV * dt;
-  // The sprite is single-sided: swap its face as it rolls through edge-on.
   const cosSign = Math.cos(l.rot) < 0;
   if (cosSign !== l.cosSign) {
     l.flip = -l.flip;
@@ -359,8 +320,6 @@ function updateLeaf(l, now, dt) {
 
   if (l.cfg.ground > 0) {
     const top = groundTopAt(l);
-    // Only a leaf actually coming down can land: one scoured up off the drift
-    // starts out below the surface, and settling it there would undo the lift.
     if (l.vy >= 0 && l.y + l.dh / (2 * CELL.h) >= top) beginSettle(l);
     else if (l.y > ROWS + 1) resetLeaf(l, undefined, l.cfg);
   } else if (l.y > ROWS + 1) {
@@ -369,7 +328,6 @@ function updateLeaf(l, now, dt) {
 }
 
 function leafPxRect(l) {
-  // The glow halo extends past the sprite, so the dirty rect covers it too.
   const glowR = l.glow > 0.01 ? Math.max(l.dw, l.dh) * (0.9 + l.glow * 0.7) : 0;
   const r = Math.hypot(l.dw, l.dh) / 2 + 2 + glowR;
   const cx = l.x * CELL.w, cy = l.y * CELL.h;
@@ -422,7 +380,6 @@ function drawLeaf(ctx, l) {
   ctx.restore();
 }
 
-/* Hard ceiling on total leaves, so a long vortex can't collapse the frame rate. */
 const MAX_LEAVES_TOTAL = 240;
 
 function totalLeaves() {
@@ -451,8 +408,6 @@ function renderLeaves(now) {
       l.prevRect = leafPxRect(l);
     }
     for (const _ of landed) {
-      // Never exceed the global budget; if this layer's floor is full, retire
-      // the oldest resting leaf to make room.
       if (totalLeaves() >= MAX_LEAVES_TOTAL) continue;
       if (cfg.leaves.length >= cfg.count + cfg.maxSettled) {
         const i = cfg.leaves.findIndex((l) => l.state === "rest" || l.state === "fade");
@@ -474,7 +429,6 @@ function renderLeaves(now) {
       }
     }
   }
-  // Safety net: force the oldest airborne leaves to fade if still over budget.
   let excess = totalLeaves() - MAX_LEAVES_TOTAL;
   if (excess > 0) {
     for (const cfg of LEAF_LAYERS) {
@@ -505,8 +459,6 @@ function setLeafRest(key, left, top) {
 function prefillLeaves(key) {
   const cfg = leafLayer(key);
   cfg.leaves = [];
-  // Spread the litter down to this layer's own drift line, not the bottom of
-  // the frame: a leaf seeded below its ground would settle inside the drift.
   const span = cfg.ground > 0 ? cfg.ground : ROWS;
   for (let i = 0; i < cfg.count; i++) {
     const lf = {};
@@ -515,10 +467,9 @@ function prefillLeaves(key) {
   }
 }
 
-/* Drifts are emergent: a per-column height field grows wherever leaves land. */
-const PILE_BUMP = 1.5; // cells of height each leaf adds at its column
-const PILE_RADIUS = 3; // columns the bump spreads over (soft mound)
-const MAX_PILE = 9;    // cap so a drift can never tower unrealistically
+const PILE_BUMP = 1.5;
+const PILE_RADIUS = 3;
+const MAX_PILE = 9;
 
 function depositAt(cfg, x, sign) {
   const h = cfg.height;
@@ -536,9 +487,6 @@ function deposit(l, sign) {
   depositAt(l.cfg, l.x, sign);
 }
 
-/* Take this leaf's bump back out of the drift at the column it was laid down
-   on, not wherever the wind has since shoved the leaf: the drift records where
-   litter lands, so only the leaf's own contribution moves in and out of it. */
 function unDeposit(l) {
   depositAt(l.cfg, l.pileX === undefined ? l.x : l.pileX, -1);
 }

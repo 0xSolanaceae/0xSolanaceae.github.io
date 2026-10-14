@@ -1,6 +1,5 @@
 "use strict";
 
-/* Braille dot bit -> [sub-col, sub-row] in the 2x4 cell matrix. */
 const SPRITE_DOT_BITS = [
   [0, 0], [0, 1], [0, 2], [1, 0],
   [1, 1], [1, 2], [0, 3], [1, 3],
@@ -64,7 +63,6 @@ async function loadSprite(url) {
   let rows = lines.map((l) => l.padEnd(srcWidth, EMPTY));
   if (SPRITE_UPSCALE > 1) rows = upscaleSpriteRows(rows, srcWidth, SPRITE_UPSCALE);
   const width = Math.max(...rows.map((l) => l.length));
-  // Precompute flat cell lists [x, y, dot code] for both orientations.
   const cells = [];
   const cellsM = [];
   for (let y = 0; y < rows.length; y++) {

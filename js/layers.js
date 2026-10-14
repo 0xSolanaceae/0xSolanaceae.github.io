@@ -3,7 +3,6 @@
 function buildForestInstances(sprites, landTop, scaleMul = 1, spacingMul = 1, seed = 0, opts = {}) {
   const instances = [];
   const baseSpacing = 68;
-  // Instances only need a sprite's-width of padding past each edge.
   const pad = 440;
   let x = -pad;
   let i = 0;
@@ -21,7 +20,6 @@ function buildForestInstances(sprites, landTop, scaleMul = 1, spacingMul = 1, se
         spacing *= 1 + 1.25 * s;
       }
     }
-    // Snap sizes to 0.05 steps so neighbours reuse the same cached sprite.
     scale = Math.round(scale * 20) / 20;
     let spriteIdx = Math.floor(hash(i * 7.13 + 3.1 + seed * 5.29) * sprites.length) % sprites.length;
     if (spriteIdx === prevSpriteIdx) spriteIdx = (spriteIdx + 1) % sprites.length;
@@ -36,8 +34,6 @@ function buildForestInstances(sprites, landTop, scaleMul = 1, spacingMul = 1, se
   return instances;
 }
 
-/* Foreground land: overlapping, alternating-mirrored copies whose dot
-   bitmasks merge (bitwise OR) so no column ever runs empty while sliding. */
 function buildNear(sprite) {
   const w = W_TOTAL, h = ROWS;
   const LAND_BACK = 0;
@@ -60,8 +56,6 @@ function buildNear(sprite) {
     stamp(sprite, mirror, x + xJitter, h - sprite.height - LAND_BACK + yJitter);
     i++;
   }
-  // The jagged silhouette leaves holes near the viewer's feet; flood-fill
-  // each column solid below its first painted dot (bottom strip stays open).
   for (let x = 0; x < w; x++) {
     let top = -1;
     for (let y = 0; y < h; y++) {
@@ -77,7 +71,7 @@ function buildNear(sprite) {
 
 function buildLandBandInstances(sprite, scale, bottomRow, seed) {
   const instances = [];
-  const pad = 480; // >= largest scaled sprite width; edges never run empty
+  const pad = 480;
   const period = Math.max(4, Math.round(sprite.width * scale * 0.32));
   let x = -pad;
   let i = 0;
@@ -124,7 +118,6 @@ function downsampledAlpha(cols, rows, ...sources) {
   return alpha;
 }
 
-/* Layout of the last successful build, so a no-op resize can be skipped. */
 let lastLayout = "";
 
 function buildAll() {
@@ -136,16 +129,11 @@ function buildAll() {
   }
   spriteCanvasCache.clear();
 
-  // The art is sized in grid cells, so the cell size decides how much of the
-  // scene a stage shows: sized off the width alone, a portrait phone holds a
-  // third of the columns a landscape one does and magnifies one trunk across
-  // the screen. Shrink the cell until the grid is wide enough to compose, and
-  // let the row count grow so the scene still fills the height.
   const cellZoom = Math.min(
     1,
     Math.max(
-      rect.width / (cell.w * MIN_COLS), // widest cell that still composes
-      rect.height / (cell.h * MAX_ROWS) // smallest cell that bounds the rows
+      rect.width / (cell.w * MIN_COLS),
+      rect.height / (cell.h * MAX_ROWS)
     )
   );
   cell.w *= cellZoom;
@@ -154,8 +142,6 @@ function buildAll() {
   W = Math.max(36, Math.floor(rect.width / cell.w) - 1);
   ROWS = Math.max(MIN_ROWS, Math.min(MAX_ROWS, Math.floor(rect.height / cell.h)));
 
-  // A stage taller than the row cap allows would leave the grid floating as a
-  // strip in the middle, so scale the cell up until the rows fill it instead.
   if (Math.floor(rect.height / cell.h) > ROWS) {
     const zoom = rect.height / (ROWS * cell.h);
     cell.w *= zoom;
@@ -166,18 +152,10 @@ function buildAll() {
   CELL.w = cell.w;
   CELL.h = cell.h;
 
-  // A resize that leaves the cell metrics and the grid unchanged (a duplicate
-  // event, or a device-pixel-ratio change) needs no rebuild; skipping also
-  // keeps the current flock and leaf litter instead of resetting them. The
-  // motion preference is part of the layout because it decides whether leaves
-  // and flocks exist at all.
   const layout = `${CELL.w}|${CELL.h}|${W}|${ROWS}|${REDUCED_MOTION ? "still" : "full"}`;
   if (layout === lastLayout) return;
   lastLayout = layout;
 
-  // Anchor every layer one wrap-margin left of the viewport so the visible
-  // window sits in the middle of the framebuffer at rest. `--cw` is the
-  // measured cell width: `1ch` only matches it for monospaced faces.
   for (const key of Object.keys(LAYER_ELS)) {
     LAYER_ELS[key].style.setProperty("--base", MARGIN);
     LAYER_ELS[key].style.setProperty("--cw", `${CELL.w}px`);
@@ -200,9 +178,6 @@ function buildAll() {
   nextNearFlocksAt = performance.now() + 4000;
   lastNearBirdT = performance.now();
   metas["birds-near"] = { el: nearEl, shift: 0, lastS: undefined };
-  // Measure from the rest transform. The inline transform left over from the
-  // previous build still carries the old shift and cell size, and crow hit
-  // testing (crowScreenX/isHovering) is expressed relative to the rest rect.
   nearEl.style.transform = `translate3d(${-MARGIN * CELL.w}px, ${(-ROWS / 2) * CELL.h}px, 0)`;
   const birdsRect = nearEl.getBoundingClientRect();
   birdsRestLeft = birdsRect.left;
@@ -256,7 +231,6 @@ function buildAll() {
     );
   }
 
-  // A third, very-back tree band on its own high horizon line.
   const backHorizon = Math.floor(ROWS * 0.5);
   const forestBack = buildForestInstances(spriteTrees, backHorizon + TREE_SINK, 0.45, 0.3, 3);
   const FAR_GROUND_SCALE = 0.58;
@@ -308,20 +282,13 @@ function buildAll() {
 
   perchPoints = [];
 
-  // Hero foreground trunks; placed by content center (TRUNK_CENTER), not
-  // sprite left edge. They are sized against the grid's rows, like every other
-  // tree, so their height keeps its relationship to the forest behind them at
-  // any viewport; the width cap keeps one from overflowing a narrow stage.
-  const TRUNK_CENTER = 51; // content center offset inside the 2x trunk sprite
+  const TRUNK_CENTER = 51;
   const trunkScale = (sprite, rows, maxWidthFrac) =>
     Math.min(
       (ROWS * rows) / sprite.height,
       (rect.width * maxWidthFrac) / (sprite.width * CELL.w)
     );
   const placeTrunk = (sprite, frac, scale) => MARGIN + W * frac - TRUNK_CENTER * scale;
-  // Row targets are the landscape proportions the composition was tuned with;
-  // the width caps are the same proportions again, loosened to the most of the
-  // stage a trunk may take once the row target no longer fits.
   const heroScale = trunkScale(trunkA, 0.95, 0.85);
   const midScale = trunkScale(trunkB, 0.52, 0.47);
   const sideScale = trunkScale(trunkA, 0.575, 0.51);
@@ -338,14 +305,9 @@ function buildAll() {
     getComputedStyle(LAYER_ELS.fore).color, cell.w, cell.h, dpr, W_TOTAL, ROWS, 0.42, 0, 0, false
   );
 
-  // A tattered note nailed to the biggest hero trunk (see paper.js).
   metas.paper = { el: LAYER_ELS.paper };
   const paperTrunk = foreInstances[0];
   const paperAnchorX = paperTrunk.x + TRUNK_CENTER * paperTrunk.scale;
-  // ~40% up from the trunk's base, but always clamped inside its bark — the
-  // note hangs half its height either side of the nail, and on portrait phones
-  // the hero trunk's scale is clamped small, so anchoring by ROWS alone would
-  // nail the note above the wood.
   const paperTrunkTop = paperTrunk.baseY - paperTrunk.sprite.height * paperTrunk.scale;
   const paperHalfRows = PAPER_NOTE_ROWS / 2;
   const paperAnchorY = clamp(
@@ -355,8 +317,6 @@ function buildAll() {
   );
   renderNailedPaper(LAYER_ELS.paper, cell.w, cell.h, dpr, W_TOTAL, ROWS, paperAnchorX, paperAnchorY);
 
-  // Find REAL perch spots by sampling the mid-near canopy skyline, after the
-  // fore layer is painted so a perched crow is never hidden behind a trunk.
   perchPoints = [];
   {
     const nearAlpha = downsampledAlpha(W_TOTAL, ROWS, LAYER_ELS["mid-near"]);

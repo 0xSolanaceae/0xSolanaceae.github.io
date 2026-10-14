@@ -1,6 +1,6 @@
 "use strict";
 
-const EMPTY = "\u2800"; // empty-cell glyph used throughout the art assets
+const EMPTY = "\u2800";
 
 const stage = document.getElementById("stage");
 const LAYER_ELS = {
@@ -19,7 +19,6 @@ const LAYER_ELS = {
   near: document.getElementById("layer-near"),
 };
 
-/* Parallax depth per layer (1 = nearest / fastest). */
 const LAYERS = [
   { key: "far",        depth: 0.25, tiled: true },
   { key: "birds-far",  depth: 0.3,  tiled: true },
@@ -43,22 +42,14 @@ let W = 0;
 let ROWS = 0;
 let W_TOTAL = 0;
 const CELL = { w: 0, h: 0 };
-// Parallax only slides MAX_SHIFT_X cells, so each side needs that much bleed.
-const MARGIN = MAX_SHIFT_X + 8; // bleed cells on each side of the viewport
+const MARGIN = MAX_SHIFT_X + 8;
 const DPR_CAP = 1;
-/* The scene is authored as a landscape grid. A narrow stage holds barely a
- * third of its columns, which magnifies every tree, so it gets a smaller cell
- * (and more rows) instead of a magnified crop. The bounds cap the build cost,
- * which grows with both. */
-const MIN_COLS = 136; // fewest grid columns a stage may compose from
+const MIN_COLS = 136;
 const MIN_ROWS = 72;
 const MAX_ROWS = 240;
 
 const metas = {};
 
-/* Read live rather than once: a preference toggled in the OS should reach the
- * scene without a reload. Every consumer reads this flag as it runs, so set the
- * flag and let main.js rebuild. */
 const motionQuery =
   typeof matchMedia !== "undefined" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
 let REDUCED_MOTION = motionQuery ? motionQuery.matches : false;

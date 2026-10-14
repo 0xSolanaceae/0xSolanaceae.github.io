@@ -1,41 +1,41 @@
 "use strict";
 
-const CROW_FLY_LARGE = [ // row 5: large near-crow wing-flap cycle
+const CROW_FLY_LARGE = [
   [6, 251, 35, 26],
   [54, 251, 35, 26],
   [102, 251, 35, 26],
   [150, 251, 35, 26],
   [198, 251, 35, 26],
 ];
-const CROW_PERCH_POSES = [ // row 4: resting poses for perched near crows
+const CROW_PERCH_POSES = [
   [6, 202, 35, 25],
   [198, 202, 35, 25],
   [246, 202, 35, 25],
   [294, 202, 35, 25],
 ];
-const CROW_FLY_SMALL = [ // row 0: distant small-crow wing-flap cycle
+const CROW_FLY_SMALL = [
   [8, 8, 30, 26], [56, 8, 30, 26], [104, 8, 30, 26], [152, 8, 30, 26],
   [200, 8, 30, 26], [248, 8, 30, 26], [296, 8, 30, 26],
 ];
-const CROW_SMALL_GLIDE = [152, 58, 30, 26]; // row 1: small-crow glide pose
-const CROW_FLY_MED = [ // row 3: distant medium-crow wing-flap cycle
+const CROW_SMALL_GLIDE = [152, 58, 30, 26];
+const CROW_FLY_MED = [
   [9, 148, 30, 30], [57, 148, 30, 30], [105, 148, 30, 30], [153, 148, 30, 30],
   [201, 148, 30, 30], [249, 148, 30, 30], [297, 148, 30, 30],
 ];
-const CROW_GLIDE_MED = [ // row 2: distant medium-crow glide poses
+const CROW_GLIDE_MED = [
   [6, 117, 30, 18],
   [203, 109, 26, 21],
 ];
-const LARGE_GLIDE_FRAME = 1; // level-wing pose (row 5) held while a near crow glides
-const HAPTIC_STARTLE = 12;   // ms — a bird leaving a branch under a hand
+const LARGE_GLIDE_FRAME = 1;
+const HAPTIC_STARTLE = 12;
 
 const FLAP_LIFT = {
-  flap: 0.06,    // nose-up while flapping
-  bob: 0.035,    // per-wingbeat pitch bob
-  glide: -0.06,  // gentle glide nose-down
-  dive: -0.14,   // swoop dive (nose well down)
-  pullup: 0.12,  // swoop pull-up (nose up)
-  stall: 0.2,    // landing flare/stall
+  flap: 0.06,
+  bob: 0.035,
+  glide: -0.06,
+  dive: -0.14,
+  pullup: 0.12,
+  stall: 0.2,
 };
 const NEAR_FLAP_MS = [600, 1000];
 const NEAR_GLIDE_MS = [500, 1000];
@@ -59,10 +59,6 @@ let lastFarBirdT = 0;
 let birdsRestLeft = 0;
 let birdsRestTop = 0;
 
-/* Wing-cycle sprite for a crow. A frame counter that has drifted negative or
-   non-finite would index off the end of the sheet, and that throw happens
-   inside the animation loop, which then never re-arms itself — so the sheet is
-   indexed defensively and an unusable sprite is skipped rather than fatal. */
 function wingFrame(frames, n) {
   if (!frames.length || !Number.isFinite(n)) return frames[0];
   return frames[((Math.floor(n) % frames.length) + frames.length) % frames.length];
@@ -74,8 +70,6 @@ function drawCrow(ctx, b, now, img, bottom) {
   const py = (b.y + (b.bob ? Math.sin(b.bob + now * 0.003) * 0.7 : 0)) * CELL.h;
   ctx.save();
   ctx.translate(px, py);
-  // Body pitch (radians; positive = nose up). Applied BEFORE the horizontal
-  // mirror so a left- and right-flying crow pitch identically on screen.
   if (b.pitch) ctx.rotate(-b.pitch);
   if (b.dir < 0) ctx.scale(-1, 1);
   const dy = bottom ? -b.dh : -b.dh / 2;
@@ -83,8 +77,6 @@ function drawCrow(ctx, b, now, img, bottom) {
   ctx.restore();
 }
 
-/* Where a crow is committed to sit: the branch it is perched on, the branch it
-   is homing in on, or the branch it is hopping towards. Flyers have no slot. */
 function perchSlot(b) {
   if (b.type !== "percher") return null;
   if (b.phase === "approach") return { x: b.tx, y: b.ty };
@@ -92,10 +84,6 @@ function perchSlot(b) {
   return { x: b.x, y: b.y };
 }
 
-/* Two crows sharing a branch read as one doubled-up bird, so a candidate perch
-   is only offered when every other crow's drawn box is clear of it: both axes
-   must be clear, since two crows on branches directly above one another
-   overlap just as badly as two on the same one. */
 const PERCH_ASPECT = CROW_FLY_LARGE[0][3] / CROW_FLY_LARGE[0][2];
 
 function perchTaken(p, dw, self) {
@@ -155,7 +143,6 @@ function spawnPercher() {
   const cw = CROW_FLY_LARGE[0][2], ch = CROW_FLY_LARGE[0][3];
   const scale = 0.75 + Math.random() * 0.4;
   const dw = (cw * CELL.w) / 4.5 * scale;
-  // Every branch may already be taken; the caller flies a crow past instead.
   const p = pickPerchPoint(dw, null);
   if (!p) return false;
   const fromLeft = p.x > MARGIN + W / 2 ? Math.random() < 0.5 : true;
@@ -175,7 +162,6 @@ function spawnPercher() {
     pitch: 0,
     frame: Math.random() * CROW_FLY_LARGE.length,
     flap: 7,
-    // which resting pose from the sheet (row 4) this crow sits in
     perchIdx: Math.floor(Math.random() * CROW_PERCH_POSES.length),
   });
   return true;
@@ -187,9 +173,6 @@ function spawnNearFlocks(now) {
   if (room <= 0) { nextNearFlocksAt = now + 6000; return; }
   const n = Math.min(room, 1 + Math.floor(Math.random() * 2));
   for (let i = 0; i < n; i++) {
-    // Most arrivals land on a branch; only occasionally does one fly across,
-    // and a canopy with no clear branch left is flown over rather than
-    // squeezed into a slot some other crow already holds.
     const landed = perchPoints.length > 0 && Math.random() < 0.85 && spawnPercher();
     if (!landed) spawnNearFlyer();
   }
@@ -205,7 +188,7 @@ function updateFlyer(b, now, dt) {
     if (now >= b.phaseEnd) {
       b.phase = "glide";
       b.glideT = 0;
-      b.glideDur = (NEAR_GLIDE_MS[0] + Math.random() * (NEAR_GLIDE_MS[1] - NEAR_GLIDE_MS[0])) / 1000; // seconds
+      b.glideDur = (NEAR_GLIDE_MS[0] + Math.random() * (NEAR_GLIDE_MS[1] - NEAR_GLIDE_MS[0])) / 1000;
       b.phaseEnd = now + b.glideDur * 1000;
     }
     const wingPhase = (b.frame % CROW_FLY_LARGE.length) / CROW_FLY_LARGE.length;
@@ -273,7 +256,7 @@ function pickHopTarget(b) {
     const dy = Math.abs(p.y - b.y);
     if (dx < 6 || dx > 32 || dy > 14) continue;
     if (p.x === b.p.x && p.y === b.p.y) continue;
-    if (perchTaken(p, b.dw, b)) continue; // never hop onto an occupied branch
+    if (perchTaken(p, b.dw, b)) continue;
     const score = dx + dy;
     if (score < bestScore) { bestScore = score; best = p; }
   }
@@ -287,8 +270,8 @@ function startHop(b, target) {
   b.dir = target.x >= b.x ? 1 : -1;
   const dist = Math.hypot(target.x - b.x, target.y - b.y);
   b.hopT = 0;
-  b.hopDur = clamp(dist / 18, 0.55, 1.8); // quick flap, scaled to distance
-  b.hopArc = clamp(dist * 0.45, 2.4, 9.0); // peak arc height (cells)
+  b.hopDur = clamp(dist / 18, 0.55, 1.8);
+  b.hopArc = clamp(dist * 0.45, 2.4, 9.0);
 }
 
 function updateHopper(b, now, dt) {
@@ -298,8 +281,6 @@ function updateHopper(b, now, dt) {
   b.x = b.hopFrom.x + (b.hopTo.x - b.hopFrom.x) * t;
   b.y = lineY - Math.sin(t * Math.PI) * b.hopArc;
   b.frame += dt * b.flap;
-  // Nose-up on the rise, nose-down on the fall, level at both take-off and
-  // touchdown, so the pitch never snaps at the apex or on landing.
   b.pitch = (t < 0.5 ? 0.1 : 0.06) * Math.sin(t * Math.PI * 2);
   if (t >= 1) {
     b.x = b.hopTo.x; b.y = b.hopTo.y;
@@ -333,13 +314,9 @@ function updatePercher(b, now, dt, hovered) {
   } else if (b.phase === "perched") {
     b.pitch += (0 - b.pitch) * Math.min(1, dt * 8);
     if (hovered) {
-      // Only a hand that is actually in the air gets a tick. A cursor passing
-      // near a perch is not a deliberate act, and firing on every pass would
-      // make the feedback meaningless.
       if (PTR.down) haptic(HAPTIC_STARTLE);
       scarePercher(b);
     } else if (now >= b.perchUntil) {
-      // Sometimes hop to a nearby branch instead of flying off.
       if ((b.hops || 0) < 2 && Math.random() < 0.55) {
         const t = pickHopTarget(b);
         if (t) { b.hops = (b.hops || 0) + 1; startHop(b, t); }
@@ -373,8 +350,6 @@ function birdPxRect(b) {
 function renderBirdsNear(now) {
   if (!nearFrames || !nearBirdsCtx) return;
   if (REDUCED_MOTION) return;
-  // Clamped at both ends: a clock that steps backwards would otherwise run the
-  // wing cycle (and the flap/hop state machine) in reverse.
   const dt = lastNearBirdT ? clamp((now - lastNearBirdT) / 1000, 0, 0.05) : 0.016;
   lastNearBirdT = now;
   if (now >= nextNearFlocksAt) spawnNearFlocks(now);
@@ -393,8 +368,6 @@ function renderBirdsNear(now) {
       updatePercher(b, now, dt, hovered);
       const off = b.x < -20 || b.x > W_TOTAL + 20 || b.y < -20;
       if (b.phase === "depart" && off) { nearBirds.splice(i, 1); continue; }
-      // Approaching/departing crows are bottom-anchored so the crow settles
-      // onto the branch without a visible snap.
       if (b.phase === "perched") drawCrow(ctx, b, now, nearPerchFrames[b.perchIdx], true);
       else drawCrow(ctx, b, now, wingFrame(nearFrames, b.frame), true);
     } else {
@@ -411,10 +384,10 @@ function renderBirdsNear(now) {
 
 function spawnFarCrow() {
   const fromLeft = Math.random() < 0.5;
-  const small = Math.random() < 0.6; // mostly the tiny row-0 crows
+  const small = Math.random() < 0.6;
   const cw = small ? CROW_FLY_SMALL[0][2] : CROW_FLY_MED[0][2];
   const ch = small ? CROW_FLY_SMALL[0][3] : CROW_FLY_MED[0][3];
-  const dw = ((small ? 2.2 : 3.0) + Math.random() * 0.8) * CELL.w; // cells wide (far smaller than near)
+  const dw = ((small ? 2.2 : 3.0) + Math.random() * 0.8) * CELL.w;
   farBirds.push({
     x: fromLeft ? -20 : W_TOTAL + 20,
     y: 3 + Math.random() * (ROWS * 0.35),

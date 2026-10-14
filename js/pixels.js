@@ -1,7 +1,5 @@
 "use strict";
 
-/* Dot layout, precomputed once: dot bit n -> (sub-column, sub-row) of the
- * 2x4 cell matrix (normal and mirrored). */
 const DOT_LAYOUT = [
   [0, 0, 0], [1, 0, 1], [2, 0, 2], [3, 1, 0],
   [4, 1, 1], [5, 1, 2], [6, 0, 3], [7, 1, 3],
@@ -83,8 +81,6 @@ function renderCanvasLayer(canvas, mask, color, cellW, cellH, dpr, dotScale = 1)
   batcher.flush();
 }
 
-/* Each unique (sprite, scale, mirror, colour) is rasterised once into an
-   offscreen canvas and blitted for every instance that shares it. */
 const spriteCanvasCache = new Map();
 
 function spriteCanvas(sprite, scale, mirror, color, cellW, cellH, dotScale) {
