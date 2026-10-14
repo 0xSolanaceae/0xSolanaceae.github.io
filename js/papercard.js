@@ -14,8 +14,6 @@ const cardSheet = document.getElementById("papercard-sheet");
 const cardPaper = document.getElementById("papercard-paper");
 const cardBackdrop = document.getElementById("papercard-backdrop");
 const cardLinks = document.getElementById("papercard-links");
-const cardVeilTop = document.getElementById("papercard-veil-top");
-const cardVeilBottom = document.getElementById("papercard-veil-bottom");
 const noteLayer = document.getElementById("layer-paper");
 
 let cardPhase = "closed";
@@ -38,11 +36,10 @@ const HAPTIC_COMMIT = 8;
  * pinned in the tree — same eleven columns, same twelve rows — and only its size
  * follows the viewport.
  *
- * The writing is sized off the paper too, so that exactly PAPER_TEXT_ROWS lines
- * fill the writing box at every size. That is what lets the sheet be a page of
- * writing: the same 14 lines of text sit on it whether the note is 64px wide in
- * the tree or 416px on screen, and the tree's own ink is drawn to the same
- * count. */
+ * The writing is sized off the paper as well, so its four lines make up the same
+ * block of the sheet at any size: PAPER_TEXT_SPAN of the height, in
+ * PAPER_TEXT_LINES lines. That is what keeps the card and the ink on the note in
+ * the tree the same writing rather than two different sheets. */
 function sizeCardSheet() {
   if (!CELL.w || !CELL.h) return;
   const ratio = (PAPER_W_CELLS * CELL.w) / (PAPER_NOTE_ROWS * CELL.h);
@@ -54,13 +51,14 @@ function sizeCardSheet() {
   const h = Math.round(w / ratio);
   cardSheet.style.width = w + "px";
   cardSheet.style.height = h + "px";
-  const writeBox = h * (1 - PAPER_WRITE_TOP - PAPER_WRITE_BOTTOM);
-  cardSheet.style.setProperty("--card-fs", (writeBox / (PAPER_TEXT_ROWS * CARD_LINE)).toFixed(2) + "px");
+  const lineBox = (h * PAPER_TEXT_SPAN) / PAPER_TEXT_LINES;
+  cardSheet.style.setProperty("--card-fs", (lineBox / CARD_LINE).toFixed(2) + "px");
   // The writing box's margins, in px, from the same fractions the tree's ink uses.
   // Percent padding would resolve against the sheet's width, which is not what a
-  // top and bottom margin mean here.
-  cardSheet.style.setProperty("--card-pad-top", (h * PAPER_WRITE_TOP).toFixed(2) + "px");
-  cardSheet.style.setProperty("--card-pad-bottom", (h * PAPER_WRITE_BOTTOM).toFixed(2) + "px");
+  // top and bottom margin mean here. They are symmetric, so the block that is
+  // centred inside them lands on the middle of the sheet.
+  cardSheet.style.setProperty("--card-pad-top", (h * PAPER_WRITE_INSET_Y).toFixed(2) + "px");
+  cardSheet.style.setProperty("--card-pad-bottom", (h * PAPER_WRITE_INSET_Y).toFixed(2) + "px");
   cardSheet.style.setProperty("--card-pad-x", (w * PAPER_WRITE_INSET_X).toFixed(2) + "px");
 }
 
@@ -196,22 +194,6 @@ function hitPaper(px, py) {
   return Math.abs(rx) <= PAPER_INFO.w / 2 + slack && Math.abs(ry) <= PAPER_INFO.h / 2 + slack;
 }
 
-/* Filler for the sheet: the note is one page of writing, and the four ways to
- * reach someone are the lines on it that matter. Written out here rather than
- * generated, so the page is the same page every time it is opened.
- *
- * The account is longer than the sheet holds. It is set as far as it fits at a
- * legible size, the way a page of writing actually runs out of room. */
-const PAPERCARD_VEIL_TOP =
-  "Although the convoy incident was the first Creature encounter to be properly " +
-  "recorded, legends of a mysterious beast inhabiting the region preceded it. Natives " +
-  "of the area warned never to enter The Forest so as not to anger the monster that " +
-  "roamed it.";
-
-const PAPERCARD_VEIL_BOTTOM =
-  "Abstract sketches drawn by these early inhabitants depicting an unidentified " +
-  "creature have been recovered throughout the area. An example of this is shown above.";
-
 /* One line, written the way it would be on paper: a label, then the thing itself. */
 function makeItem(key, text, href, downloadName) {
   const li = document.createElement("li");
@@ -236,8 +218,6 @@ function makeItem(key, text, href, downloadName) {
 
 function buildCard() {
   card.setAttribute("aria-label", PAPERCARD_DATA.name);
-  cardVeilTop.textContent = PAPERCARD_VEIL_TOP;
-  cardVeilBottom.textContent = PAPERCARD_VEIL_BOTTOM;
   cardLinks.append(
     makeItem("github:", PAPERCARD_DATA.github, "https://github.com/" + PAPERCARD_DATA.github),
     makeItem("discord:", PAPERCARD_DATA.discord, PAPERCARD_DATA.discordUrl),

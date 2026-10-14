@@ -294,16 +294,17 @@ body {
     pointer-events: none;
 }
 
-/* The margins and the line rhythm below are the note's own writing box: the same
-   7% inset top and bottom, and the same 1.6 line height, that
-   sizeCardSheet() uses to size the writing and that drawInk() uses to draw the
-   illegible ink on the note in the tree. */
+/* The four lines sit as one block in the middle of the sheet, where the note in
+   the tree carries its ink. */
 #papercard-content {
     position: relative;
     z-index: 1;
     align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     width: 100%;
-    padding: var(--card-pad-top, 11%) var(--card-pad-x, 9%) var(--card-pad-bottom, 7%);
+    padding: var(--card-pad-top, 8%) var(--card-pad-x, 9%) var(--card-pad-bottom, 8%);
     overflow: hidden;
     text-align: left;
 }
@@ -316,18 +317,6 @@ body {
 
 #papercard-links li {
     display: block;
-}
-
-/* The rest of the page. Faded, because it is not what the note is for, and out of
-   the reading order, because nobody should have to hear it. */
-.papercard-veil {
-    margin: 0;
-    font-family: "Caveat", "Segoe Script", cursive;
-    font-size: var(--card-fs, 1.5rem);
-    line-height: 1.6;
-    letter-spacing: 0;
-    color: rgba(67, 51, 30, 0.5);
-    user-select: none;
 }
 
 .papercard-link {

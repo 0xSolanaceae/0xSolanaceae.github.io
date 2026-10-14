@@ -3,16 +3,14 @@
 const PAPER_SEED = 401;
 const PAPER_W_CELLS = 11;
 const PAPER_NOTE_ROWS = 12;
-/* How the writing sits on the sheet: a margin at the top and bottom, filled with
-   this many lines. The note in the tree draws its illegible ink from these same
-   numbers, so it is the same page of writing that the card opens into.
- *
- * The top margin is the deeper one because the nail is pinned through the sheet
- * just above the writing: it has to sit in blank paper, not under a line. */
-const PAPER_WRITE_TOP = 0.115;
-const PAPER_WRITE_BOTTOM = 0.07;
+/* How the writing sits on the sheet: this many lines, occupying this fraction of
+   the sheet's height and centred on it. The note in the tree draws its illegible
+   ink from the same two numbers, so it is the same sheet of writing that the card
+   opens into — four short lines in the middle of a page. */
+const PAPER_TEXT_LINES = 4;
+const PAPER_TEXT_SPAN = 0.36;
 const PAPER_WRITE_INSET_X = 0.085;  // of the width
-const PAPER_TEXT_ROWS = 14;
+const PAPER_WRITE_INSET_Y = 0.07;   // of the height; the block is centred inside it
 const INK = "#2b2113";
 const INK_ALPHA = 0.74;
 
@@ -149,12 +147,11 @@ function drawWord(ctx, x0, y0, len, slant, inkW, u, rng) {
 
 function drawInk(ctx, w, h, u, rng) {
   const inkW = Math.max(0.7, u * 0.07);
-  const lines = PAPER_TEXT_ROWS;
-  const top = h * PAPER_WRITE_TOP;
-  const bottom = h * (1 - PAPER_WRITE_BOTTOM);
+  const lines = PAPER_TEXT_LINES;
+  const top = h * (0.5 - PAPER_TEXT_SPAN / 2);
+  const span = h * PAPER_TEXT_SPAN;
   const left = w * PAPER_WRITE_INSET_X;
   const right = w * (1 - PAPER_WRITE_INSET_X);
-  const span = bottom - top;
 
   for (let li = 0; li < lines; li++) {
     const baseY = top + (span * (li + 0.5)) / lines + (rng() - 0.5) * u * 0.4;
