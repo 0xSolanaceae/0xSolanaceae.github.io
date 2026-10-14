@@ -1,6 +1,5 @@
 "use strict";
 
-let windMouseX = -9999, windMouseY = -9999;
 let windVx = 0, windVy = 0;
 let windSpeed = 0;            // its magnitude, shared with leaves.js
 let lastWindX = -9999, lastWindY = -9999, lastWindT = 0;
@@ -39,6 +38,8 @@ const WAKE_TRAIL_MS = 900;
 // Tornado detector (derived from what was actually shed):
 const SWIRL_WINDOW = 1100;
 const SWIRL_TIGHT = 160;
+const TORNADO_FELT = 0.35;  // strength at which the column reads as one, and is felt
+const HAPTIC_TORNADO = 18;  // ms
 const AMB_BASE = 1.4;
 const AMB_GUST = 8.2;
 
@@ -120,8 +121,8 @@ function turbVector(x, y, now, mean) {
 
 /* Potential-flow dipole field of the pointer as a translating body. */
 function dipoleWindAt(x, y) {
-  if (windMouseX < -999) return { u: 0, v: 0 };
-  const dx = x - windMouseX, dy = y - windMouseY;
+  if (!pointerStirs()) return { u: 0, v: 0 };
+  const dx = x - PTR.x, dy = y - PTR.y;
   const d2 = dx * dx + dy * dy;
   if (d2 < 1) return { u: windVx, v: windVy };
   if (d2 > DIPOLE_RANGE * DIPOLE_RANGE) return { u: 0, v: 0 };
@@ -175,13 +176,6 @@ function ambientWindAt(x, y, now) {
   return { u: mean.u + turb.u, v: mean.v + turb.v };
 }
 
-/* True while the pointer is held down and stirring the air. A mouse that is
-   only hovering is not a pointer here: the leaves answer to a press, not to a
-   hand passing over them. */
-function pointerStirs() {
-  return windMouseX > -999;
-}
-
 /* Flow created only by the cursor (used for leaf glow/scatter). Inside an
    active shaken tornado the pointer's own drag is spent driving the vortex, so
    it is absorbed there and what remains is the inflow — which is what draws
@@ -212,8 +206,8 @@ function interactionWindAt(x, y, now) {
 
 function emitBlob(gamma, now) {
   const nx = windVx / (windSpeed || 1), ny = windVy / (windSpeed || 1);
-  const bx = windMouseX - nx * 8 + (Math.random() * 8 - 4);
-  const by = windMouseY - ny * 8 + (Math.random() * 8 - 4);
+  const bx = PTR.x - nx * 8 + (Math.random() * 8 - 4);
+  const by = PTR.y - ny * 8 + (Math.random() * 8 - 4);
   blobs.push({ x: bx, y: by, gamma, rc2: BLOB_RC0 * BLOB_RC0, age: 0 });
   shedLog.push({ x: bx, y: by, gamma, t: now });
   if (blobs.length > BLOB_MAX) blobs.shift();
@@ -221,7 +215,7 @@ function emitBlob(gamma, now) {
 }
 
 function shedVorticity(now, dt, ax, ay) {
-  if (windMouseX < -999 || windSpeed < SHED_SPEED_MIN) return;
+  if (!pointerStirs() || windSpeed < SHED_SPEED_MIN) return;
   if (windSpeed > 260) {
     wakePhase += (windSpeed / (2 * PTR_RADIUS)) * 2 * Math.PI * WAKE_ST * dt;
     wakeAcc += Math.sin(wakePhase) * WAKE_K * windSpeed * windSpeed * dt;
@@ -337,22 +331,26 @@ function updateUpdraft(now, dt) {
   // Whichever is stronger owns the column; a shaken column trails the hand and
   // carries no spin of its own. Without a pointer on the page there is nothing
   // for it to trail, so only a circulation can hold the column then.
-  const travelling = windMouseX > -999 && shimmy > swirl;
+  const travelling = pointerStirs() && shimmy > swirl;
   const target = travelling ? shimmy : swirl;
   const k = 1 - Math.exp(-6 * dt);
+  const wasTornado = windTornado;
   windVortex += (target - windVortex) * k;
   windSpin += ((travelling ? 0 : spinT) - windSpin) * k;
   windTornado += ((travelling ? shimmy : 0) - windTornado) * k;
+  // The moment the column forms is the one worth feeling, and it has to land on
+  // the frame the leaves actually fly — same tick, same instant.
+  if (wasTornado <= TORNADO_FELT && windTornado > TORNADO_FELT) haptic(HAPTIC_TORNADO);
   if (target > 0) {
     const kc = 1 - Math.exp(-(travelling ? SHIMMY_TRACK_RATE : 6) * dt);
-    windCx += ((travelling ? windMouseX : cx) - windCx) * kc;
-    windCy += ((travelling ? windMouseY : cy) - windCy) * kc;
+    windCx += ((travelling ? PTR.x : cx) - windCx) * kc;
+    windCy += ((travelling ? PTR.y : cy) - windCy) * kc;
   }
 }
 
 function updateWind(now) {
   const dt = lastWindT ? Math.min(0.1, Math.max(0.016, (now - lastWindT) / 1000)) : 0.016;
-  if (windMouseX < -999) {
+  if (!pointerStirs()) {
     windVx = 0;
     windVy = 0;
     windSpeed = 0;
@@ -362,8 +360,8 @@ function updateWind(now) {
     return;
   }
   if (lastWindT) {
-    const ix = clamp((windMouseX - lastWindX) / dt, -VMAX, VMAX);
-    const iy = clamp((windMouseY - lastWindY) / dt, -VMAX, VMAX);
+    const ix = clamp((PTR.x - lastWindX) / dt, -VMAX, VMAX);
+    const iy = clamp((PTR.y - lastWindY) / dt, -VMAX, VMAX);
     const k = 1 - Math.exp(-12 * dt);
     const nvx = windVx + (ix - windVx) * k;
     const nvy = windVy + (iy - windVy) * k;
@@ -374,21 +372,19 @@ function updateWind(now) {
     windSpeed = Math.hypot(windVx, windVy);
     shedVorticity(now, dt, ax, ay);
     if (windSpeed > 50) {
-      wakeTrail.push({ x: windMouseX, y: windMouseY, vx: windVx, vy: windVy, t: now });
+      wakeTrail.push({ x: PTR.x, y: PTR.y, vx: windVx, vy: windVy, t: now });
       while (wakeTrail.length && now - wakeTrail[0].t > WAKE_TRAIL_MS) wakeTrail.shift();
       if (wakeTrail.length > 96) wakeTrail.shift();
     }
   }
   lastWindT = now;
-  lastWindX = windMouseX;
-  lastWindY = windMouseY;
+  lastWindX = PTR.x;
+  lastWindY = PTR.y;
   updateBlobs(now, dt);
   updateUpdraft(now, dt);
 }
 
 function resetWind() {
-  windMouseX = -9999;
-  windMouseY = -9999;
   windVx = 0;
   windVy = 0;
   windSpeed = 0;
@@ -409,31 +405,21 @@ function resetWind() {
 
 // The hand moves air only while it is pressed down, so a bare hover stirs
 // nothing: the flow starts at the press and runs until the button (or finger)
-// comes up. Pointer events carry the button bitmask, which covers a held mouse
-// button and a touching finger alike.
-window.addEventListener("pointermove", (e) => {
-  if (!(e.buttons & 1)) return;
-  windMouseX = e.clientX;
-  windMouseY = e.clientY;
+// comes up. PTR carries the button state, which covers a held mouse button and
+// a touching finger alike.
+onPointer("move", () => {
+  if (!PTR.down) return;
   ensureTicking();
 });
-// Seed the pointer at the press so the first frame's flow is anchored where the
-// hand landed rather than at wherever it was last released.
-window.addEventListener("pointerdown", (e) => {
-  if (e.button !== 0) return;
-  windMouseX = e.clientX;
-  windMouseY = e.clientY;
-  ensureTicking();
-});
-document.documentElement.addEventListener("pointerleave", () => {
-  resetWind();
-  ensureTicking();
-});
+// Seed the position at the press rather than at wherever the hand was last
+// released: pointer.js has already moved PTR there by the time this runs.
+onPointer("press", ensureTicking);
+onPointer("leave", endPointerWind);
 // A lifted finger does not reliably fire a pointerleave, so a release resets
 // explicitly either way: the wind stops the moment the pointer lets go.
+onPointer("release", endPointerWind);
+
 function endPointerWind() {
   resetWind();
   ensureTicking();
 }
-window.addEventListener("pointerup", endPointerWind);
-window.addEventListener("pointercancel", endPointerWind);

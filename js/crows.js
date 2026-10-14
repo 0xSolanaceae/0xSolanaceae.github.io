@@ -27,6 +27,7 @@ const CROW_GLIDE_MED = [ // row 2: distant medium-crow glide poses
   [203, 109, 26, 21],
 ];
 const LARGE_GLIDE_FRAME = 1; // level-wing pose (row 5) held while a near crow glides
+const HAPTIC_STARTLE = 12;   // ms — a bird leaving a branch under a hand
 
 const FLAP_LIFT = {
   flap: 0.06,    // nose-up while flapping
@@ -55,7 +56,6 @@ let nextNearFlocksAt = 0;
 let lastNearBirdT = 0;
 let nextFarFlocksAt = 0;
 let lastFarBirdT = 0;
-let mouseX = -9999, mouseY = -9999;
 let birdsRestLeft = 0;
 let birdsRestTop = 0;
 
@@ -237,16 +237,17 @@ function crowScreenX(b) {
 }
 
 function isHovering(b) {
+  if (!PTR.present) return false;
   const sx = crowScreenX(b);
   const sy = birdsRestTop + b.y * CELL.h - b.dh / 2;
   const r = Math.max(30, b.dw * 0.9);
-  return Math.hypot(mouseX - sx, mouseY - sy) < r;
+  return Math.hypot(PTR.x - sx, PTR.y - sy) < r;
 }
 
 function scarePercher(b) {
   b.phase = "depart";
   const sx = crowScreenX(b);
-  b.dir = mouseX < sx ? 1 : -1;
+  b.dir = PTR.x < sx ? 1 : -1;
   b.speed = 4;
   b.accel = 32 + Math.random() * 20;
   b.maxSpeed = 44 + Math.random() * 16;
@@ -331,8 +332,13 @@ function updatePercher(b, now, dt, hovered) {
     }
   } else if (b.phase === "perched") {
     b.pitch += (0 - b.pitch) * Math.min(1, dt * 8);
-    if (hovered) scarePercher(b);
-    else if (now >= b.perchUntil) {
+    if (hovered) {
+      // Only a hand that is actually in the air gets a tick. A cursor passing
+      // near a perch is not a deliberate act, and firing on every pass would
+      // make the feedback meaningless.
+      if (PTR.down) haptic(HAPTIC_STARTLE);
+      scarePercher(b);
+    } else if (now >= b.perchUntil) {
       // Sometimes hop to a nearby branch instead of flying off.
       if ((b.hops || 0) < 2 && Math.random() < 0.55) {
         const t = pickHopTarget(b);

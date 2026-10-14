@@ -85,6 +85,10 @@ async function init() {
   buildAll();
   loading.classList.add("hidden");
   window.addEventListener("resize", debounce(buildAll, 150));
+  window.addEventListener("motionprefchange", () => {
+    buildAll();
+    ensureTicking();
+  });
   ensureTicking();
 
   if (!builtWithRealFont) {

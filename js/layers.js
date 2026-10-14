@@ -168,8 +168,10 @@ function buildAll() {
 
   // A resize that leaves the cell metrics and the grid unchanged (a duplicate
   // event, or a device-pixel-ratio change) needs no rebuild; skipping also
-  // keeps the current flock and leaf litter instead of resetting them.
-  const layout = `${CELL.w}|${CELL.h}|${W}|${ROWS}`;
+  // keeps the current flock and leaf litter instead of resetting them. The
+  // motion preference is part of the layout because it decides whether leaves
+  // and flocks exist at all.
+  const layout = `${CELL.w}|${CELL.h}|${W}|${ROWS}|${REDUCED_MOTION ? "still" : "full"}`;
   if (layout === lastLayout) return;
   lastLayout = layout;
 

@@ -56,6 +56,16 @@ const MAX_ROWS = 240;
 
 const metas = {};
 
-const REDUCED_MOTION =
-  typeof matchMedia !== "undefined" &&
-  matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Read live rather than once: a preference toggled in the OS should reach the
+ * scene without a reload. Every consumer reads this flag as it runs, so set the
+ * flag and let main.js rebuild. */
+const motionQuery =
+  typeof matchMedia !== "undefined" ? matchMedia("(prefers-reduced-motion: reduce)") : null;
+let REDUCED_MOTION = motionQuery ? motionQuery.matches : false;
+
+if (motionQuery && motionQuery.addEventListener) {
+  motionQuery.addEventListener("change", (e) => {
+    REDUCED_MOTION = e.matches;
+    window.dispatchEvent(new Event("motionprefchange"));
+  });
+}

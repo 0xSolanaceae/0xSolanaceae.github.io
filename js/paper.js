@@ -285,9 +285,14 @@ function renderNailedPaper(canvas, cellW, cellH, dpr, worldCells, rowsCells, anc
     const cos = Math.cos(tilt), sin = Math.sin(tilt);
     const dx = w / 2 - nailX;
     const dy = h / 2 - nailY;
+    // cx/cy is the note's centre and nx/ny its nail, both in this canvas's
+    // local px: papercard.js grows the card out of the nail, so it needs the
+    // exact point the note is pinned by, not just where it sits.
     PAPER_INFO = {
       cx: anchorXCell * cellW + (dx * cos - dy * sin - dx),
       cy: anchorYCell * cellH + (dx * sin + dy * cos - dy),
+      nx: anchorXCell * cellW + nailX - w / 2,
+      ny: anchorYCell * cellH + nailY - h / 2,
       w, h, tilt,
     };
   }

@@ -49,6 +49,17 @@ body {
         linear-gradient(112deg, #f6e6bd 0%, #e8bf7d 34%, #bd8043 65%, #70421f 100%);
 }
 
+/* The scene is a surface you can push, so a press reads as taking hold of it;
+   the note is a link, so it keeps its pointer even while pressed. */
+#stage:active {
+    cursor: grabbing;
+}
+
+#stage.note-hover,
+#stage.note-hover:active {
+    cursor: pointer;
+}
+
 #stage::before {
     content: "";
     position: absolute;
@@ -210,6 +221,13 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
     #light { animation: none; }
+    /* A gentler equivalent rather than a frozen one: the spinner still reports
+       that work is happening, without the rotation. */
+    .spinner { animation: pulse 1.4s ease-in-out infinite alternate; }
+    @keyframes pulse {
+        from { opacity: 0.35; }
+        to   { opacity: 1; }
+    }
 }
 
 #papercard {
@@ -220,8 +238,14 @@ body {
     pointer-events: none;
 }
 
-#papercard.open {
+/* `showing` covers the press, before the note is committed: the card has to be
+   painted while it is still growing, but it must not eat pointer events — the
+   release still belongs to the note. */
+#papercard.showing {
     visibility: visible;
+}
+
+#papercard.open {
     pointer-events: auto;
 }
 
@@ -235,16 +259,18 @@ body {
     cursor: pointer;
 }
 
+/* Sized in rem so a reader's larger text size gets a bigger sheet to sit in,
+   and the content's own em padding grows with it. `will-change` is set by the
+   transition itself, since a hidden sheet needs no compositor layer. */
 #papercard-sheet {
     position: absolute;
     left: 0;
     top: 0;
     display: flex;
     align-items: center;
-    width: min(420px, 88vw);
-    min-height: min(580px, 92vh);
+    width: min(28rem, 88vw);
+    min-height: min(38rem, 92vh);
     color: #2a2012;
-    will-change: transform, opacity;
 }
 
 /* Focused only programmatically (tabindex="-1"), never a tab stop, so no ring
@@ -265,7 +291,7 @@ body {
     position: relative;
     z-index: 1;
     width: 100%;
-    padding: 48px 44px;
+    padding: 3em 2.75em;
     text-transform: lowercase;
     text-align: center;
 }
@@ -274,9 +300,12 @@ body {
     display: inline-block;
     margin: 0 0 18px;
     font-family: "Libron", serif;
-    font-size: clamp(19px, 3.2vmin, 24px);
+    font-size: clamp(1.15rem, 3.2vmin, 1.5rem);
     font-weight: 400;
-    letter-spacing: 0;
+    /* Tracking is size-specific: large text reads loose at zero, small text
+       needs a hair more. Leading tightens as the type grows. */
+    line-height: 1.15;
+    letter-spacing: -0.01em;
     text-align: left;
     color: #2a2012;
     text-shadow:
@@ -307,8 +336,9 @@ body {
     border: 0;
     background: transparent;
     font-family: "Libron", serif;
-    font-size: clamp(13px, 2.4vmin, 16px);
+    font-size: clamp(0.8125rem, 2.4vmin, 1rem);
     line-height: 1.4;
+    letter-spacing: 0.01em;
     color: #2a2012;
     text-align: left;
     text-decoration: none;
@@ -330,4 +360,51 @@ body {
     text-shadow:
         0 0.4px 0.7px rgba(42, 32, 18, 0.28),
         0 0 1.6px rgba(42, 32, 18, 0.14);
+}
+
+/* The scene's translucency is atmospheric light rather than material, so there
+   is little to solidify; what does sit over content is the modal scrim, and the
+   one overlay that competes with motion is the grain. */
+@media (prefers-reduced-transparency: reduce) {
+    #papercard-backdrop {
+        background: rgba(10, 6, 2, 0.92);
+    }
+
+    #stage::before {
+        opacity: 0.16;
+    }
+}
+
+/* Near-solid surfaces and fully opaque type: nothing has to be read through a
+   veil or carried by a soft shadow. */
+@media (prefers-contrast: more) {
+    #stage {
+        background: #f2dfae;
+    }
+
+    #haze,
+    #light,
+    #groundlight,
+    #vignette {
+        opacity: 0.4;
+    }
+
+    #stage::before {
+        opacity: 0.14;
+    }
+
+    #papercard-backdrop {
+        background: rgba(6, 4, 1, 0.94);
+    }
+
+    #papercard-name,
+    .papercard-val {
+        color: #140e06;
+        text-shadow: none;
+    }
+
+    .papercard-link:focus-visible {
+        outline: 2px solid #140e06;
+        outline-offset: 2px;
+    }
 }
