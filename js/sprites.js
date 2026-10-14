@@ -89,7 +89,7 @@ function loadImage(url) {
   });
 }
 
-function tintSprite(sheet, src, color, alpha) {
+function tintSprite(sheet, src, color, alpha, keep = 0) {
   const c = document.createElement("canvas");
   c.width = src[2];
   c.height = src[3];
@@ -100,6 +100,62 @@ function tintSprite(sheet, src, color, alpha) {
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.globalCompositeOperation = "source-over";
+  if (keep > 0) {
+    ctx.globalAlpha = keep;
+    ctx.drawImage(sheet, src[0], src[1], src[2], src[3], 0, 0, src[2], src[3]);
+  }
   ctx.globalAlpha = 1;
   return c;
+}
+
+function dotMaskFromImage(sheet, src, cols, rows, cut, litLum) {
+  const dw = cols * 2;
+  const dh = rows * 4;
+  const c = document.createElement("canvas");
+  c.width = dw;
+  c.height = dh;
+  const ctx = c.getContext("2d");
+  ctx.drawImage(sheet, src[0], src[1], src[2], src[3], 0, 0, dw, dh);
+  const data = ctx.getImageData(0, 0, dw, dh).data;
+  const dots = [];
+  const lit = [];
+  const present = new Set();
+  let footRow = 0;
+  for (let y = 0; y < dh; y++) {
+    for (let x = 0; x < dw; x++) {
+      const i = (y * dw + x) * 4;
+      if (data[i + 3] < cut) continue;
+      dots.push([x, y]);
+      present.add(x + "," + y);
+      if (y > footRow) footRow = y;
+      const lum = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+      if (lum >= litLum) lit.push([x, y]);
+    }
+  }
+  const rim = [];
+  for (let i = 0; i < dots.length; i++) {
+    const x = dots[i][0];
+    const y = dots[i][1];
+    if (x === 0 || y === 0) continue;
+    if (present.has((x - 1) + "," + y) && present.has(x + "," + (y - 1))) continue;
+    rim.push([x - 1, y - 1]);
+  }
+  let fx0 = dw;
+  let fx1 = -1;
+  for (let i = 0; i < lit.length; i++) {
+    if (lit[i][1] < footRow - 2) continue;
+    if (lit[i][0] < fx0) fx0 = lit[i][0];
+    if (lit[i][0] > fx1) fx1 = lit[i][0];
+  }
+  if (fx1 < 0) {
+    fx0 = Math.round(dw * 0.4);
+    fx1 = Math.round(dw * 0.6);
+  }
+  return {
+    dots, lit, rim,
+    footRow,
+    footSpan: [fx0, fx1],
+    dotCols: dw,
+    dotRows: dh,
+  };
 }

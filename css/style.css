@@ -107,9 +107,15 @@ body {
 }
 
 #layer-far         { color: #b5945f; z-index: 1; }
-#layer-birds-far   { color: #3a4357; z-index: 4; }
+#layer-birds-far   { color: #7a6a52; z-index: 4; }
 #layer-leaves-far  { z-index: 4; }
-#layer-birds-near  { color: #1c2333; z-index: 8; }
+#layer-birds-near  {
+    color: #26221b;
+    z-index: 8;
+    --crow-lit: #6f6757;
+    --crow-rim: #b5945f;
+    --crow-shade: rgba(24, 16, 6, 0.38);
+}
 #layer-mid-far     { color: #887044; z-index: 5; }
 #layer-land-mid    { color: #75603a; z-index: 6; }
 #layer-mid-near    { color: #55452a; z-index: 7; }

@@ -41,9 +41,14 @@ const NEAR_FLAP_MS = [600, 1000];
 const NEAR_GLIDE_MS = [500, 1000];
 
 let crowImg = null;
-let nearFrames = null;
-let nearPerchFrames = null;
 let farFrames = null;
+let crowArt = null;
+
+const CROW_COLS = 11;
+const CROW_ROWS = 6;
+const CROW_DOT_CUT = 40;
+const CROW_LIT_LUM = 0.3;
+const CROW_OCCLUDE_DOTS = 2;
 
 const MAX_NEAR_BIRDS = 6;
 const MAX_FAR_BIRDS = 6;
@@ -62,6 +67,97 @@ let birdsRestTop = 0;
 function wingFrame(frames, n) {
   if (!frames.length || !Number.isFinite(n)) return frames[0];
   return frames[((Math.floor(n) % frames.length) + frames.length) % frames.length];
+}
+
+function crowAspect() {
+  return (CROW_ROWS * CELL.h) / (CROW_COLS * CELL.w);
+}
+
+function crowMetrics(scale) {
+  const dw = CROW_COLS * CELL.w * scale;
+  return { dw, dh: dw * crowAspect() };
+}
+
+function buildCrowArt() {
+  const nearCss = getComputedStyle(LAYER_ELS["birds-near"]);
+  const farColor = getComputedStyle(LAYER_ELS["birds-far"]).color;
+  const mask = (r) => dotMaskFromImage(crowImg, r, CROW_COLS, CROW_ROWS, CROW_DOT_CUT, CROW_LIT_LUM);
+  crowArt = {
+    body: nearCss.color,
+    lit: nearCss.getPropertyValue("--crow-lit").trim() || nearCss.color,
+    rim: nearCss.getPropertyValue("--crow-rim").trim() || nearCss.color,
+    shade: nearCss.getPropertyValue("--crow-shade").trim() || "rgba(24, 16, 6, 0.38)",
+    perch: CROW_PERCH_POSES.map(mask),
+    fly: CROW_FLY_LARGE.map(mask),
+  };
+  crowArt.glide = crowArt.fly[LARGE_GLIDE_FRAME];
+  farFrames = {
+    small: CROW_FLY_SMALL.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
+    smallGlide: tintSprite(crowImg, CROW_SMALL_GLIDE, farColor, 0.85, 0.2),
+    med: CROW_FLY_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
+    medGlide: CROW_GLIDE_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85, 0.2)),
+  };
+}
+
+function dotPass(ctx, dots, left, top, dotW, dotH, color) {
+  if (!dots.length) return;
+  ctx.fillStyle = color;
+  const batcher = pathBatcher(ctx);
+  for (let i = 0; i < dots.length; i++) {
+    batcher.rect(left + dots[i][0] * dotW, top + dots[i][1] * dotH, dotW, dotH);
+  }
+  batcher.flush();
+}
+
+function crowPose(ctx, b, px, py) {
+  ctx.translate(px, py);
+  if (b.pitch) ctx.rotate(-b.pitch);
+  if (b.dir < 0) ctx.scale(-1, 1);
+}
+
+function canopyOver(ctx, x, y, w, h) {
+  const src = LAYER_ELS["mid-near"];
+  if (!src.width || w <= 0 || h <= 0) return;
+  const k = ctx.getTransform().a;
+  const sx = x * k;
+  const sy = y * k;
+  if (sx < 0 || sy < 0 || sx + w * k > src.width || sy + h * k > src.height) return;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.clip();
+  ctx.globalCompositeOperation = "source-atop";
+  ctx.drawImage(src, sx, sy, w * k, h * k, x, y, w, h);
+  ctx.restore();
+}
+
+function drawNearCrow(ctx, b, now, mask, perched) {
+  if (!mask || !crowArt) return;
+  const px = b.x * CELL.w;
+  const py = (b.y + (b.bob ? Math.sin(b.bob + now * 0.003) * 0.7 : 0)) * CELL.h;
+  const dotW = b.dw / mask.dotCols;
+  const dotH = b.dh / mask.dotRows;
+  const left = -b.dw / 2;
+  const top = perched ? -(mask.footRow + 1) * dotH : -b.dh / 2;
+
+  ctx.save();
+  crowPose(ctx, b, px, py);
+  dotPass(ctx, mask.rim, left - dotW, top - dotH, dotW, dotH, crowArt.rim);
+  dotPass(ctx, mask.dots, left, top, dotW, dotH, crowArt.body);
+  ctx.restore();
+
+  if (perched) {
+    canopyOver(ctx, px - b.dw / 2 - dotW, py - CROW_OCCLUDE_DOTS * dotH, b.dw + dotW * 2, (CROW_OCCLUDE_DOTS + 1) * dotH);
+  }
+
+  ctx.save();
+  crowPose(ctx, b, px, py);
+  dotPass(ctx, mask.lit, left, top, dotW, dotH, crowArt.lit);
+  if (perched) {
+    ctx.fillStyle = crowArt.shade;
+    ctx.fillRect(left + (mask.footSpan[0] - 1) * dotW, 0, (mask.footSpan[1] - mask.footSpan[0] + 3) * dotW, dotH);
+  }
+  ctx.restore();
 }
 
 function drawCrow(ctx, b, now, img, bottom) {
@@ -84,10 +180,8 @@ function perchSlot(b) {
   return { x: b.x, y: b.y };
 }
 
-const PERCH_ASPECT = CROW_FLY_LARGE[0][3] / CROW_FLY_LARGE[0][2];
-
 function perchTaken(p, dw, self) {
-  const dh = dw * PERCH_ASPECT;
+  const dh = dw * crowAspect();
   for (const o of nearBirds) {
     if (o === self) continue;
     const slot = perchSlot(o);
@@ -108,9 +202,8 @@ function pickPerchPoint(dw, self) {
 
 function spawnNearFlyer() {
   const fromLeft = Math.random() < 0.5;
-  const scale = 0.8 + Math.random() * 0.4;
-  const cw = CROW_FLY_LARGE[0][2], ch = CROW_FLY_LARGE[0][3];
-  const dw = (cw * CELL.w) / 4.5 * scale;
+  const scale = 0.8 + Math.random() * 0.15;
+  const { dw, dh } = crowMetrics(scale);
   nearBirds.push({
     type: "fly",
     x: fromLeft ? -20 : W_TOTAL + 20,
@@ -135,14 +228,12 @@ function spawnNearFlyer() {
     bob: Math.random() * Math.PI * 2,
     pitch: 0,
     dw,
-    dh: (dw * ch) / cw,
+    dh,
   });
 }
 
 function spawnPercher() {
-  const cw = CROW_FLY_LARGE[0][2], ch = CROW_FLY_LARGE[0][3];
-  const scale = 0.75 + Math.random() * 0.4;
-  const dw = (cw * CELL.w) / 4.5 * scale;
+  const { dw, dh } = crowMetrics(0.8 + Math.random() * 0.15);
   const p = pickPerchPoint(dw, null);
   if (!p) return false;
   const fromLeft = p.x > MARGIN + W / 2 ? Math.random() < 0.5 : true;
@@ -155,7 +246,7 @@ function spawnPercher() {
     dir: fromLeft ? 1 : -1,
     speed: 36 + Math.random() * 20,
     dw,
-    dh: (dw * ch) / cw,
+    dh,
     perchUntil: 0,
     hops: 0,
     bob: 0,
@@ -348,7 +439,7 @@ function birdPxRect(b) {
 }
 
 function renderBirdsNear(now) {
-  if (!nearFrames || !nearBirdsCtx) return;
+  if (!crowArt || !nearBirdsCtx) return;
   if (REDUCED_MOTION) return;
   const dt = lastNearBirdT ? clamp((now - lastNearBirdT) / 1000, 0, 0.05) : 0.016;
   lastNearBirdT = now;
@@ -368,15 +459,13 @@ function renderBirdsNear(now) {
       updatePercher(b, now, dt, hovered);
       const off = b.x < -20 || b.x > W_TOTAL + 20 || b.y < -20;
       if (b.phase === "depart" && off) { nearBirds.splice(i, 1); continue; }
-      if (b.phase === "perched") drawCrow(ctx, b, now, nearPerchFrames[b.perchIdx], true);
-      else drawCrow(ctx, b, now, wingFrame(nearFrames, b.frame), true);
+      if (b.phase === "perched") drawNearCrow(ctx, b, now, crowArt.perch[b.perchIdx], true);
+      else drawNearCrow(ctx, b, now, wingFrame(crowArt.fly, b.frame), true);
     } else {
       updateFlyer(b, now, dt);
       if (b.x < -20 || b.x > W_TOTAL + 20) { nearBirds.splice(i, 1); continue; }
-      const img = b.phase === "glide"
-        ? nearFrames[LARGE_GLIDE_FRAME]
-        : wingFrame(nearFrames, b.frame);
-      drawCrow(ctx, b, now, img, false);
+      const mask = b.phase === "glide" ? crowArt.glide : wingFrame(crowArt.fly, b.frame);
+      drawNearCrow(ctx, b, now, mask, false);
     }
     b.prevRect = birdPxRect(b);
   }

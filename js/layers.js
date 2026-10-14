@@ -319,35 +319,52 @@ function buildAll() {
 
   perchPoints = [];
   {
-    const nearAlpha = downsampledAlpha(W_TOTAL, ROWS, LAYER_ELS["mid-near"]);
+    const DOT_COLS = W_TOTAL * 2;
+    const DOT_ROWS = ROWS * 4;
+    const nearDots = downsampledAlpha(DOT_COLS, DOT_ROWS, LAYER_ELS["mid-near"]);
     const occAlpha = downsampledAlpha(W_TOTAL, ROWS, LAYER_ELS.fore);
-    const x0 = Math.max(0, MARGIN - 8);
-    const x1 = Math.min(W_TOTAL - 1, MARGIN + W + 8);
-    const MIN_PERCH_Y = 12;
-    for (let cx = x0; cx <= x1; cx++) {
-      let topY = -1;
-      for (let cy = 0; cy < ROWS; cy++) {
-        if (nearAlpha[cy * W_TOTAL + cx] > 0) { topY = cy; break; }
+    const SOLID = 128;
+    const RUN = 6;
+    const RUN_BELOW = 4;
+    const MIN_PERCH_DOT_Y = 26;
+    const LEDGE_SCAN_DOTS = 24;
+    const LEDGE_FIRST_DOT = 4;
+    const solid = (dx, dy) => dx >= 0 && dx < DOT_COLS && dy >= 0 && dy < DOT_ROWS && nearDots[dy * DOT_COLS + dx] >= SOLID;
+    const runAt = (dx, dy) => {
+      let n = 0;
+      for (let k = dx - 4; k <= dx + 4; k++) if (solid(k, dy)) n++;
+      return n;
+    };
+    const dx0 = Math.max(0, (MARGIN - 8) * 2);
+    const dx1 = Math.min(DOT_COLS - 1, (MARGIN + W + 8) * 2);
+    for (let dx = dx0; dx <= dx1; dx += 2) {
+      let topDot = -1;
+      for (let dy = 0; dy < DOT_ROWS; dy++) {
+        if (nearDots[dy * DOT_COLS + dx] > 0) { topDot = dy; break; }
       }
-      if (topY < 0) continue;
-      const perchY = Math.round(Math.max(topY + 4, MIN_PERCH_Y + (hash(cx * 0.618 + 3.1) - 0.5) * 4));
-      if (perchY >= ROWS - 4) continue;
-      let rowSupport = 0;
-      for (let sx = cx - 2; sx <= cx + 2; sx++) {
-        if (sx >= 0 && sx < W_TOTAL && nearAlpha[perchY * W_TOTAL + sx] > 0) rowSupport++;
+      if (topDot < 0) continue;
+      let ledge = -1;
+      const scanEnd = Math.min(DOT_ROWS - 13, topDot + LEDGE_SCAN_DOTS);
+      for (let dy = Math.max(topDot + LEDGE_FIRST_DOT, MIN_PERCH_DOT_Y); dy <= scanEnd; dy++) {
+        if (runAt(dx, dy) < RUN) continue;
+        if (runAt(dx, dy + 2) < RUN_BELOW) continue;
+        ledge = dy;
+        break;
       }
-      if (rowSupport < 3 || perchY + 2 >= ROWS || nearAlpha[(perchY + 2) * W_TOTAL + cx] === 0) continue;
-      const dx0 = Math.max(0, cx - 4);
-      const dx1 = Math.min(W_TOTAL - 1, cx + 4);
-      const dy0 = Math.max(0, perchY - 8);
-      const dy1 = Math.min(ROWS - 1, perchY + 2);
+      if (ledge < 0) continue;
+      const cx = Math.round(dx / 2);
+      const cy = Math.round(ledge / 4);
+      const ox0 = Math.max(0, cx - 4);
+      const ox1 = Math.min(W_TOTAL - 1, cx + 4);
+      const oy0 = Math.max(0, cy - 8);
+      const oy1 = Math.min(ROWS - 1, cy + 2);
       let covered = false;
-      for (let y = dy0; y <= dy1 && !covered; y++) {
-        for (let x = dx0; x <= dx1; x++) {
+      for (let y = oy0; y <= oy1 && !covered; y++) {
+        for (let x = ox0; x <= ox1; x++) {
           if (occAlpha[y * W_TOTAL + x] > 0) { covered = true; break; }
         }
       }
-      if (!covered) perchPoints.push({ x: cx, y: perchY + 0.5 });
+      if (!covered) perchPoints.push({ x: cx, y: ledge / 4 });
     }
   }
 

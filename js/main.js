@@ -56,16 +56,7 @@ async function init() {
     trunkB = { ...t2, solid: t2Solid };
     crowImg = crow;
     leafImg = leaf;
-    const nearColor = getComputedStyle(LAYER_ELS["birds-near"]).color;
-    nearFrames = CROW_FLY_LARGE.map((r) => tintSprite(crowImg, r, nearColor, 0.95));
-    nearPerchFrames = CROW_PERCH_POSES.map((r) => tintSprite(crowImg, r, nearColor, 0.95));
-    const farColor = getComputedStyle(LAYER_ELS["birds-far"]).color;
-    farFrames = {
-      small: CROW_FLY_SMALL.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
-      smallGlide: tintSprite(crowImg, CROW_SMALL_GLIDE, farColor, 0.85),
-      med: CROW_FLY_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
-      medGlide: CROW_GLIDE_MED.map((r) => tintSprite(crowImg, r, farColor, 0.85)),
-    };
+    buildCrowArt();
   } catch (err) {
     console.error("Could not load assets:", err);
     loading.classList.add("hidden");
