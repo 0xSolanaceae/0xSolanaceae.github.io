@@ -294,15 +294,17 @@ body {
     pointer-events: none;
 }
 
-/* The margins and the spread of the lines follow the ink on the note in the tree,
-   whose four scribbled lines these four replace. */
+/* The margins and the line rhythm below are the note's own writing box: the same
+   7% inset top and bottom, and the same 1.6 line height, that
+   sizeCardSheet() uses to size the writing and that drawInk() uses to draw the
+   illegible ink on the note in the tree. */
 #papercard-content {
     position: relative;
     z-index: 1;
     align-self: stretch;
-    display: flex;
     width: 100%;
-    padding: 13% 10%;
+    padding: var(--card-pad-top, 11%) var(--card-pad-x, 9%) var(--card-pad-bottom, 7%);
+    overflow: hidden;
     text-transform: lowercase;
     text-align: left;
 }
@@ -311,24 +313,29 @@ body {
     list-style: none;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
-    justify-content: center;
 }
 
 #papercard-links li {
     display: block;
 }
 
-/* Handwriting sits on its own rhythm — the lines of a note nearly touch, the way
-   they do when a hand writes them in one sitting. Spreading them to fill the page
-   is what made this read as a form. */
+/* The rest of the page. Faded, because it is not what the note is for, and out of
+   the reading order, because nobody should have to hear it. */
+.papercard-veil {
+    margin: 0;
+    font-family: "Caveat", "Segoe Script", cursive;
+    font-size: var(--card-fs, 1.5rem);
+    line-height: 1.6;
+    letter-spacing: 0;
+    color: rgba(67, 51, 30, 0.5);
+    user-select: none;
+}
+
 .papercard-link {
     display: block;
     font-family: "Caveat", "Segoe Script", cursive;
     font-size: var(--card-fs, 1.5rem);
-    line-height: 1.5;
+    line-height: 1.6;
     letter-spacing: 0;
     color: inherit;
     /* Ink wicking into rough paper: a hairline of bleed, not a drop shadow. */

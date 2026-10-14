@@ -3,6 +3,16 @@
 const PAPER_SEED = 401;
 const PAPER_W_CELLS = 11;
 const PAPER_NOTE_ROWS = 12;
+/* How the writing sits on the sheet: a margin at the top and bottom, filled with
+   this many lines. The note in the tree draws its illegible ink from these same
+   numbers, so it is the same page of writing that the card opens into.
+ *
+ * The top margin is the deeper one because the nail is pinned through the sheet
+ * just above the writing: it has to sit in blank paper, not under a line. */
+const PAPER_WRITE_TOP = 0.115;
+const PAPER_WRITE_BOTTOM = 0.07;
+const PAPER_WRITE_INSET_X = 0.085;  // of the width
+const PAPER_TEXT_ROWS = 16;
 const INK = "#2b2113";
 const INK_ALPHA = 0.74;
 
@@ -139,11 +149,11 @@ function drawWord(ctx, x0, y0, len, slant, inkW, u, rng) {
 
 function drawInk(ctx, w, h, u, rng) {
   const inkW = Math.max(0.7, u * 0.07);
-  const lines = 4;
-  const top = u * 0.8;
-  const bottom = h - u * 0.9;
-  const left = u * 0.75;
-  const right = w - u * 0.75;
+  const lines = PAPER_TEXT_ROWS;
+  const top = h * PAPER_WRITE_TOP;
+  const bottom = h * (1 - PAPER_WRITE_BOTTOM);
+  const left = w * PAPER_WRITE_INSET_X;
+  const right = w * (1 - PAPER_WRITE_INSET_X);
   const span = bottom - top;
 
   for (let li = 0; li < lines; li++) {
@@ -201,31 +211,9 @@ function paintPaperSheet(ctx, sheet, w, h, u, rng) {
   ctx.save();
   ctx.clip(sheet);
 
-  // Grime creeps in from every edge, because the borders of a sheet are what gets
-  // handled. Drawn as one band per edge, so the corners — where two bands meet —
-  // come out dirtiest, the way they do on paper that has sat out.
-  const band = Math.min(w, h) * 0.3;
-  const edgeBand = (x0, y0, x1, y1) => {
-    const g = ctx.createLinearGradient(x0, y0, x1, y1);
-    g.addColorStop(0, `rgba(${PAPER_GRIME}, 0.29)`);
-    g.addColorStop(0.45, `rgba(${PAPER_GRIME}, 0.10)`);
-    g.addColorStop(1, `rgba(${PAPER_GRIME}, 0)`);
-    return g;
-  };
-  const bands = [
-    [0, 0, 0, band, 0, 0, w, band],
-    [0, h, 0, h - band, 0, h - band, w, band],
-    [0, 0, band, 0, 0, 0, band, h],
-    [w, 0, w - band, 0, w - band, 0, band, h],
-  ];
-  for (const [gx0, gy0, gx1, gy1, rx, ry, rw, rh] of bands) {
-    ctx.fillStyle = edgeBand(gx0, gy0, gx1, gy1);
-    ctx.fillRect(rx, ry, rw, rh);
-  }
-
   // Sun from one side, which is what bleached the sheet unevenly in the first place.
   const light = ctx.createLinearGradient(0, 0, w, h);
-  light.addColorStop(0, "rgba(255, 251, 235, 0.3)");
+  light.addColorStop(0, "rgba(255, 251, 235, 0.22)");
   light.addColorStop(0.45, "rgba(0, 0, 0, 0)");
   light.addColorStop(1, "rgba(120, 92, 52, 0.2)");
   ctx.fillStyle = light;
@@ -316,15 +304,37 @@ function paintPaperSheet(ctx, sheet, w, h, u, rng) {
     ctx.restore();
   }
 
-  // A last pale edge, so the sheet still reads as a surface rather than a stain.
-  ctx.strokeStyle = "rgba(255, 250, 232, 0.24)";
-  ctx.lineWidth = Math.max(1, u * 0.14);
-  ctx.stroke(sheet);
+  // Grime creeps in from every edge, because the borders of a sheet are what gets
+  // handled. Drawn last, and as one band per edge so the corners — where two
+  // bands meet — come out dirtiest. It has to go over the bleaching rather than
+  // under it, or the light from one side leaves a rim brighter than the middle of
+  // the sheet, which is backwards for paper this old.
+  const band = Math.min(w, h) * 0.3;
+  const edgeBand = (x0, y0, x1, y1) => {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, `rgba(${PAPER_GRIME}, 0.34)`);
+    g.addColorStop(0.45, `rgba(${PAPER_GRIME}, 0.11)`);
+    g.addColorStop(1, `rgba(${PAPER_GRIME}, 0)`);
+    return g;
+  };
+  const bands = [
+    [0, 0, 0, band, 0, 0, w, band],
+    [0, h, 0, h - band, 0, h - band, w, band],
+    [0, 0, band, 0, 0, 0, band, h],
+    [w, 0, w - band, 0, w - band, 0, band, h],
+  ];
+  for (const [gx0, gy0, gx1, gy1, rx, ry, rw, rh] of bands) {
+    ctx.fillStyle = edgeBand(gx0, gy0, gx1, gy1);
+    ctx.fillRect(rx, ry, rw, rh);
+  }
 
   ctx.restore();
 
-  ctx.strokeStyle = `rgba(104, 78, 40, 0.42)`;
-  ctx.lineWidth = Math.max(0.5, u * 0.04);
+  // The rim of a sheet that has sat out is its dirtiest part, so the edge is
+  // darkened here rather than highlighted — a pale line along a tear reads as
+  // new paper, which is the one thing this sheet is not.
+  ctx.strokeStyle = `rgba(88, 64, 32, 0.5)`;
+  ctx.lineWidth = Math.max(0.6, u * 0.05);
   ctx.stroke(sheet);
 }
 

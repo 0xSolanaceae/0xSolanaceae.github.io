@@ -14,6 +14,8 @@ const cardSheet = document.getElementById("papercard-sheet");
 const cardPaper = document.getElementById("papercard-paper");
 const cardBackdrop = document.getElementById("papercard-backdrop");
 const cardLinks = document.getElementById("papercard-links");
+const cardVeilTop = document.getElementById("papercard-veil-top");
+const cardVeilBottom = document.getElementById("papercard-veil-bottom");
 const noteLayer = document.getElementById("layer-paper");
 
 let cardPhase = "closed";
@@ -28,13 +30,19 @@ const cardSpring = makeSpring({
 const CARD_NAIL_ROWS = 1.05;
 const CARD_MAX_H = 0.74;  // share of the viewport's height the note may take
 const CARD_MAX_W = 0.84;
+const CARD_LINE = 1.6;    // line-height of the writing, matched in the stylesheet
 const CARD_ARRIVE = 5;       // progress at which the sheet is fully there (and the note fully gone)
 const HAPTIC_COMMIT = 8;
 
 /* The note is a slip of paper, not a panel: it keeps the proportions of the one
  * pinned in the tree — same eleven columns, same twelve rows — and only its size
- * follows the viewport. Its writing is set against that, so the paper is what
- * decides the shape and the text fits itself to the paper. */
+ * follows the viewport.
+ *
+ * The writing is sized off the paper too, so that exactly PAPER_TEXT_ROWS lines
+ * fill the writing box at every size. That is what lets the sheet be a page of
+ * writing: the same 14 lines of text sit on it whether the note is 64px wide in
+ * the tree or 416px on screen, and the tree's own ink is drawn to the same
+ * count. */
 function sizeCardSheet() {
   if (!CELL.w || !CELL.h) return;
   const ratio = (PAPER_W_CELLS * CELL.w) / (PAPER_NOTE_ROWS * CELL.h);
@@ -43,11 +51,17 @@ function sizeCardSheet() {
   let w = maxH * ratio;
   if (w > maxW) w = maxW;
   w = Math.round(w);
+  const h = Math.round(w / ratio);
   cardSheet.style.width = w + "px";
-  cardSheet.style.height = Math.round(w / ratio) + "px";
-  // The writing is sized off the paper, not the viewport, so the note is the same
-  // note at any size — and the lines keep a hand's spacing at every size.
-  cardSheet.style.setProperty("--card-fs", (w * 0.078).toFixed(2) + "px");
+  cardSheet.style.height = h + "px";
+  const writeBox = h * (1 - PAPER_WRITE_TOP - PAPER_WRITE_BOTTOM);
+  cardSheet.style.setProperty("--card-fs", (writeBox / (PAPER_TEXT_ROWS * CARD_LINE)).toFixed(2) + "px");
+  // The writing box's margins, in px, from the same fractions the tree's ink uses.
+  // Percent padding would resolve against the sheet's width, which is not what a
+  // top and bottom margin mean here.
+  cardSheet.style.setProperty("--card-pad-top", (h * PAPER_WRITE_TOP).toFixed(2) + "px");
+  cardSheet.style.setProperty("--card-pad-bottom", (h * PAPER_WRITE_BOTTOM).toFixed(2) + "px");
+  cardSheet.style.setProperty("--card-pad-x", (w * PAPER_WRITE_INSET_X).toFixed(2) + "px");
 }
 
 function setNoteHover(on) {
@@ -182,6 +196,21 @@ function hitPaper(px, py) {
   return Math.abs(rx) <= PAPER_INFO.w / 2 + slack && Math.abs(ry) <= PAPER_INFO.h / 2 + slack;
 }
 
+/* Filler for the sheet: the note is one page of writing, and the four ways to
+ * reach someone are the lines on it that matter. Written out here rather than
+ * generated, so the page is the same page every time it is opened. */
+const PAPERCARD_VEIL_TOP =
+  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
+  "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
+  "exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat duis aute irure " +
+  "dolor in reprehenderit in voluptate velit esse.";
+
+const PAPERCARD_VEIL_BOTTOM =
+  "Dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
+  "pariatur, excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia " +
+  "deserunt mollit anim id est laborum sed ut perspiciatis unde omnis iste natus error " +
+  "sit voluptatem accusantium doloremque laudantium.";
+
 /* One line, written the way it would be on paper: a label, then the thing itself. */
 function makeItem(key, text, href, downloadName) {
   const li = document.createElement("li");
@@ -206,6 +235,8 @@ function makeItem(key, text, href, downloadName) {
 
 function buildCard() {
   card.setAttribute("aria-label", PAPERCARD_DATA.name);
+  cardVeilTop.textContent = PAPERCARD_VEIL_TOP;
+  cardVeilBottom.textContent = PAPERCARD_VEIL_BOTTOM;
   cardLinks.append(
     makeItem("github:", PAPERCARD_DATA.github, "https://github.com/" + PAPERCARD_DATA.github),
     makeItem("discord:", PAPERCARD_DATA.discord, PAPERCARD_DATA.discordUrl),
