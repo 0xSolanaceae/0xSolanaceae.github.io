@@ -305,7 +305,6 @@ body {
     width: 100%;
     padding: var(--card-pad-top, 11%) var(--card-pad-x, 9%) var(--card-pad-bottom, 7%);
     overflow: hidden;
-    text-transform: lowercase;
     text-align: left;
 }
 

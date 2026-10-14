@@ -198,16 +198,19 @@ function hitPaper(px, py) {
 
 /* Filler for the sheet: the note is one page of writing, and the four ways to
  * reach someone are the lines on it that matter. Written out here rather than
- * generated, so the page is the same page every time it is opened. */
+ * generated, so the page is the same page every time it is opened.
+ *
+ * The account is longer than the sheet holds. It is set as far as it fits at a
+ * legible size, the way a page of writing actually runs out of room. */
 const PAPERCARD_VEIL_TOP =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
-  "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
-  "exercitation ullamco laboris nisi ut aliquip.";
+  "Although the convoy incident was the first Creature encounter to be properly " +
+  "recorded, legends of a mysterious beast inhabiting the region preceded it. Natives " +
+  "of the area warned never to enter The Forest so as not to anger the monster that " +
+  "roamed it.";
 
 const PAPERCARD_VEIL_BOTTOM =
-  "Dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
-  "pariatur, excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia " +
-  "deserunt mollit anim id est laborum sed ut perspiciatis unde omnis.";
+  "Abstract sketches drawn by these early inhabitants depicting an unidentified " +
+  "creature have been recovered throughout the area. An example of this is shown above.";
 
 /* One line, written the way it would be on paper: a label, then the thing itself. */
 function makeItem(key, text, href, downloadName) {
