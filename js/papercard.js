@@ -72,12 +72,12 @@ function measureCard() {
   const base = card.getBoundingClientRect();
   const sw = cardSheet.offsetWidth;
   const sh = cardSheet.offsetHeight;
-  const layer = LAYER_ELS.paper.getBoundingClientRect();
+  const s = (metas.paper && metas.paper.shift) || 0;
   const u = Math.max(8, sh / PAPER_NOTE_ROWS);
   const ox = sw / 2;
   const oy = u * CARD_NAIL_ROWS;
-  const nailX = layer.left + PAPER_INFO.nx - base.left;
-  const nailY = layer.top + PAPER_INFO.ny - base.top;
+  const nailX = paperRestLeft - s * CELL.w + PAPER_INFO.nx - base.left;
+  const nailY = paperRestTop + PAPER_INFO.ny - base.top;
   return {
     ox,
     oy,
@@ -178,8 +178,8 @@ function finishClose() {
 }
 
 function paperCenter() {
-  const r = LAYER_ELS.paper.getBoundingClientRect();
-  return { x: r.left + PAPER_INFO.cx, y: r.top + PAPER_INFO.cy };
+  const s = (metas.paper && metas.paper.shift) || 0;
+  return { x: paperRestLeft - s * CELL.w + PAPER_INFO.cx, y: paperRestTop + PAPER_INFO.cy };
 }
 
 function hitPaper(px, py) {
@@ -190,7 +190,8 @@ function hitPaper(px, py) {
   const s = Math.sin(-PAPER_INFO.tilt);
   const rx = dx * c - dy * s;
   const ry = dx * s + dy * c;
-  const slack = 10;
+  // A fingertip needs more room than a cursor tip, and the sheet is small.
+  const slack = PTR.touch ? 18 : 10;
   return Math.abs(rx) <= PAPER_INFO.w / 2 + slack && Math.abs(ry) <= PAPER_INFO.h / 2 + slack;
 }
 
@@ -303,9 +304,34 @@ onPointer("leave", () => {
 
 cardBackdrop.addEventListener("click", closeCard);
 
+/* The note is a canvas; this is the same act, for a keyboard. */
+noteBtn.addEventListener("click", () => {
+  if (cardPhase !== "closed" || !PAPER_INFO) return;
+  beginCard();
+  commitCard();
+});
+
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
-  if (cardPhase === "pressing" || cardPhase === "open") closeCard();
+  if (e.key === "Escape") {
+    if (cardPhase === "pressing" || cardPhase === "open") closeCard();
+    return;
+  }
+  if (e.key !== "Tab" || cardPhase !== "open") return;
+  // The note is modal: tabbing must not walk back out into the scene behind it.
+  const links = cardLinks.querySelectorAll("a");
+  if (!links.length) return;
+  const first = links[0];
+  const last = links[links.length - 1];
+  const active = document.activeElement;
+  if (e.shiftKey) {
+    if (active === first || active === cardSheet || !card.contains(active)) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else if (active === last || !card.contains(active)) {
+    e.preventDefault();
+    first.focus();
+  }
 });
 
 window.addEventListener("resize", () => {

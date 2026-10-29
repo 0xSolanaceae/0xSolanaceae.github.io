@@ -29,10 +29,24 @@
     box-sizing: border-box;
 }
 
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
 html,
 body {
     height: 100%;
-    touch-action: none;
+    /* Pinch-zoom is the one way to read the scene up close, so it stays
+       available while drags stay ours. */
+    touch-action: pinch-zoom;
 }
 
 body {
@@ -52,7 +66,7 @@ body {
     box-shadow: 0 0 0 10px #2a1a08, 0 0 0 11px var(--frame);
     overflow: hidden;
     user-select: none;
-    touch-action: none;
+    touch-action: pinch-zoom;
     background:
         radial-gradient(64% 68% at 32% 40%, rgba(255, 244, 204, 0.98), rgba(255, 231, 173, 0.12) 72%),
         radial-gradient(76% 100% at 98% 28%, rgba(38, 20, 8, 0.72), rgba(83, 44, 16, 0.12) 60%, transparent 78%),
@@ -87,6 +101,14 @@ body {
     inset: 0;
     z-index: 15;
     pointer-events: none;
+    /* The vignette rides on the same layer as the frame's inner shadow: both are
+       a darkening of the very top of the stack, and two full-bleed layers to do
+       one thing is a cost the compositor pays on every frame. */
+    background: radial-gradient(
+        130% 95% at 50% 40%,
+        transparent 55%,
+        rgba(30, 16, 6, 0.32) 100%
+    );
     box-shadow:
         inset 0 0 0 2px rgba(255, 223, 157, 0.14),
         inset 0 0 7vw 2.5vw rgba(24, 12, 4, 0.28),
@@ -169,13 +191,11 @@ body {
         rgba(255, 232, 170, 0) 74%
     );
     transform: skewX(-7deg);
-    animation: light-breath 9s ease-in-out infinite alternate;
 }
 
-@keyframes light-breath {
-    from { opacity: 0.65; transform: skewX(-7deg) scaleY(0.985); }
-    to   { opacity: 1;    transform: skewX(-7deg) scaleY(1.015); }
-}
+/* The breath of the light is animated from the frame loop, not from CSS: a
+   running animation would force a composite on every refresh and undo the
+   loop's pacing. See breatheLight in js/anim.js. */
 
 #groundlight {
     position: absolute;
@@ -190,16 +210,29 @@ body {
         linear-gradient(to top, rgba(236, 170, 92, 0.35), transparent 90%);
 }
 
-#vignette {
+/* The note is the page's whole content and it lives inside a canvas, so a real
+   button rides over it at the sheet's own depth: keyboard users can reach it,
+   and the focus ring lands exactly around the paper. Pointer input passes
+   straight through to the scene, which opens the note as it always did. */
+#note-open {
     position: absolute;
-    inset: 0;
-    z-index: 13;
+    top: 50%;
+    left: 0;
+    z-index: 12;
+    padding: 0;
+    border: 0;
+    border-radius: 2px;
+    background: none;
     pointer-events: none;
-    background: radial-gradient(
-        130% 95% at 50% 40%,
-        transparent 55%,
-        rgba(30, 16, 6, 0.32) 100%
-    );
+}
+
+/* Pointer input can never land on this button (it passes through to the scene),
+   so any focus it gets is a keyboard's — which is why the ring is drawn for
+   plain focus rather than for :focus-visible alone. */
+#note-open:focus {
+    outline: 2px dashed rgba(255, 240, 200, 0.85);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 7px rgba(20, 12, 4, 0.3);
 }
 
 #loading {
@@ -213,9 +246,14 @@ body {
     transition: opacity 0.5s ease;
 }
 
+/* The spinner is a full-screen opaque layer while it is up. Once it has faded it
+   is taken out of the compositor entirely rather than left at zero opacity,
+   where it would still be composited under the scene on every frame. */
 #loading.hidden {
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
+    transition: opacity 0.5s ease, visibility 0s linear 0.5s;
 }
 
 .spinner {
@@ -233,7 +271,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #light { animation: none; }
     .spinner { animation: pulse 1.4s ease-in-out infinite alternate; }
     @keyframes pulse {
         from { opacity: 0.35; }
@@ -307,6 +344,8 @@ body {
     padding: var(--card-pad-top, 8%) var(--card-pad-x, 9%) var(--card-pad-bottom, 8%);
     overflow: hidden;
     text-align: left;
+    /* The addresses are here to be copied; the scene behind them is not. */
+    user-select: text;
 }
 
 #papercard-links {
@@ -390,9 +429,12 @@ body {
 
     #haze,
     #light,
-    #groundlight,
-    #vignette {
+    #groundlight {
         opacity: 0.4;
+    }
+
+    #stage::after {
+        background: none;
     }
 
     #stage::before {

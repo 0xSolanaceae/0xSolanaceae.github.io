@@ -7,6 +7,22 @@ let wakeTimer = 0;
 let lastTick = 0;
 let viewportW = window.innerWidth || 1;
 
+/* The scene is a dozen full-bleed layers over one another, so every drawn frame
+ * is a full-screen composite. On a 120 Hz or 165 Hz panel doing that on every
+ * refresh buys nothing the eye can see — the parallax eases and the leaves fall
+ * at the same speed either way — but it does cost the compositor most of its
+ * budget. So a frame is held for as many refreshes as it takes to stay above
+ * MIN_FPS, measured once per page from the display's own cadence. */
+const TARGET_FPS = 60;
+const MIN_FPS = 50;
+const VSYNC_SAMPLES = 24;
+let framePeriod = 0;
+let drawnAt = 0;
+let vsyncAt = 0;
+const vsyncGaps = [];
+
+let lightLit = false;
+
 let dragging = false;
 let dragStartX = 0;
 let dragStartTmx = 0;
@@ -93,9 +109,52 @@ function writeTransforms() {
     if (m.lastS === undefined || Math.abs(m.lastS - s) >= SHIFT_EPS) {
       m.lastS = s;
       const yOff = m.yOff || 0;
-      m.el.style.transform = `translate3d(${(-s - MARGIN) * CELL.w}px, ${(yOff - ROWS / 2) * CELL.h}px, 0)`;
+      m.el.style.transform =
+        `translate3d(${(-s - MARGIN) * CELL.w + (m.offX || 0)}px, ` +
+        `${(yOff - ROWS / 2) * CELL.h + (m.offY || 0)}px, 0)`;
     }
   }
+}
+
+/* The shaft of light breathes. It used to be a CSS animation, but a running
+ * animation keeps the compositor working on every refresh no matter how the
+ * frame loop is paced, which would have undone the pacing above. */
+function breatheLight(now) {
+  if (REDUCED_MOTION) {
+    if (lightLit) {
+      lightEl.style.opacity = "";
+      lightEl.style.transform = "";
+      lightLit = false;
+    }
+    return;
+  }
+  const p = 0.5 - 0.5 * Math.cos((now * Math.PI) / LIGHT_BREATH_MS);
+  lightEl.style.opacity = (0.65 + 0.35 * p).toFixed(3);
+  lightEl.style.transform = `skewX(-7deg) scaleY(${(0.985 + 0.03 * p).toFixed(4)})`;
+  lightLit = true;
+}
+
+function measureVsync(now) {
+  if (framePeriod) return;
+  if (vsyncAt) {
+    const gap = now - vsyncAt;
+    // A hidden or throttled tab reports absurd gaps; those say nothing about
+    // the display, so the window starts again rather than locking onto them.
+    if (gap >= 2 && gap <= 40) vsyncGaps.push(gap);
+    else vsyncGaps.length = 0;
+  }
+  vsyncAt = now;
+  if (vsyncGaps.length < VSYNC_SAMPLES) return;
+  vsyncGaps.sort((a, b) => a - b);
+  // The fastest intervals are the display's own; the slower ones are frames the
+  // machine could not start on time, and start-up is full of those.
+  const vsync = clamp(vsyncGaps[Math.floor(VSYNC_SAMPLES * 0.2)] || 1000 / TARGET_FPS, 4, 20);
+  let skip = 1;
+  for (let s = 2; s <= 4; s++) {
+    if (1000 / (vsync * s) >= MIN_FPS) skip = s;
+  }
+  framePeriod = vsync * skip;
+  vsyncGaps.length = 0;
 }
 
 function ensureTicking() {
@@ -108,6 +167,12 @@ function ensureTicking() {
 
 function tick(now) {
   rafId = 0;
+  measureVsync(now);
+  if (drawnAt && framePeriod && now - drawnAt < framePeriod - 2) {
+    rafId = requestAnimationFrame(tick);
+    return;
+  }
+  drawnAt = now;
   const dt = lastTick ? Math.min(0.05, (now - lastTick) / 1000) : 1 / 60;
   lastTick = now;
   if (coasting) {
@@ -122,6 +187,7 @@ function tick(now) {
     if (Math.abs(tmx - mx) < 0.0005) mx = tmx;
   }
   writeTransforms();
+  breatheLight(now);
   renderBirdsNear(now);
   renderBirdsFar(now);
   renderLeaves(now);
@@ -137,5 +203,15 @@ function tick(now) {
     wakeTimer = setTimeout(ensureTicking, wait);
   }
 }
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    if (wakeTimer) { clearTimeout(wakeTimer); wakeTimer = 0; }
+    return;
+  }
+  drawnAt = 0;
+  ensureTicking();
+});
 
 window.addEventListener("resize", () => { viewportW = window.innerWidth || 1; });

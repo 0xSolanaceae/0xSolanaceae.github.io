@@ -160,13 +160,21 @@ function liftLeaf(l, scour) {
   l.squash = 1;
 }
 
-function updateLeaf(l, now, dt) {
+/* Samples are written into these rather than returned as objects: this runs for
+ * every leaf on every drawn frame, and a few hundred throwaway objects a frame
+ * is garbage the loop does not need to make. */
+const LEAF_AMB = { u: 0, v: 0 };
+const LEAF_ITX = { u: 0, v: 0 };
+const GLOW_MIN_SPEED = 30;
+
+function updateLeaf(l, now, dt, mean) {
+  const cellPx = CELL.w || 1;
+  const p = leafScreenPos(l);
+  const itx = interactionWindAt(p.x, p.y, now, LEAF_ITX);
+  const itxSpeed = Math.sqrt(itx.u * itx.u + itx.v * itx.v);
+
   let glowTarget = 0;
-  if (pointerStirs()) {
-    const p = leafScreenPos(l);
-    const itx = interactionWindAt(p.x, p.y, now);
-    glowTarget = smoothstep(30, 150, Math.hypot(itx.u, itx.v));
-  }
+  if (itxSpeed > GLOW_MIN_SPEED) glowTarget = smoothstep(GLOW_MIN_SPEED, 150, itxSpeed);
   const gk = glowTarget > l.glow ? 9 : 2.8;
   l.glow = Math.min(MAX_GLOW, l.glow + (glowTarget - l.glow) * (1 - Math.exp(-gk * dt)));
   if (l.glow < 0.004) l.glow = 0;
@@ -184,12 +192,9 @@ function updateLeaf(l, now, dt) {
   }
 
   if (l.state === "rest") {
-    const cellPx = CELL.w || 1;
-    const p = leafScreenPos(l);
-    const amb = ambientWindAt(p.x, p.y, now);
-    const ambSpeed = Math.hypot(amb.u, amb.v) / cellPx;
-    const itx = interactionWindAt(p.x, p.y, now);
-    const sp = Math.hypot(itx.u, itx.v);
+    const amb = ambientWindAt(p.x, p.y, now, mean, LEAF_AMB);
+    const ambSpeed = Math.sqrt(amb.u * amb.u + amb.v * amb.v) / cellPx;
+    const sp = itxSpeed;
 
     const drag = clamp(
       (amb.u / cellPx) * REST_BREEZE_DRAG + (itx.u / cellPx) * REST_CURSOR_DRAG,
@@ -243,11 +248,7 @@ function updateLeaf(l, now, dt) {
     return;
   }
 
-  const p = leafScreenPos(l);
-  const amb = ambientWindAt(p.x, p.y, now);
-  const itx = interactionWindAt(p.x, p.y, now);
-  const cellPx = CELL.w || 1;
-  const itxSpeed = Math.hypot(itx.u, itx.v);
+  const amb = ambientWindAt(p.x, p.y, now, mean, LEAF_AMB);
   if (itxSpeed > 150) l.airLife -= dt;
   else if (l.airLife < l.airLifeMax) l.airLife = Math.min(l.airLifeMax, l.airLife + dt * 0.6);
   if (l.airLife <= 0) {
@@ -303,7 +304,7 @@ function updateLeaf(l, now, dt) {
     }
   }
 
-  const airspeed = Math.hypot(l.vx, l.vy);
+  const airspeed = Math.sqrt(l.vx * l.vx + l.vy * l.vy);
   const restore = -Math.sin(2 * l.rot) * (0.9 + airspeed * 0.45);
   const stir = (noise1D(l.rotSeed + now * 0.0005) - 0.5) * l.torque * Math.max(0.35, airspeed * 0.12);
   l.rotV += (restore + stir) * dt;
@@ -329,7 +330,7 @@ function updateLeaf(l, now, dt) {
 
 function leafPxRect(l) {
   const glowR = l.glow > 0.01 ? Math.max(l.dw, l.dh) * (0.9 + l.glow * 0.7) : 0;
-  const r = Math.hypot(l.dw, l.dh) / 2 + 2 + glowR;
+  const r = Math.sqrt(l.dw * l.dw + l.dh * l.dh) / 2 + 2 + glowR;
   const cx = l.x * CELL.w, cy = l.y * CELL.h;
   return [cx - r, cy - r, r * 2, r * 2];
 }
@@ -391,6 +392,9 @@ function totalLeaves() {
 function renderLeaves(now) {
   if (!leafImg) return;
   if (REDUCED_MOTION) return;
+  // The gust field is the same for the whole scene this frame, so it is worked
+  // out once instead of once per leaf.
+  const mean = ambientMean(now);
   for (const cfg of LEAF_LAYERS) {
     if (!cfg.ctx || cfg.leaves.length === 0) continue;
     const dt = Math.min(0.05, cfg.lastT ? (now - cfg.lastT) / 1000 : 0.016);
@@ -402,7 +406,7 @@ function renderLeaves(now) {
     const landed = [];
     for (const l of cfg.leaves) {
       const wasFalling = l.state === "fall";
-      updateLeaf(l, now, dt);
+      updateLeaf(l, now, dt, mean);
       if (wasFalling && l.state === "settle") landed.push(l);
       drawLeaf(ctx, l);
       l.prevRect = leafPxRect(l);

@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>artemive</title>
+    <meta
+        name="description"
+        content="A forest drawn in braille, and a note pinned to one of its trees with the ways to reach me."
+    />
+    <meta name="theme-color" content="#130d07" />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="artemive" />
+    <meta
+        property="og:description"
+        content="A forest drawn in braille, and a note pinned to one of its trees."
+    />
+    <meta property="og:image" content="assets/fav.webp" />
+    <meta property="og:image:alt" content="A crow perched in a braille-drawn forest." />
+    <meta name="twitter:card" content="summary" />
     <link rel="icon" type="image/webp" href="assets/fav.webp" />
     <link
         rel="preload"
@@ -19,10 +34,11 @@
         type="font/woff2"
         crossorigin
     />
-    <link rel="stylesheet" href="css/style.css?v=19" />
+    <link rel="stylesheet" href="css/style.css?v=20" />
 </head>
 <body>
-    <main id="stage" aria-label="Forest map with mouse-driven parallax">
+    <main id="stage" aria-label="A forest drawn in braille. A note pinned to the great tree holds the links.">
+        <h1 class="sr-only">artemive</h1>
         <canvas class="layer" id="layer-far"></canvas>
         <canvas class="layer" id="layer-birds-far"></canvas>
         <canvas class="layer" id="layer-leaves-far"></canvas>
@@ -38,10 +54,15 @@
         <canvas class="layer" id="layer-paper"></canvas>
         <canvas class="layer" id="layer-leaves-near"></canvas>
         <canvas class="layer" id="layer-near"></canvas>
+        <button
+            id="note-open"
+            type="button"
+            aria-haspopup="dialog"
+            aria-label="Open the note pinned to the tree"
+        ></button>
         <div id="groundlight"></div>
-        <div id="vignette"></div>
         <div id="papercard" role="dialog" aria-modal="true" aria-label="solanaceae" aria-hidden="true">
-            <button id="papercard-backdrop" type="button" aria-label="Close note"></button>
+            <button id="papercard-backdrop" type="button" aria-label="Close note" tabindex="-1"></button>
             <article id="papercard-sheet" tabindex="-1">
                 <canvas id="papercard-paper" aria-hidden="true"></canvas>
                 <div id="papercard-content">
@@ -49,21 +70,24 @@
                 </div>
             </article>
         </div>
-        <div id="loading"><div class="spinner"></div></div>
+        <div id="loading" role="status">
+            <div class="spinner" aria-hidden="true"></div>
+            <p class="sr-only">Drawing the forest</p>
+        </div>
     </main>
-    <script src="js/config.js?v=19"></script>
-    <script src="js/util.js?v=19"></script>
-    <script src="js/motion.js?v=19"></script>
-    <script src="js/pointer.js?v=19"></script>
-    <script src="js/sprites.js?v=19"></script>
-    <script src="js/pixels.js?v=19"></script>
-    <script src="js/paper.js?v=19"></script>
-    <script src="js/layers.js?v=19"></script>
-    <script src="js/crows.js?v=19"></script>
-    <script src="js/leaves.js?v=19"></script>
-    <script src="js/anim.js?v=19"></script>
-    <script src="js/wind.js?v=19"></script>
-    <script src="js/papercard.js?v=19"></script>
-    <script src="js/main.js?v=19"></script>
+    <script src="js/config.js?v=20"></script>
+    <script src="js/util.js?v=20"></script>
+    <script src="js/motion.js?v=20"></script>
+    <script src="js/pointer.js?v=20"></script>
+    <script src="js/sprites.js?v=20"></script>
+    <script src="js/pixels.js?v=20"></script>
+    <script src="js/paper.js?v=20"></script>
+    <script src="js/layers.js?v=20"></script>
+    <script src="js/crows.js?v=20"></script>
+    <script src="js/leaves.js?v=20"></script>
+    <script src="js/anim.js?v=20"></script>
+    <script src="js/wind.js?v=20"></script>
+    <script src="js/papercard.js?v=20"></script>
+    <script src="js/main.js?v=20"></script>
 </body>
 </html>

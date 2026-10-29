@@ -3,6 +3,8 @@
 const EMPTY = "\u2800";
 
 const stage = document.getElementById("stage");
+const lightEl = document.getElementById("light");
+const noteBtn = document.getElementById("note-open");
 const LAYER_ELS = {
   far: document.getElementById("layer-far"),
   "birds-far": document.getElementById("layer-birds-far"),
@@ -33,7 +35,12 @@ const LAYERS = [
   { key: "paper",      depth: 0.78, tiled: true },
   { key: "leaves-near", depth: 0.78, tiled: true },
   { key: "near",       depth: 1.0,  tiled: true },
+  // The note's keyboard target rides the sheet itself, so it needs the sheet's
+  // depth rather than one of its own.
+  { key: "note-hit",   depth: 0.78 },
 ];
+
+const LIGHT_BREATH_MS = 9000;
 
 const SPRITE_UPSCALE = 2;
 const MAX_SHIFT_X = 16 * SPRITE_UPSCALE;

@@ -11,6 +11,7 @@ const PTR = {
   down: false,
   touch: false,
   dragged: false,
+  movedAt: 0,
   x0: 0,
   y0: 0,
   vx: 0,
@@ -72,6 +73,7 @@ function sample(e) {
 window.addEventListener("pointermove", (e) => {
   PTR.present = true;
   PTR.touch = e.pointerType === "touch";
+  PTR.movedAt = performance.now();
   PTR.x = e.clientX;
   PTR.y = e.clientY;
   if (PTR.down) {
@@ -89,6 +91,7 @@ window.addEventListener("pointerdown", (e) => {
   PTR.present = true;
   PTR.down = true;
   PTR.touch = e.pointerType === "touch";
+  PTR.movedAt = performance.now();
   PTR.dragged = false;
   PTR.x = PTR.x0 = e.clientX;
   PTR.y = PTR.y0 = e.clientY;

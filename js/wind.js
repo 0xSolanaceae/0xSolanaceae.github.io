@@ -5,6 +5,10 @@ let windSpeed = 0;
 let lastWindX = -9999, lastWindY = -9999, lastWindT = 0;
 const VMAX = 8000;
 
+/* The field samplers write here instead of returning objects: they run for every
+ * leaf on every drawn frame, and the numbers are read back immediately. */
+const OUT = { u: 0, v: 0 };
+
 let windVortex = 0;
 let windSpin = 0;
 let windCx = 0, windCy = 0;
@@ -98,36 +102,36 @@ function vnoise2(x, y) {
 }
 
 function turbVector(x, y, now, mean) {
-  const S = Math.hypot(mean.u, mean.v);
-  if (S < 1) return { u: 0, v: 0 };
+  const S = Math.sqrt(mean.u * mean.u + mean.v * mean.v);
+  if (S < 1) { OUT.u = 0; OUT.v = 0; return OUT; }
   const t = now / 1000;
   const L = 260;
   const n1 = vnoise2((x - mean.u * t) / L, (y - mean.v * t) / L + 3.7);
   const n2 = vnoise2((x - mean.u * t * 0.85) / (L * 0.55) + 41.3, (y - mean.v * t * 0.85) / (L * 0.55) + 91.2);
   const n3 = vnoise2((x - mean.u * t * 0.7) / (L * 0.22) - 13.1, (y - mean.v * t * 0.7) / (L * 0.22) - 7.7);
-  return {
-    u: ((n1 - 0.5) * 1.2 + (n2 - 0.5) * 0.5) * S * 0.5,
-    v: ((n2 - 0.5) * 1.1 + (n3 - 0.5) * 0.4) * S * 0.38,
-  };
+  OUT.u = ((n1 - 0.5) * 1.2 + (n2 - 0.5) * 0.5) * S * 0.5;
+  OUT.v = ((n2 - 0.5) * 1.1 + (n3 - 0.5) * 0.4) * S * 0.38;
+  return OUT;
 }
 
 function dipoleWindAt(x, y) {
-  if (!pointerStirs()) return { u: 0, v: 0 };
+  OUT.u = 0;
+  OUT.v = 0;
+  if (!pointerStirs()) return OUT;
   const dx = x - PTR.x, dy = y - PTR.y;
   const d2 = dx * dx + dy * dy;
-  if (d2 < 1) return { u: windVx, v: windVy };
-  if (d2 > DIPOLE_RANGE * DIPOLE_RANGE) return { u: 0, v: 0 };
+  if (d2 < 1) { OUT.u = windVx; OUT.v = windVy; return OUT; }
+  if (d2 > DIPOLE_RANGE * DIPOLE_RANGE) return OUT;
   const d = Math.sqrt(d2);
   const fade = clamp((DIPOLE_RANGE - d) / (DIPOLE_RANGE * 0.45), 0, 1);
   const env = ease01(fade);
   const speedGate = clamp((windSpeed - 25) / 90, 0, 1);
-  if (d < PTR_RADIUS) return { u: windVx * env, v: windVy * env };
+  if (d < PTR_RADIUS) { OUT.u = windVx * env; OUT.v = windVy * env; return OUT; }
   const f = (PTR_RADIUS * PTR_RADIUS) / d2;
   const proj = (dx * windVx + dy * windVy) / d;
-  return {
-    u: f * (2 * proj * (dx / d) - windVx) * env * speedGate,
-    v: f * (2 * proj * (dy / d) - windVy) * env * speedGate,
-  };
+  OUT.u = f * (2 * proj * (dx / d) - windVx) * env * speedGate;
+  OUT.v = f * (2 * proj * (dy / d) - windVy) * env * speedGate;
+  return OUT;
 }
 
 function blobWindAt(x, y) {
@@ -141,40 +145,65 @@ function blobWindAt(x, y) {
     u += (-dy / r) * sw;
     v += (dx / r) * sw;
   }
-  return { u, v };
+  OUT.u = u;
+  OUT.v = v;
+  return OUT;
 }
 
 function wakeWindAt(x, y, now) {
-  if (!wakeTrail.length) return { u: 0, v: 0 };
+  OUT.u = 0;
+  OUT.v = 0;
+  if (!wakeTrail.length) return OUT;
   let u = 0, v = 0;
   for (const s of wakeTrail) {
     const age = (now - s.t) / 1000;
     if (age > 1.2) continue;
+    const sigma = WAKE_SIGMA0 + WAKE_SIGMA_RATE * age;
     const dx = x - s.x, dy = y - s.y;
     const d2 = dx * dx + dy * dy;
-    const sigma = WAKE_SIGMA0 + WAKE_SIGMA_RATE * age;
+    // Cost the fall-off only where it is still felt; the tail of the trail is
+    // sampled for every leaf on every frame.
+    const cut = 2.5 * sigma;
+    if (d2 > cut * cut) continue;
     const w = Math.exp(-d2 / (2 * sigma * sigma)) * Math.exp(-age / WAKE_TAU);
     u += s.vx * w;
     v += s.vy * w;
   }
-  return { u: u * WAKE_GAIN, v: v * WAKE_GAIN };
+  OUT.u = u * WAKE_GAIN;
+  OUT.v = v * WAKE_GAIN;
+  return OUT;
 }
 
-function ambientWindAt(x, y, now) {
-  const mean = ambientMean(now);
-  const turb = turbVector(x, y, now, mean);
-  return { u: mean.u + turb.u, v: mean.v + turb.v };
+function ambientWindAt(x, y, now, mean, out) {
+  const m = mean || ambientMean(now);
+  const turb = turbVector(x, y, now, m);
+  const o = out || OUT;
+  o.u = m.u + turb.u;
+  o.v = m.v + turb.v;
+  return o;
 }
 
-function interactionWindAt(x, y, now) {
-  const dip = dipoleWindAt(x, y);
-  const bl = blobWindAt(x, y);
-  const wk = wakeWindAt(x, y, now);
-  let u = dip.u + bl.u + wk.u;
-  let v = dip.v + bl.v + wk.v;
+function interactionWindAt(x, y, now, out) {
+  const o = out || OUT;
+  let u = 0, v = 0;
+  if (pointerStirs()) {
+    const dip = dipoleWindAt(x, y);
+    u = dip.u;
+    v = dip.v;
+  }
+  if (blobs.length) {
+    const bl = blobWindAt(x, y);
+    u += bl.u;
+    v += bl.v;
+  }
+  if (wakeTrail.length) {
+    const wk = wakeWindAt(x, y, now);
+    u += wk.u;
+    v += wk.v;
+  }
   if (windTornado > 0.02) {
     const dx = x - windCx, dy = y - windCy;
-    const d = Math.hypot(dx, dy);
+    const d = Math.sqrt(dx * dx + dy * dy);
     if (d < TORNADO_RANGE) {
       const reach = 1 - d / TORNADO_RANGE;
       const absorbed = windTornado * Math.min(1, reach * TORNADO_SWALLOW);
@@ -187,7 +216,9 @@ function interactionWindAt(x, y, now) {
       }
     }
   }
-  return { u, v };
+  o.u = u;
+  o.v = v;
+  return o;
 }
 
 function emitBlob(gamma, now) {

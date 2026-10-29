@@ -119,6 +119,13 @@ function downsampledAlpha(cols, rows, ...sources) {
 }
 
 let lastLayout = "";
+/* Where the note comes to rest in the window. Hit testing happens on pointer
+ * moves, dozens of times a second while dragging, and asking the layout engine
+ * for the sheet's box each time forces a style recalculate of every layer that
+ * has moved since the last frame. The rest position is a build-time fact, and
+ * the parallax offset is known here, so the two together are enough. */
+let paperRestLeft = 0;
+let paperRestTop = 0;
 
 function buildAll() {
   const cell = measureCell();
@@ -316,6 +323,19 @@ function buildAll() {
     paperTrunk.baseY - paperHalfRows + 0.4
   );
   renderNailedPaper(LAYER_ELS.paper, cell.w, cell.h, dpr, W_TOTAL, ROWS, paperAnchorX, paperAnchorY);
+
+  const paperEl = LAYER_ELS.paper;
+  paperEl.style.transform = `translate3d(${-MARGIN * CELL.w}px, ${(-ROWS / 2) * CELL.h}px, 0)`;
+  const paperRect = paperEl.getBoundingClientRect();
+  paperRestLeft = paperRect.left;
+  paperRestTop = paperRect.top;
+  noteBtn.style.width = `${PAPER_INFO.w}px`;
+  noteBtn.style.height = `${PAPER_INFO.h}px`;
+  metas["note-hit"] = {
+    el: noteBtn,
+    offX: PAPER_INFO.cx - PAPER_INFO.w / 2,
+    offY: PAPER_INFO.cy - PAPER_INFO.h / 2,
+  };
 
   perchPoints = [];
   {

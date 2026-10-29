@@ -28,6 +28,14 @@ const CROW_GLIDE_MED = [
 ];
 const LARGE_GLIDE_FRAME = 1;
 const HAPTIC_STARTLE = 12;
+/* A cursor that merely rests somewhere is not an approach. Only movement can
+ * startle a bird, or a landing is cut short the moment the mouse happens to sit
+ * where the bird was headed. */
+const STARTLE_MOVE_MS = 140;
+const LAND_SETTLE_MS = 900;
+/* Long enough that a bird arriving reads as having arrived, rather than as
+ * passing through. */
+const PERCH_DWELL_MS = [14000, 26000];
 
 const FLAP_LIFT = {
   flap: 0.06,
@@ -182,7 +190,9 @@ function perchSlot(b) {
   if (b.type !== "percher") return null;
   if (b.phase === "approach") return { x: b.tx, y: b.ty };
   if (b.phase === "hop") return b.hopTo;
-  return { x: b.x, y: b.y };
+  if (b.phase === "perched") return { x: b.x, y: b.y };
+  // A bird on its way out no longer holds the branch.
+  return null;
 }
 
 function perchTaken(p, dw, self) {
@@ -235,6 +245,10 @@ function spawnNearFlyer() {
     dw,
     dh,
   });
+}
+
+function perchDwell(now) {
+  return now + PERCH_DWELL_MS[0] + Math.random() * (PERCH_DWELL_MS[1] - PERCH_DWELL_MS[0]);
 }
 
 function spawnPercher() {
@@ -315,12 +329,16 @@ function crowScreenX(b) {
   return birdsRestLeft - s * CELL.w + b.x * CELL.w;
 }
 
-function isHovering(b) {
+function isHovering(b, now) {
   if (!PTR.present) return false;
+  if (now - PTR.movedAt > STARTLE_MOVE_MS) return false;
+  if (now - (b.landedAt || 0) < LAND_SETTLE_MS) return false;
   const sx = crowScreenX(b);
   const sy = birdsRestTop + b.y * CELL.h - b.dh / 2;
   const r = Math.max(30, b.dw * 0.9);
-  return Math.hypot(PTR.x - sx, PTR.y - sy) < r;
+  const dx = PTR.x - sx;
+  const dy = PTR.y - sy;
+  return dx * dx + dy * dy < r * r;
 }
 
 function scarePercher(b) {
@@ -364,10 +382,12 @@ function startHop(b, target) {
   b.hopFrom = { x: b.x, y: b.y };
   b.hopTo = { x: target.x, y: target.y };
   b.dir = target.x >= b.x ? 1 : -1;
-  const dist = Math.hypot(target.x - b.x, target.y - b.y);
+  const dist = Math.sqrt((target.x - b.x) ** 2 + (target.y - b.y) ** 2);
+  // A hop, not a flight: short in the air and low to the branch, so it never
+  // leaves the treetop or reads as taking off.
   b.hopT = 0;
-  b.hopDur = clamp(dist / 18, 0.55, 1.8);
-  b.hopArc = clamp(dist * 0.45, 2.4, 9.0);
+  b.hopDur = clamp(dist / 34, 0.3, 0.75);
+  b.hopArc = clamp(dist * 0.16, 0.8, 2.6);
 }
 
 function updateHopper(b, now, dt) {
@@ -375,14 +395,15 @@ function updateHopper(b, now, dt) {
   const t = Math.min(1, b.hopT / b.hopDur);
   const lineY = b.hopFrom.y + (b.hopTo.y - b.hopFrom.y) * t;
   b.x = b.hopFrom.x + (b.hopTo.x - b.hopFrom.x) * t;
-  b.y = lineY - Math.sin(t * Math.PI) * b.hopArc;
+  b.y = Math.max(1.5, lineY - Math.sin(t * Math.PI) * b.hopArc);
   b.frame += dt * b.flap;
   b.pitch = (t < 0.5 ? 0.1 : 0.06) * Math.sin(t * Math.PI * 2);
   if (t >= 1) {
     b.x = b.hopTo.x; b.y = b.hopTo.y;
     b.p = b.hopTo;
     b.phase = "perched";
-    b.perchUntil = now + (8000 + Math.random() * 8000);
+    b.landedAt = now;
+    b.perchUntil = perchDwell(now);
     b.perchIdx = Math.floor(Math.random() * CROW_PERCH_POSES.length);
     b.pitch = 0;
   }
@@ -391,11 +412,12 @@ function updateHopper(b, now, dt) {
 function updatePercher(b, now, dt, hovered) {
   if (b.phase === "approach") {
     const dx = b.tx - b.x, dy = b.ty - b.y;
-    const dist = Math.hypot(dx, dy);
+    const dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 0.7) {
       b.x = b.tx; b.y = b.ty;
       b.phase = "perched";
-      b.perchUntil = now + (8000 + Math.random() * 8000);
+      b.landedAt = now;
+      b.perchUntil = perchDwell(now);
       b.pitch = 0;
     } else {
       const speed = Math.min(b.speed, Math.max(0.8, dist * 6));
@@ -460,7 +482,7 @@ function renderBirdsNear(now) {
   for (let i = nearBirds.length - 1; i >= 0; i--) {
     const b = nearBirds[i];
     if (b.type === "percher") {
-      const hovered = b.phase === "perched" && isHovering(b);
+      const hovered = b.phase === "perched" && isHovering(b, now);
       updatePercher(b, now, dt, hovered);
       const off = b.x < -20 || b.x > W_TOTAL + 20 || b.y < -20;
       if (b.phase === "depart" && off) { nearBirds.splice(i, 1); continue; }
