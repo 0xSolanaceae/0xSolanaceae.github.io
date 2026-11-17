@@ -328,8 +328,8 @@ html.no-js .fallback { display: grid; }
 }
 
 @keyframes sheet-sway {
-  0%, 100% { transform: rotate(calc(var(--sway, 0.8deg) * -1)); }
-  50% { transform: rotate(var(--sway, 0.8deg)); }
+  0%, 100% { transform: rotate(calc(var(--sway, 0.8deg) * -1 + var(--lean, 0deg))); }
+  50% { transform: rotate(calc(var(--sway, 0.8deg) + var(--lean, 0deg))); }
 }
 
 @media (prefers-reduced-motion: reduce) {

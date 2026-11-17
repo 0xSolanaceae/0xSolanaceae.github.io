@@ -17,6 +17,8 @@
   const CORE = '#0E1A12';
 
   let collect = null;
+  const plants = [];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function mulberry(a) {
     return function () {
@@ -567,13 +569,22 @@
     collect = null;
 
     layer.appendChild(cv);
+    plants.push({ el: cv, x, y: baseY, h, lean: 0, max: leanCap(kind, h) });
     return cv;
   }
 
-  function still(el) { if (el) el.style.animation = 'none'; return el; }
+  // Wide clumps pivot on a base that spans the whole canvas, so they get a
+  // gentler cap than the narrow creepers in the gutters.
+  function leanCap(kind, h) {
+    if (kind === 'bed') return 1.6;
+    return Math.min(4, (Math.atan(18 / Math.max(60, h)) * 180) / Math.PI);
+  }
+
+  function still(el) { if (el) { el.style.animation = 'none'; el.stillFrame = true; } return el; }
 
   function layout() {
     layer.textContent = '';
+    plants.length = 0;
 
     const wRect = wrap.getBoundingClientRect();
     const rect = sheet.getBoundingClientRect();
@@ -637,7 +648,62 @@
       bounds: { left, right, bottom: H - 4, padB, W, H, ground },
     };
     dispatchEvent(new CustomEvent('sheetflora:layout'));
+    wake();
   }
+
+  // The plants lean towards the cursor the way the hero's do: a smoothstep
+  // falloff across the reach, eased into place frame by frame.
+  const REACH = 320;
+  let pointer = null, leanRaf = 0;
+
+  function setLean(p) {
+    const deg = Math.abs(p.lean) < 0.02 ? 0 : p.lean;
+    if (p.deg === deg) return deg !== 0;
+    p.deg = deg;
+    if (p.el.stillFrame) p.el.style.transform = deg ? 'rotate(' + deg.toFixed(2) + 'deg)' : '';
+    else p.el.style.setProperty('--lean', deg.toFixed(2) + 'deg');
+    return deg !== 0;
+  }
+
+  function tick() {
+    leanRaf = 0;
+    if (!plants.length || layer.classList.contains('is-paused')) return;
+    const r = layer.getBoundingClientRect();
+    const px = pointer ? pointer.x - r.left : null;
+    const py = pointer ? pointer.y - r.top : null;
+    let moving = false;
+    for (const p of plants) {
+      let target = 0;
+      if (px != null) {
+        const dx = px - p.x, dy = py - (p.y - p.h * 0.6), d = Math.hypot(dx, dy);
+        if (d < REACH && d > 1) {
+          const w = 1 - d / REACH;
+          target = (dx / d) * w * w * (3 - 2 * w) * Math.min(1, d / 40) * p.max;
+        }
+      }
+      p.lean += (target - p.lean) * 0.09;
+      if (Math.abs(target - p.lean) < 0.02) p.lean = target;
+      if (setLean(p)) moving = true;
+    }
+    if (pointer || moving) leanRaf = requestAnimationFrame(tick);
+  }
+
+  function wake() {
+    if (reduce || leanRaf) return;
+    leanRaf = requestAnimationFrame(tick);
+  }
+
+  addEventListener('pointermove', (e) => {
+    if (e.pointerType && e.pointerType !== 'mouse') return;
+    pointer = { x: e.clientX, y: e.clientY };
+    wake();
+  }, { passive: true });
+
+  const release = () => { pointer = null; wake(); };
+  document.addEventListener('pointerleave', release);
+  addEventListener('pointerup', (e) => { if (e.pointerType !== 'mouse') release(); });
+  addEventListener('pointercancel', release);
+  addEventListener('blur', release);
 
   let pending = 0;
   function schedule() {
@@ -648,6 +714,7 @@
   if ('IntersectionObserver' in window) {
     new IntersectionObserver((entries) => {
       layer.classList.toggle('is-paused', !entries[0].isIntersecting);
+      if (entries[0].isIntersecting) wake();
     }, { rootMargin: '80px' }).observe(sheet);
   }
 
