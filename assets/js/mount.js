@@ -32,6 +32,7 @@
   }
 
   function boot() {
+    document.documentElement.classList.remove('no-garden');
     if (g.plantEdges) g.plantEdges(STILL);
     if (STILL) seedStill(); else typeOut();
   }

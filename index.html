@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="no-js">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -23,15 +23,15 @@
 
   <link rel="preload" href="fonts/playfair-display-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/dm-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=121">
+  <link rel="stylesheet" href="assets/css/style.css?v=122">
+  <noscript><style>.fallback { display: grid; }</style></noscript>
 
-  <script>
+  <script data-cfasync="false">
 
-    document.documentElement.classList.remove('no-js');
     // If the garden never loads, fall back to the static word rather than an
     // empty hero.
     setTimeout(function () {
-      if (!window.garden) document.documentElement.classList.add('no-js');
+      if (!window.garden) document.documentElement.classList.add('no-garden');
     }, 4000);
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
     (function () {
@@ -89,11 +89,11 @@
   </div>
 
   </main>
-  <script src="assets/js/garden.js?v=120" defer></script>
-  <script src="assets/js/sheet-flora.js?v=121" defer></script>
-  <script src="assets/js/sheet-bugs.js?v=120" defer></script>
-  <script src="assets/js/hex.js?v=120" defer></script>
-  <script src="assets/js/cue.js?v=120" defer></script>
-  <script src="assets/js/mount.js?v=120" defer></script>
+  <script src="assets/js/garden.js?v=120" defer data-cfasync="false"></script>
+  <script src="assets/js/sheet-flora.js?v=121" defer data-cfasync="false"></script>
+  <script src="assets/js/sheet-bugs.js?v=120" defer data-cfasync="false"></script>
+  <script src="assets/js/hex.js?v=120" defer data-cfasync="false"></script>
+  <script src="assets/js/cue.js?v=120" defer data-cfasync="false"></script>
+  <script src="assets/js/mount.js?v=122" defer data-cfasync="false"></script>
 </body>
 </html>

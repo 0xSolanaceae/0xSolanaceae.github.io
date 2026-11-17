@@ -148,9 +148,11 @@ a { color: inherit; }
   text-align: center;
 }
 
-/* Only shown when scripting is off; the canvas types the word otherwise, and
-   the static copy would flash before the first letters land. */
-html.no-js .fallback { display: grid; }
+/* Never in the first paint: the canvas types the word, and the static copy is
+   only for scripting off (<noscript> in the head) or a garden that never
+   loads. A class set from a script would race the first paint, so the markup
+   carries none. */
+html.no-garden .fallback { display: grid; }
 
 .chrome {
   position: absolute;
