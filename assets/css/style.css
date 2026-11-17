@@ -415,15 +415,6 @@ html.no-js .fallback { display: grid; }
 .plate a:focus-visible .ascii { fill: var(--ink); opacity: 1; }
 .plate a:focus-visible { outline: 1px solid var(--rose); outline-offset: 4px; }
 
-.plate .tag { fill: var(--rose); }
-.plate a:hover .tag,
-.plate a:focus-visible .tag { fill: var(--ink); }
-
-/* The contact rows are labelled inline on phones, where the ascii column
-   is cropped out; desktop keeps the ascii strings as the links. */
-.plate-tags,
-.plate-decode { display: none; }
-
 .vignette {
   position: fixed;
   inset: 0;
@@ -492,10 +483,7 @@ html.no-js .fallback { display: grid; }
   }
   .plate .addr,
   .plate .b2,
-  .plate .hex-status,
-  .plate-links { display: none; }
-  .plate-tags,
-  .plate-decode { display: inline; }
+  .plate .hex-status { display: none; }
 }
 
 /* Short desktop windows trim the bed; phones keep the tall bed from above. */

@@ -2,16 +2,21 @@
   const svg = document.querySelector('.plate-svg');
   if (!svg) return;
 
-  // Phones show the byte columns with the contact strings beside them, in the
-  // row each string lives in, instead of scrolling a 24-byte row.
+  // Phones drop the address and the second byte group, keeping the eight bytes
+  // and the ascii column beside them, in the same framed form as the desktop.
   const FULL_BOX = svg.getAttribute('viewBox') || '0 0 800 792';
-  const COMPACT_BOX = '90 24 322 768';
+  const COMPACT_BOX = '90 24 371 768';
+  const COMPACT_ASC = 272;
   const narrow = matchMedia('(max-width: 720px)');
   const fitPlate = () => {
     const box = narrow.matches ? COMPACT_BOX : FULL_BOX;
-    if (svg.getAttribute('viewBox') === box) return;
-    svg.setAttribute('viewBox', box);
-    dispatchEvent(new Event('resize'));
+    if (svg.getAttribute('viewBox') !== box) {
+      svg.setAttribute('viewBox', box);
+      for (const t of svg.querySelectorAll('text.ascii')) {
+        t.setAttribute('x', narrow.matches ? COMPACT_ASC : 601);
+      }
+      dispatchEvent(new Event('resize'));
+    }
   };
   fitPlate();
   if (narrow.addEventListener) narrow.addEventListener('change', fitPlate);
@@ -64,27 +69,6 @@
   const byteX = (b) => (b < 8 ? X_HEX1 + b * 3 * CW : X_HEX2 + (b - 8) * 3 * CW);
   const asciiX = (b) => X_ASC + (b + 1) * CW;
   const rowY = (r) => ROW0 + r * LH;
-
-  // Phones drop the ascii column, so each row gets the decoded text of the
-  // bytes still on screen; contact rows keep their full label instead.
-  const tagRows = new Set();
-  for (const t of svg.querySelectorAll('.plate-tags text')) {
-    const y = Number(t.getAttribute('y'));
-    tagRows.add(Math.round((y - ROW0) / LH));
-  }
-  const decode = document.createElementNS(NS, 'g');
-  decode.setAttribute('class', 'plate-decode');
-  decode.setAttribute('aria-hidden', 'true');
-  rows.forEach((row, r) => {
-    if (!row.ascii || tagRows.has(r)) return;
-    const t = document.createElementNS(NS, 'text');
-    t.setAttribute('x', 272);
-    t.setAttribute('y', rowY(r));
-    t.setAttribute('class', 'ascii');
-    t.textContent = row.ascii.slice(0, 8);
-    decode.appendChild(t);
-  });
-  svg.appendChild(decode);
 
   const place = (el, x, w, r) => {
     el.setAttribute('x', x.toFixed(1));
