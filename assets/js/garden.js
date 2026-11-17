@@ -79,7 +79,7 @@ class Garden {
       last = now;
       this.frame();
     };
-    loop();
+    setTimeout(loop, 0);
   }
 
   pickInsect() {

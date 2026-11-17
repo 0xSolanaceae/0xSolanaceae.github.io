@@ -23,7 +23,7 @@
 
   <link rel="preload" href="fonts/playfair-display-700-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/dm-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/style.css?v=124">
+  <link rel="stylesheet" href="assets/css/style.css?v=125">
   <noscript><style>.fallback { display: grid; }</style></noscript>
 
   <script data-cfasync="false">
@@ -38,7 +38,11 @@
         history.replaceState(null, '', location.pathname + location.search);
       }
       addEventListener('pageshow', function (e) {
-        if (e.persisted || location.hash) return;
+        if (e.persisted) return;
+        if (location.hash) {
+          history.replaceState(null, '', location.pathname + location.search);
+          return;
+        }
         scrollTo(0, 0);
       });
     })();
@@ -86,11 +90,19 @@
   </div>
 
   </main>
-  <script src="assets/js/garden.js?v=121" defer data-cfasync="false"></script>
-  <script src="assets/js/sheet-flora.js?v=121" defer data-cfasync="false"></script>
-  <script src="assets/js/sheet-bugs.js?v=120" defer data-cfasync="false"></script>
-  <script src="assets/js/hex.js?v=120" defer data-cfasync="false"></script>
-  <script src="assets/js/cue.js?v=120" defer data-cfasync="false"></script>
-  <script src="assets/js/mount.js?v=123" defer data-cfasync="false"></script>
+  <script src="assets/js/garden.js?v=122" defer data-cfasync="false"></script>
+  <script src="assets/js/mount.js?v=125" defer data-cfasync="false"></script>
+  <script src="assets/js/cue.js?v=121" defer data-cfasync="false"></script>
+  <script data-cfasync="false">
+    addEventListener('load', function () {
+      ['assets/js/sheet-flora.js?v=121', 'assets/js/sheet-bugs.js?v=120', 'assets/js/hex.js?v=120'].forEach(function (src) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        s.setAttribute('data-cfasync', 'false');
+        document.head.appendChild(s);
+      });
+    });
+  </script>
 </body>
 </html>

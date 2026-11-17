@@ -37,11 +37,22 @@
     if (STILL) seedStill(); else typeOut();
   }
 
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(boot).catch(boot);
-  } else {
-    boot();
+  var DISPLAY = '700 100px "Playfair Display"';
+  var FONT_WAIT = 900;
+
+  function start() {
+    if (!document.fonts || !document.fonts.load) return boot();
+    var settled = false;
+    var go = function () {
+      if (settled) return;
+      settled = true;
+      boot();
+    };
+    setTimeout(go, FONT_WAIT);
+    document.fonts.load(DISPLAY).then(go).catch(go);
   }
+
+  start();
 
   if (cv) {
     cv.addEventListener('pointerdown', function (e) {
