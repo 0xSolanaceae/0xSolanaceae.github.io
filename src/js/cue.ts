@@ -1,6 +1,6 @@
 (() => {
   const LIMIT = 40;
-  const cue = document.querySelector('.scroll-cue');
+  const cue = document.querySelector<HTMLElement>('.scroll-cue');
 
   const dismiss = () => {
     if (!cue) return;
@@ -14,8 +14,9 @@
     if (history.replaceState) history.replaceState(null, '', location.pathname + location.search);
   };
 
-  const jump = (e) => {
-    const target = document.querySelector(e.currentTarget.getAttribute('href'));
+  const jump = (e: Event) => {
+    const href = (e.currentTarget as Element).getAttribute('href')!;
+    const target = document.querySelector<HTMLElement>(href);
     if (!target) return;
     e.preventDefault();
     dismiss();

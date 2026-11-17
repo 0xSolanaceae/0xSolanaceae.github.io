@@ -1,24 +1,40 @@
-(() => {
-  const svg = document.querySelector('.plate-svg');
-  if (!svg) return;
+interface HexCell { r: number; b: number }
 
-  const FULL_BOX = svg.getAttribute('viewBox') || '0 0 800 792';
+interface HexRow {
+  hex: number[];
+  ascii: string;
+  addr?: string;
+}
+
+(() => {
+  const svg = document.querySelector<SVGSVGElement>('.plate-svg');
+  if (!svg) return;
+  const root = svg;
+
+  /** SVG elements do not get the typed addEventListener overloads that HTMLElement has. */
+  function listen<K extends keyof GlobalEventHandlersEventMap>(
+    el: Element, type: K, fn: (e: GlobalEventHandlersEventMap[K]) => void,
+  ): void {
+    el.addEventListener(type, fn as EventListener);
+  }
+
+  const FULL_BOX = root.getAttribute('viewBox') || '0 0 800 792';
   const COMPACT_BOX = '90 24 371 768';
   const COMPACT_ASC = 272;
   const narrow = matchMedia('(max-width: 720px)');
   const fitPlate = () => {
     const box = narrow.matches ? COMPACT_BOX : FULL_BOX;
-    if (svg.getAttribute('viewBox') !== box) {
-      svg.setAttribute('viewBox', box);
-      for (const t of svg.querySelectorAll('text.ascii')) {
-        t.setAttribute('x', narrow.matches ? COMPACT_ASC : 601);
+    if (root.getAttribute('viewBox') !== box) {
+      root.setAttribute('viewBox', box);
+      for (const t of root.querySelectorAll('text.ascii')) {
+        t.setAttribute('x', String(narrow.matches ? COMPACT_ASC : 601));
       }
       dispatchEvent(new Event('resize'));
     }
   };
   fitPlate();
-  if (narrow.addEventListener) narrow.addEventListener('change', fitPlate);
-  else if (narrow.addListener) narrow.addListener(fitPlate);
+  if ('addEventListener' in narrow) narrow.addEventListener('change', fitPlate);
+  else (narrow as unknown as { addListener(fn: () => void): void }).addListener(fitPlate);
 
   const NS = 'http://www.w3.org/2000/svg';
   const CW = 6.9;
@@ -33,30 +49,30 @@
   const BASE = 0xa2040;
   const CAP = 15;
 
-  const cursor = svg.querySelector('[data-hex]');
+  const cursor = root.querySelector<SVGGElement>('[data-hex]');
   if (!cursor) return;
 
-  const hover = cursor.querySelector('.hex-hover');
-  const caretHex = cursor.querySelector('.hex-caret');
-  const caretAsc = cursor.querySelector('.hex-caret-ascii');
-  const status = svg.querySelector('.hex-status');
+  const hover = cursor.querySelector<SVGRectElement>('.hex-hover')!;
+  const caretHex = cursor.querySelector<SVGRectElement>('.hex-caret')!;
+  const caretAsc = cursor.querySelector<SVGRectElement>('.hex-caret-ascii')!;
+  const status = root.querySelector<SVGElement>('.hex-status')!;
   const live = document.getElementById('hex-live');
 
-  const selG = document.createElementNS(NS, 'g');
+  const selG = document.createElementNS(NS, 'g') as SVGGElement;
   selG.setAttribute('class', 'hex-sel');
   cursor.insertBefore(selG, cursor.firstChild);
 
-  const rows = [];
-  const addrEls = [];
+  const rows: HexRow[] = [];
+  const addrEls: SVGTextElement[] = [];
   for (let r = 0; r < ROWS; r++) rows.push({ hex: [], ascii: '' });
 
-  for (const t of svg.querySelectorAll('text')) {
+  for (const t of root.querySelectorAll('text')) {
     const x = Number(t.getAttribute('x'));
     const y = Number(t.getAttribute('y'));
     if (!(y >= ROW0)) continue;
     const r = Math.round((y - ROW0) / LH);
     if (r < 0 || r >= ROWS) continue;
-    const txt = t.textContent;
+    const txt = t.textContent ?? '';
 
     if (x === X_ADDR) { rows[r].addr = txt; addrEls[r] = t; }
     else if (x === X_HEX1 || x === X_HEX2) {
@@ -64,32 +80,32 @@
     } else if (x === X_ASC) rows[r].ascii = txt.replace(/\|/g, '');
   }
 
-  const byteX = (b) => (b < 8 ? X_HEX1 + b * 3 * CW : X_HEX2 + (b - 8) * 3 * CW);
-  const asciiX = (b) => X_ASC + (b + 1) * CW;
-  const rowY = (r) => ROW0 + r * LH;
+  const byteX = (b: number) => (b < 8 ? X_HEX1 + b * 3 * CW : X_HEX2 + (b - 8) * 3 * CW);
+  const asciiX = (b: number) => X_ASC + (b + 1) * CW;
+  const rowY = (r: number) => ROW0 + r * LH;
 
-  const place = (el, x, w, r) => {
+  const place = (el: SVGElement, x: number, w: number, r: number) => {
     el.setAttribute('x', x.toFixed(1));
     el.setAttribute('y', (rowY(r) - CAP + 3).toFixed(1));
     el.setAttribute('width', Math.max(0, w).toFixed(1));
-    el.setAttribute('height', CAP);
+    el.setAttribute('height', String(CAP));
   };
 
-  const addrOf = (i) => '0x' + (BASE + i).toString(16).padStart(8, '0');
-  const hexOf = (i) => {
+  const addrOf = (i: number) => '0x' + (BASE + i).toString(16).padStart(8, '0');
+  const hexOf = (i: number) => {
     const v = rows[Math.floor(i / N)].hex[i % N];
     return Number.isFinite(v) ? v.toString(16).padStart(2, '0') : '--';
   };
-  const charOf = (i) => rows[Math.floor(i / N)].ascii[i % N] || '.';
+  const charOf = (i: number) => rows[Math.floor(i / N)].ascii[i % N] || '.';
 
-  const point = svg.createSVGPoint();
-  const toUser = (e) => {
+  const point = root.createSVGPoint();
+  const toUser = (e: PointerEvent) => {
     point.x = e.clientX;
     point.y = e.clientY;
-    return point.matrixTransform(svg.getScreenCTM().inverse());
+    return point.matrixTransform(root.getScreenCTM()!.inverse());
   };
 
-  const cellAt = (u) => {
+  const cellAt = (u: DOMPoint): HexCell | null => {
     const r = Math.round((u.y - ROW0) / LH);
     if (r < 0 || r >= ROWS) return null;
     if (Math.abs(u.y - rowY(r)) > 13) return null;
@@ -110,11 +126,11 @@
     return null;
   };
 
-  let caret = null;
-  let anchor = null;
+  let caret: HexCell | null = null;
+  let anchor: HexCell | null = null;
   let dragging = false;
 
-  const index = (c) => c.r * N + c.b;
+  const index = (c: HexCell) => c.r * N + c.b;
   const range = () => {
     if (!caret) return null;
     const a = anchor ? index(anchor) : index(caret);
@@ -122,7 +138,7 @@
     return { from: Math.min(a, c), to: Math.max(a, c) };
   };
 
-  const say = (note) => {
+  const say = (note?: string) => {
     const sel = range();
     let line = '';
     if (sel) {
@@ -145,7 +161,7 @@
     const sel = range();
     if (!sel || sel.from === sel.to) return;
 
-    const rect = (cls, x, w, r) => {
+    const rect = (cls: string, x: number, w: number, r: number) => {
       const el = document.createElementNS(NS, 'rect');
       if (cls) el.setAttribute('class', cls);
       place(el, x, w, r);
@@ -172,7 +188,7 @@
     }
   };
 
-  let marked = null;
+  let marked: SVGTextElement | null = null;
   const markRow = () => {
     if (marked) marked.classList.remove('is-row');
     marked = null;
@@ -185,26 +201,26 @@
     const on = !!caret;
     caretHex.style.display = on ? '' : 'none';
     caretAsc.style.display = on ? '' : 'none';
-    if (!on) return;
+    if (!caret) return;
     place(caretHex, byteX(caret.b), 2 * CW, caret.r);
     place(caretAsc, asciiX(caret.b), CW, caret.r);
   };
 
-  const update = (note) => {
+  const update = (note?: string) => {
     drawSelection();
     drawCaret();
     markRow();
     say(note);
   };
 
-  const setCaret = (cell, keepAnchor) => {
+  const setCaret = (cell: HexCell, keepAnchor: boolean) => {
     caret = cell;
     if (!keepAnchor) anchor = null;
     else if (!anchor) anchor = cell;
     update();
   };
 
-  const copyText = (text, count) => {
+  const copyText = (text: string, count: number) => {
     const done = () => {
       say(`copied ${count} byte${count === 1 ? '' : 's'}`);
       window.setTimeout(() => say(), 1200);
@@ -228,10 +244,10 @@
     }
   };
 
-  const copySelection = (asAscii) => {
+  const copySelection = (asAscii: boolean) => {
     const sel = range();
     if (!sel) return;
-    const parts = [];
+    const parts: string[] = [];
     for (let i = sel.from; i <= sel.to; i++) parts.push(asAscii ? charOf(i) : hexOf(i));
     const text = asAscii ? parts.join('') : parts.join(' ');
     copyText(text, sel.to - sel.from + 1);
@@ -239,7 +255,7 @@
 
   const clearHover = () => { hover.style.display = 'none'; };
 
-  svg.addEventListener('pointermove', (e) => {
+  listen(root, 'pointermove', (e) => {
     const u = toUser(e);
     const cell = cellAt(u);
 
@@ -254,32 +270,33 @@
     hover.style.display = '';
   });
 
-  svg.addEventListener('pointerleave', () => { clearHover(); dragging = false; });
+  listen(root, 'pointerleave', () => { clearHover(); dragging = false; });
 
-  svg.addEventListener('pointerdown', (e) => {
-    if (e.target.closest && e.target.closest('a')) return;
+  listen(root, 'pointerdown', (e) => {
+    const target = e.target as Element | null;
+    if (target && target.closest('a')) return;
     const cell = cellAt(toUser(e));
     if (!cell) return;
     e.preventDefault();
-    svg.focus({ preventScroll: true });
+    root.focus({ preventScroll: true });
     dragging = true;
-    if (e.pointerId != null && svg.setPointerCapture) {
-      try { svg.setPointerCapture(e.pointerId); } catch (err) {  }
+    if (e.pointerId != null && root.setPointerCapture) {
+      try { root.setPointerCapture(e.pointerId); } catch (err) {  }
     }
     anchor = cell;
     setCaret(cell, true);
     clearHover();
   });
 
-  svg.addEventListener('pointerup', () => { dragging = false; });
+  listen(root, 'pointerup', () => { dragging = false; });
 
-  const stepBy = (d) => {
+  const stepBy = (d: number): HexCell => {
     if (!caret) return { r: 0, b: 0 };
     const i = Math.min(ROWS * N - 1, Math.max(0, index(caret) + d));
     return { r: Math.floor(i / N), b: i % N };
   };
 
-  svg.addEventListener('keydown', (e) => {
+  listen(root, 'keydown', (e) => {
     const extend = e.shiftKey;
     const k = e.key;
 
@@ -296,7 +313,8 @@
     else if (k === 'Home') setCaret({ r: caret ? caret.r : 0, b: 0 }, extend);
     else if (k === 'End') setCaret({ r: caret ? caret.r : 0, b: N - 1 }, extend);
     else if (k === 'Escape') {
-      if (anchor && range() && range().from !== range().to) { anchor = null; update(); }
+      const sel = range();
+      if (anchor && sel && sel.from !== sel.to) { anchor = null; update(); }
       else { caret = null; anchor = null; update(); }
       e.preventDefault();
       return;
@@ -306,7 +324,7 @@
     e.preventDefault();
   });
 
-  status.addEventListener('pointerdown', (e) => {
+  listen(status, 'pointerdown', (e) => {
     e.preventDefault();
     copySelection(e.shiftKey);
   });

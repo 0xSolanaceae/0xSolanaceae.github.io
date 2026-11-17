@@ -1,20 +1,38 @@
+interface BugMotion {
+  max: number; base: number; k: number; fy: number; fa: number;
+  wf: number; wo: number; jf: number; ja: number; flap: number;
+}
+
+interface BugZone { x0: number; x1: number; y0: number; y1: number; anchors: SheetBloom[] }
+
+interface BugTarget { x: number; y: number; bloom: boolean }
+
+interface Bug {
+  zone: BugZone; kind: string; size: number; m: BugMotion; seed: number;
+  x: number; y: number; vx: number; vy: number; ang: number; open: number; dir: number;
+  st: 'fly' | 'sit' | 'leave'; target: BugTarget | null; until: number; visits: number;
+  sitX: number; sitY: number; ph: number;
+  box?: [number, number, number, number];
+}
+
 (() => {
-  const sheet = document.querySelector('.plate');
-  if (!sheet) return;
-  const wrap = sheet.closest('.sheet') || sheet.parentElement;
+  const sheetOrNull = document.querySelector('.plate');
+  if (!sheetOrNull) return;
+  const sheet: Element = sheetOrNull;
+  const wrap = (sheet.closest('.sheet') || sheet.parentElement)!;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const cv = document.createElement('canvas');
   cv.className = 'sheet-bugs';
   cv.setAttribute('aria-hidden', 'true');
-  const g = cv.getContext('2d');
+  const g = cv.getContext('2d')!;
 
   const MARIGOLD = '#FF8A00';
   const CREAM = '#FFE2B8';
   const BODY = '#2A2114';
   const INK = '#171008';
 
-  const MV = {
+  const MV: Record<string, BugMotion> = {
     butterfly: { max: 118, base: 20, k: 1.5, fy: 3.2, fa: 24, wf: 4.3, wo: 7, jf: 13, ja: 5, flap: 17 },
     bee: { max: 168, base: 42, k: 2.4, fy: 9, fa: 38, wf: 6, wo: 13, jf: 41, ja: 9, flap: 62 },
     moth: { max: 96, base: 16, k: 1.7, fy: 4, fa: 16, wf: 5, wo: 9, jf: 21, ja: 7, flap: 12 },
@@ -29,7 +47,7 @@
     { kind: 'moth', size: 15, seed: 29, zone: 'grass' },
   ];
 
-  function rng(seed) {
+  function rng(seed: number): () => number {
     let a = seed;
     return function () {
       a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -39,14 +57,14 @@
     };
   }
 
-  let bugs = [];
+  let bugs: Bug[] = [];
   let W = 0, H = 0, dpr = 1;
   let raf = 0, last = 0, paused = false, geo = null;
 
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const rand = (r, a, b) => a + r() * (b - a);
+  const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
+  const rand = (r: () => number, a: number, b: number) => a + r() * (b - a);
 
-  function paintBee(open) {
+  function paintBee(open: number): void {
     g.save();
     g.scale(open, 1);
     g.fillStyle = 'rgba(255,246,232,0.62)';
@@ -92,7 +110,7 @@
     g.stroke();
   }
 
-  function paintButterfly(open) {
+  function paintButterfly(open: number): void {
     for (const side of [-1, 1]) {
       g.save();
       g.scale(side * open, 1);
@@ -128,7 +146,7 @@
     g.stroke();
   }
 
-  function paintMoth(open) {
+  function paintMoth(open: number): void {
     for (const side of [-1, 1]) {
       g.save();
       g.scale(side * open, 1);
@@ -164,9 +182,9 @@
     g.stroke();
   }
 
-  const PAINT = { bee: paintBee, butterfly: paintButterfly, moth: paintMoth };
+  const PAINT: Record<string, (open: number) => void> = { bee: paintBee, butterfly: paintButterfly, moth: paintMoth };
 
-  function draw(b) {
+  function draw(b: Bug): void {
     const s = b.size / 20;
     g.save();
     g.translate(b.x, b.y);
@@ -176,7 +194,7 @@
     g.restore();
   }
 
-  function zoneFor(name) {
+  function zoneFor(name: string): BugZone | null {
     const s = window.sheetFlora;
     if (!s) return null;
     const { left, right, padB, W: vw, H: vh, ground } = s.bounds;
@@ -202,7 +220,7 @@
     return null;
   }
 
-  function resize() {
+  function resize(): void {
     const r = wrap.getBoundingClientRect();
     W = Math.round(r.width);
     H = Math.round(r.height);
@@ -214,7 +232,7 @@
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function spawn() {
+  function spawn(): void {
     bugs = [];
     if (!window.sheetFlora) return;
     const rnd = rng(451);
@@ -232,7 +250,7 @@
     }
   }
 
-  function perchTarget(b, rnd) {
+  function perchTarget(b: Bug, rnd: () => number): BugTarget {
     const z = b.zone;
     if (z.anchors.length && rnd() < 0.8) {
       const a = z.anchors[(rnd() * z.anchors.length) | 0];
@@ -241,7 +259,7 @@
     return { x: rand(rnd, z.x0 + 24, z.x1 - 24), y: rand(rnd, z.y0 + 24, z.y1 - 16), bloom: false };
   }
 
-  function step(dt, now) {
+  function step(dt: number, now: number): void {
     const t = now / 1000;
     const rnd = Math.random;
 
@@ -259,7 +277,7 @@
           if (b.visits >= 2 + ((rnd() * 3) | 0)) {
             b.st = 'leave';
             const away = b.x < (z.x0 + z.x1) / 2;
-            b.target = { x: away ? -120 : W + 120, y: b.y - 50 };
+            b.target = { x: away ? -120 : W + 120, y: b.y - 50, bloom: false };
           } else {
             b.st = 'fly';
             b.target = perchTarget(b, rnd);
@@ -270,7 +288,7 @@
 
       if (b.st === 'leave') {
         const sp = m.max * 1.2;
-        const toRight = b.target.x > b.x;
+        const toRight = b.target!.x > b.x;
         b.vx += ((toRight ? sp : -sp) - b.vx) * Math.min(1, dt * 5);
         b.vy += (-sp * 0.3 - b.vy) * Math.min(1, dt * 5);
         b.x += b.vx * dt;
@@ -336,7 +354,7 @@
     }
   }
 
-  function render() {
+  function render(): void {
     for (const b of bugs) {
       if (b.box) g.clearRect(b.box[0], b.box[1], b.box[2], b.box[3]);
     }
@@ -347,7 +365,7 @@
     }
   }
 
-  function frame(now) {
+  function frame(now: number): void {
     raf = 0;
     if (paused) return;
     const dt = Math.min(0.05, (now - last) / 1000 || 0.016);

@@ -1,6 +1,109 @@
 'use strict';
 
-const CONFIG = {
+type Pt = [number, number];
+type Rng = () => number;
+type TFn = (x: number, y: number, z?: number) => Pt;
+
+interface WeaveSeg { u0: number; u1: number; layer: number }
+
+interface Motion {
+  max: number; base: number; k: number; leave: number; acc: number;
+  fy: number; fa: number; wf: number; wo: number; jf: number; ja: number;
+  wx: number; wy: number; wA: number; wB: number;
+}
+
+/** A stem plus the sub-curves it is drawn in; `_wp` caches its warped points per pass. */
+interface StemEl {
+  t: 'stem'; id: number; pts: Pt[]; segs: WeaveSeg[]; d0: number; dur: number;
+  w: number; thorns: { u: number; s: number }[];
+  _wp?: Pt[]; _wpP?: number;
+}
+
+interface LeafEl {
+  t: 'leaf'; id: number; x: number; y: number; a: number; L: number;
+  bend: number; layer: number; d0: number;
+}
+
+interface RoseEl {
+  t: 'rose'; kind: string; id: number; x: number; y: number; R: number;
+  rot: number; ph1: number; ph2: number; turns: number; layer: number; d0: number;
+  /** overlap-relaxation scale, eased per frame */
+  _k?: number;
+  /** overlap-relaxation scale for the current pass */
+  _tk?: number;
+}
+
+type GardenEl = StemEl | LeafEl | RoseEl;
+
+interface Letter {
+  ch: string; id: number; birth: number; els: GardenEl[];
+  endEls?: GardenEl[] | null;
+  tend?: StemEl[];
+  tx?: number; ty?: number; tw?: number; line?: number;
+  /** undefined until layout() places the letter; keeps new glyphs from flying in from the origin */
+  x?: number; y?: number;
+  tb?: number; ws?: number; wi?: number; prev?: Letter | null;
+  cut?: number; dead?: number;
+  planter?: boolean; side?: number; ay?: number;
+  _nx?: Letter | null; lean?: Pt;
+}
+
+interface WordParams {
+  roseP: number; leafy: number; dens: number; lean: number;
+  big: number; curvy: number; bridgeP: number; w: number;
+}
+
+interface GrowOpts {
+  base?: Pt; dir?: number; len?: number; pts?: Pt[];
+  d0: number; tip?: string | null; depth?: number; layer0?: number;
+}
+
+type FlyState = 'fly' | 'wander' | 'sit' | 'leave';
+
+interface Fly {
+  kind: string; x: number; y: number; vx: number; vy: number; st: FlyState;
+  pid: number | null; hx: number; hy: number; t0: number; ph: number; sz: number;
+  seed: number; ang: number; dir: number; pit: number; open: number;
+  until: number; visits: number; ex?: number; ey?: number;
+}
+
+interface Perch { id: number; x: number; y: number; R: number }
+
+interface GardenColors { red: string; blue: string; line: string; text: string; vein: string }
+
+interface GardenPalette { bg: string; C: GardenColors }
+
+type PaletteRow = [name: string, bg: string, red: string, blue: string, line: string, text: string];
+
+interface GardenState {
+  letters: Letter[]; S: number; C: GardenColors; boil: boolean;
+  recoil: number; speed: number; wither: number; face: boolean; sway: number;
+}
+
+interface GardenPainter {
+  fill(p: Pt[], col: string, al?: number): void;
+  stroke(p: Pt[], col: string, w: number, closed?: boolean): void;
+  fillMany(list: Pt[][], col: string): void;
+  strokeMany(list: Pt[][], col: string, w: number): void;
+  rect(x: number, y: number, w: number, h: number, col: string): void;
+  text(ch: string, x: number, y: number, S: number, col: string): void;
+}
+
+/** Canvas context carrying the cached font/text state the painter tracks. */
+interface GardenCtx extends CanvasRenderingContext2D {
+  _fgS?: number;
+  _fgF?: string;
+  _fgA?: number;
+}
+
+interface GardenConfig {
+  boil: boolean; recoil: number; density: number; speed: number; bounce: number;
+  sway: number; boilMs: number; boilAmp: number; wobble: number; leanAmt: number;
+  flowers: Record<string, number>; avoidOverlap: boolean;
+  insects: Record<string, number>; ambient: boolean; ambientEvery: number;
+}
+
+const CONFIG: GardenConfig = {
   boil: true,
   recoil: 20,
   density: 0.85,
@@ -20,8 +123,59 @@ const CONFIG = {
 };
 
 class Garden {
+  el: { cv: HTMLCanvasElement };
+  cfg: GardenConfig;
+  KF: Record<string, number>;
+  MV: Record<string, Motion>;
+  F: string;
+  FW: number;
+  PAL: PaletteRow[];
+  state: { palette: number };
+  phone: MediaQueryList;
+
+  letters: Letter[] = [];
+  uid = 1;
+  cache: Record<string, number> = {};
+  Sd = 0;
+  St = 0;
+  wrapped = false;
+  t0 = 0;
+  lastKey = 0;
+  rand: Rng = Math.random;
+  g!: GardenCtx;
+  BK!: GardenPainter;
+  _pass = 0;
+  msAvg = 0;
+  pace = 0;
+  fa: Record<number, Pt> = {};
+  mx: number | null = null;
+  my = 0;
+  flies: Fly[] = [];
+  perch: Perch[] = [];
+  still = false;
+  paused = false;
+  typing = false;
+  lt = 0;
+  W = 0;
+  H = 0;
+  dpr = 1;
+  _rz = 0;
+  _rzDone = false;
+  ctx_ = 0;
+  cty = 0;
+  cx = 0;
+  cy = 0;
+  _amb: number | null = null;
+  _fl = 0;
+  _palI = -1;
+  _pal: GardenPalette | null = null;
+  cc!: GardenColors;
+  _now = 0;
+  planters: Letter[] = [];
+  _pd: Letter[] = [];
+
   constructor() {
-    this.el = { cv: document.getElementById('cv') };
+    this.el = { cv: document.getElementById('cv') as HTMLCanvasElement };
     this.cfg = CONFIG;
 
     this.KF = { rose: 1, peony: 1.08, tulip: 1.1, daisy: 1.05, poppy: 1.02, bell: 0.95, marigold: 1.1 };
@@ -54,7 +208,7 @@ class Garden {
   init() {
     this.letters = []; this.uid = 1; this.cache = {}; this.Sd = 0; this.St = 0; this.wrapped = false;
     this.t0 = performance.now(); this.lastKey = 0; this.rand = Math.random;
-    this.g = this.el.cv.getContext('2d', { alpha: false });
+    this.g = this.el.cv.getContext('2d', { alpha: false }) as GardenCtx;
     this.BK = this.backend(this.g);
     this._pass = 0; this.msAvg = 0; this.pace = 0;
     this.fa = {}; this.mx = null; this.flies = []; this.perch = [];
@@ -68,7 +222,7 @@ class Garden {
     document.addEventListener('pointerleave', () => { this.mx = null; });
 
     if (document.fonts) document.fonts.load(`${this.FW} 100px ${this.F}`).then(() => { this.cache = {}; this.layout(); this.paint(performance.now(), false); }).catch(() => {});
-    this.still = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    this.still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (this.still) { this.frame = () => {}; return; }
     let last = 0;
     const loop = () => {
@@ -82,15 +236,15 @@ class Garden {
     setTimeout(loop, 0);
   }
 
-  pickInsect() {
+  pickInsect(): string {
     const w = this.cfg.insects || { butterfly: 1 }, ks = Object.keys(w).filter(k => w[k] > 0);
     if (!ks.length) return 'butterfly';
     let tot = 0; for (const k of ks) tot += w[k];
     let x = Math.random() * tot; for (const k of ks) { x -= w[k]; if (x <= 0) return k; }
     return ks[ks.length - 1];
   }
-  insectSize(k) { const S = this.Sd || this.St || 100; return k === 'bee' ? Math.max(8, S * 0.075) : k === 'dragonfly' ? Math.max(9, S * 0.08) : Math.max(9, S * 0.09); }
-  spawnFly(cx, cy, kind) {
+  insectSize(k: string): number { const S = this.Sd || this.St || 100; return k === 'bee' ? Math.max(8, S * 0.075) : k === 'dragonfly' ? Math.max(9, S * 0.08) : Math.max(9, S * 0.09); }
+  spawnFly(cx: number, cy: number, kind?: string): void {
     kind = kind || this.pickInsect();
     if (this.flies.length >= 6) { const o = this.flies.find(f => f.st !== 'leave'); if (o) this.flyOff(o); }
     const taken = new Set(this.flies.filter(f => f.st !== 'leave').map(f => f.pid));
@@ -103,7 +257,7 @@ class Garden {
       visits: kind === 'butterfly' ? 1 + Math.floor(r() * 2) : 2 + Math.floor(r() * 3) });
   }
 
-  ambient(now) {
+  ambient(now: number): void {
     if (!this.cfg.ambient || !this.perch.length) return;
     if (this._amb == null) this._amb = now + 2500;
     if (now < this._amb) return;
@@ -114,24 +268,24 @@ class Garden {
     const p = free[Math.floor(Math.random() * free.length)];
     this.spawnFly(p.x, p.y);
   }
-  flyOff(f) { f.st = 'leave'; f.pid = null; f.ex = f.x < this.W / 2 ? -80 : this.W + 80; f.ey = f.y - this.H * (f.kind === 'dragonfly' ? 0.12 : 0.3); }
+  flyOff(f: Fly): void { f.st = 'leave'; f.pid = null; f.ex = f.x < this.W / 2 ? -80 : this.W + 80; f.ey = f.y - this.H * (f.kind === 'dragonfly' ? 0.12 : 0.3); }
 
-  nextPerch(f) {
+  nextPerch(f: Fly): void {
     if (f.visits-- <= 0) return this.flyOff(f);
     const taken = new Set(this.flies.filter(o => o !== f && o.st !== 'leave').map(o => o.pid));
     const cand = this.perch.filter(p => p.id !== f.pid && !taken.has(p.id));
     if (!cand.length) return this.flyOff(f);
     cand.sort((a, b) => Math.hypot(a.x - f.x, a.y - f.y) - Math.hypot(b.x - f.x, b.y - f.y));
-    const n = cand.length, rn = m => Math.floor(Math.random() * Math.min(m, n));
+    const n = cand.length, rn = (m: number) => Math.floor(Math.random() * Math.min(m, n));
     const pick = f.kind === 'bee' ? cand[rn(3)] : f.kind === 'dragonfly' ? cand[n - 1 - rn(3)] : cand[rn(5)];
     f.pid = pick.id; f.st = 'fly';
   }
-  landed(f, now) {
+  landed(f: Fly, now: number): void {
     f.st = 'sit'; f.ph = 0;
     const r = Math.random();
     f.until = now + (f.kind === 'bee' ? 1800 + r * 1800 : f.kind === 'dragonfly' ? 1300 + r * 1200 : 4000 + r * 4000);
   }
-  sitPose(f, now, k) {
+  sitPose(f: Fly, now: number, k: string): void {
     const s = now / 1000;
     if (k === 'bee') {
       const burst = Math.sin(s * 1.3 + f.seed) > 0.8;
@@ -144,16 +298,16 @@ class Garden {
       f.open = burst ? 0.2 + 0.8 * Math.abs(Math.cos(s * 9 + f.seed)) : 0.25 + 0.15 * Math.sin(f.ph);
     }
   }
-  drawFlies(B, now, C) {
+  drawFlies(B: GardenPainter, now: number, C: GardenColors): void {
     this.ambient(now);
     const dt = Math.min(48, now - (this._fl || now)); this._fl = now;
     if (!this.flies.length) return;
-    const byId = {}; for (const p of this.perch) byId[p.id] = p;
+    const byId: Record<number, Perch> = {}; for (const p of this.perch) byId[p.id] = p;
     this.flies = this.flies.filter(f => {
       const k = f.kind || 'butterfly', m = this.MV[k], t = (now - f.t0) / 1000;
-      let tx, ty;
+      let tx = 0, ty = 0;
       if (f.st === 'sit' || f.st === 'fly') {
-        const p = byId[f.pid];
+        const p = byId[f.pid!];
         if (!p) { this.flyOff(f); }
         else { tx = p.x + p.R * 0.05; ty = p.y - p.R * 0.55; }
       }
@@ -161,7 +315,7 @@ class Garden {
         tx = f.hx + Math.sin(t * m.wx + f.seed) * m.wA; ty = f.hy + Math.sin(t * m.wy + f.seed) * m.wB;
         if (t > 3.5) this.flyOff(f);
       }
-      if (f.st === 'leave') { tx = f.ex; ty = f.ey; }
+      if (f.st === 'leave') { tx = f.ex!; ty = f.ey!; }
       if (f.st === 'sit') {
         f.x += (tx - f.x) * 0.35; f.y += (ty - f.y) * 0.35; f.ang *= 0.85; f.pit *= 0.8;
         f.ph += dt * 0.004;
@@ -186,10 +340,10 @@ class Garden {
       return true;
     });
   }
-  butterfly(B, x, y, s, ang, o, C) {
-    const ca = Math.cos(ang), sa = Math.sin(ang), T = (px, py) => [x + (px * ca - py * sa) * s, y + (px * sa + py * ca) * s];
-    const wing = (cx, cy, rx, ry, a, side) => {
-      const pts = [], c = Math.cos(a), sn = Math.sin(a);
+  butterfly(B: GardenPainter, x: number, y: number, s: number, ang: number, o: number, C: GardenColors): void {
+    const ca = Math.cos(ang), sa = Math.sin(ang), T = (px: number, py: number): Pt => [x + (px * ca - py * sa) * s, y + (px * sa + py * ca) * s];
+    const wing = (cx: number, cy: number, rx: number, ry: number, a: number, side: number): Pt[] => {
+      const pts: Pt[] = [], c = Math.cos(a), sn = Math.sin(a);
       for (let k = 0; k < 22; k++) { const th = k / 22 * Math.PI * 2, r = 1 + 0.08 * Math.sin(th * 3), lx = Math.cos(th) * rx * r, ly = Math.sin(th) * ry * r; pts.push(T(side * (cx + lx * c - ly * sn) * (0.12 + 0.88 * o), cy + lx * sn + ly * c)); }
       return pts;
     };
@@ -198,27 +352,27 @@ class Garden {
       B.fill(wing(0.55, -0.32, 0.55, 0.36, -0.55, sd), C.text);
       if (o > 0.35) B.fill(wing(0.66, -0.4, 0.13, 0.11, 0, sd), C.red);
     }
-    const body = []; for (let k = 0; k < 18; k++) { const th = k / 18 * Math.PI * 2; body.push(T(Math.cos(th) * 0.08, Math.sin(th) * 0.48)); }
+    const body: Pt[] = []; for (let k = 0; k < 18; k++) { const th = k / 18 * Math.PI * 2; body.push(T(Math.cos(th) * 0.08, Math.sin(th) * 0.48)); }
     B.fill(body, C.blue);
     const lw = Math.max(0.8, s * 0.05);
     B.stroke([T(0, -0.42), T(-0.14, -0.72), T(-0.24, -0.86)], C.blue, lw);
     B.stroke([T(0, -0.42), T(0.14, -0.72), T(0.24, -0.86)], C.blue, lw);
   }
 
-  insectFrame(x, y, s, dir, pit) {
+  insectFrame(x: number, y: number, s: number, dir: number, pit: number): { T: (px: number, py: number) => Pt; ell: (cx: number, cy: number, rx: number, ry: number, rot: number, n?: number) => Pt[] } {
     const ang = pit * dir, ca = Math.cos(ang), sa = Math.sin(ang);
-    const T = (px, py) => { const X = px * dir; return [x + (X * ca - py * sa) * s, y + (X * sa + py * ca) * s]; };
-    const ell = (cx, cy, rx, ry, rot, n = 16) => {
-      const c = Math.cos(rot), sn = Math.sin(rot), p = [];
+    const T = (px: number, py: number): Pt => { const X = px * dir; return [x + (X * ca - py * sa) * s, y + (X * sa + py * ca) * s]; };
+    const ell = (cx: number, cy: number, rx: number, ry: number, rot: number, n = 16): Pt[] => {
+      const c = Math.cos(rot), sn = Math.sin(rot), p: Pt[] = [];
       for (let k = 0; k < n; k++) { const th = k / n * Math.PI * 2, lx = Math.cos(th) * rx, ly = Math.sin(th) * ry; p.push(T(cx + lx * c - ly * sn, cy + lx * sn + ly * c)); }
       return p;
     };
     return { T, ell };
   }
 
-  bee(B, x, y, s, dir, pit, fl, C) {
+  bee(B: GardenPainter, x: number, y: number, s: number, dir: number, pit: number, fl: number, C: GardenColors): void {
     const { T, ell } = this.insectFrame(x, y, s, dir, pit), lw = Math.max(0.8, s * 0.05);
-    const wing = (a, al) => { const px = 0.12, py = -0.2; B.fill(ell(px + Math.cos(a) * 0.32, py + Math.sin(a) * 0.32, 0.34, 0.14, a), C.text, al); };
+    const wing = (a: number, al: number) => { const px = 0.12, py = -0.2; B.fill(ell(px + Math.cos(a) * 0.32, py + Math.sin(a) * 0.32, 0.34, 0.14, a), C.text, al); };
     wing(-2.0 + 0.7 * fl, 0.38);
     B.stroke([T(-0.67, 0.02), T(-0.84, 0.05)], C.blue, lw);
     B.fill(ell(-0.25, 0.02, 0.42, 0.28, 0), C.text);
@@ -229,7 +383,7 @@ class Garden {
     wing(-1.35 + 0.7 * fl, 0.55);
   }
 
-  dragonfly(B, x, y, s, dir, pit, o, C) {
+  dragonfly(B: GardenPainter, x: number, y: number, s: number, dir: number, pit: number, o: number, C: GardenColors): void {
     const { T, ell } = this.insectFrame(x, y, s, dir, pit), lw = Math.max(1, s * 0.11), len = 0.55 + 0.45 * o;
     for (const sd of [-1, 1]) for (let j = 0; j < 2; j++) {
       const px = [0.66, 0.46][j] - j * 0.04 * sd;
@@ -241,7 +395,7 @@ class Garden {
     B.fill(ell(0.55, 0, 0.24, 0.14, 0), C.blue);
     B.fill(ell(0.88, 0, 0.12, 0.13, 0), C.red);
   }
-  faceTurn(e, x, y) {
+  faceTurn(e: RoseEl, x: number, y: number): Pt {
     let wx = 0, wy = 0;
     if (this.mx != null) {
       const dx = this.mx - x, dy = this.my - y, d = Math.hypot(dx, dy), reach = 300;
@@ -250,36 +404,36 @@ class Garden {
         wx = dx / d * s; wy = dy / d * s;
       }
     }
-    const c = this.fa[e.id] || [0, 0];
+    const c: Pt = this.fa[e.id] || [0, 0];
     c[0] += (wx - c[0]) * 0.09; c[1] += (wy - c[1]) * 0.09;
     this.fa[e.id] = c;
     return c;
   }
 
-  h(n) { const x = Math.sin(n) * 43758.5453; return x - Math.floor(x); }
-  spr(t, k = 7, w = 16) { if (t <= 0) return 0; return 1 - Math.exp(-t * k / this.cfg.bounce) * Math.cos(t * w); }
-  eo(t) { if (t <= 0) return 0; if (t >= 1) return 1; return 1 - Math.pow(1 - t, 3); }
-  rng(seed) {
+  h(n: number): number { const x = Math.sin(n) * 43758.5453; return x - Math.floor(x); }
+  spr(t: number, k = 7, w = 16): number { if (t <= 0) return 0; return 1 - Math.exp(-t * k / this.cfg.bounce) * Math.cos(t * w); }
+  eo(t: number): number { if (t <= 0) return 0; if (t >= 1) return 1; return 1 - Math.pow(1 - t, 3); }
+  rng(seed: number): Rng {
     let s = seed | 0;
     return () => { s = (s + 0x6D2B79F5) | 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
-  bez(a, b, c, d, n) {
-    const P = [];
+  bez(a: Pt, b: Pt, c: Pt, d: Pt, n: number): Pt[] {
+    const P: Pt[] = [];
     for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t;
       P.push([u*u*u*a[0] + 3*u*u*t*b[0] + 3*u*t*t*c[0] + t*t*t*d[0], u*u*u*a[1] + 3*u*u*t*b[1] + 3*u*t*t*c[1] + t*t*t*d[1]]); }
     return P;
   }
-  at(P, u) {
+  at(P: Pt[], u: number): [Pt, number] {
     const n = P.length; const i = Math.min(n - 2, Math.max(1, Math.round(u * (n - 1))));
     return [P[i], Math.atan2(P[i+1][1] - P[i-1][1], P[i+1][0] - P[i-1][0])];
   }
-  jit(id, f, amp) {
+  jit(id: number, f: number, amp: number): [number, number, number] {
     if (!amp) return [0, 0, 0];
     return [(this.h(id*1.37 + f*7.13)*2 - 1)*amp, (this.h(id*2.71 + f*3.11)*2 - 1)*amp, (this.h(id*5.3 + f*1.7)*2 - 1)*0.035];
   }
-  path(c, p, closed) {
+  path(c: CanvasRenderingContext2D, p: Pt[], closed: boolean): void {
     const n = p.length; if (n < 2) return;
-    const m = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    const m = (a: Pt, b: Pt): Pt => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
     if (closed) {
       const s = m(p[n-1], p[0]); c.moveTo(s[0], s[1]);
       for (let i = 0; i < n; i++) { const q = m(p[i], p[(i+1) % n]); c.quadraticCurveTo(p[i][0], p[i][1], q[0], q[1]); }
@@ -290,7 +444,7 @@ class Garden {
       c.lineTo(p[n-1][0], p[n-1][1]);
     }
   }
-  backend(g) {
+  backend(g: GardenCtx): GardenPainter {
     const self = this;
     return {
       fill: (p, col, al) => { g.beginPath(); self.path(g, p, true); g.fillStyle = col; if (al != null) g.globalAlpha = al; g.fill(); if (al != null) g.globalAlpha = 1; },
@@ -305,26 +459,26 @@ class Garden {
       }
     };
   }
-  vine(base, dir, len, amp, waves, ph, bend, n) {
-    n = n || 40; const P = [[base[0], base[1]]], step = len / n; let x = base[0], y = base[1];
+  vine(base: Pt, dir: number, len: number, amp: number, waves: number, ph: number, bend: number, n?: number): Pt[] {
+    n = n || 40; const P: Pt[] = [[base[0], base[1]]], step = len / n; let x = base[0], y = base[1];
     for (let i = 1; i <= n; i++) {
       const u = i / n, a = dir + bend * u + amp * Math.sin(u * Math.PI * waves + ph) * Math.min(1, u * 3);
       x += Math.cos(a) * step; y += Math.sin(a) * step; P.push([x, y]);
     }
     return P;
   }
-  curl(P, sign, rad) {
+  curl(P: Pt[], sign: number, rad: number): Pt[] {
     const n = P.length, e = P[n - 1], a = Math.atan2(e[1] - P[n - 2][1], e[0] - P[n - 2][0]);
     const c = [e[0] - Math.sin(a) * sign * rad, e[1] + Math.cos(a) * sign * rad];
     const a0 = Math.atan2(e[1] - c[1], e[0] - c[0]);
     for (let i = 1; i <= 14; i++) { const u = i / 14, t = a0 + sign * u * Math.PI * 1.6, rr = rad * (1 - 0.5 * u); P.push([c[0] + Math.cos(t) * rr, c[1] + Math.sin(t) * rr]); }
     return P;
   }
-  weave(r, startLayer) {
-    const cuts = []; const nc = 1 + Math.floor(r() * 3);
+  weave(r: Rng, startLayer: number): WeaveSeg[] {
+    const cuts: number[] = []; const nc = 1 + Math.floor(r() * 3);
     for (let i = 0; i < nc; i++) cuts.push(0.15 + r() * 0.7);
     cuts.sort((a, b) => a - b);
-    const segs = []; let u0 = 0, layer = startLayer;
+    const segs: WeaveSeg[] = []; let u0 = 0, layer = startLayer;
     for (const c of cuts) {
       if (c <= u0) continue;
       segs.push({ u0, u1: c, layer });
@@ -334,15 +488,15 @@ class Garden {
     segs.push({ u0, u1: 1, layer });
     return segs;
   }
-  layerAt(segs, u) { for (const s of segs) if (u >= s.u0 && u <= s.u1) return s.layer; return segs[segs.length - 1].layer; }
+  layerAt(segs: WeaveSeg[], u: number): number { for (const s of segs) if (u >= s.u0 && u <= s.u1) return s.layer; return segs[segs.length - 1].layer; }
 
-  resize() {
+  resize(): void {
     if (this._rz) return;
     if (this._rzDone) { this._rz = requestAnimationFrame(() => { this._rz = 0; this.resizeNow(); }); return; }
     this._rzDone = true;
     this.resizeNow();
   }
-  resizeNow() {
+  resizeNow(): void {
     const c = this.el.cv, r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
     if (!r.width) return;
     this.W = r.width; this.H = r.height;
@@ -353,13 +507,13 @@ class Garden {
     this.layout(true);
     this.placePlanters();
   }
-  clearToBg() {
+  clearToBg(): void {
     const g = this.g, d = this.dpr;
     g.setTransform(d, 0, 0, d, 0, 0);
     g.fillStyle = this.pal().bg;
     g.fillRect(0, 0, this.W, this.H);
   }
-  mw(ch) {
+  mw(ch: string): number {
     if (this.cache[ch] != null) return this.cache[ch];
     this.g.font = `${this.FW} 100px ${this.F}`;
     this.g._fgS = 100; this.g._fgF = this.F;
@@ -368,19 +522,19 @@ class Garden {
     return (this.cache[ch] = w);
   }
 
-  layoutCore(A, W, H, prevWrapped) {
+  layoutCore(A: Letter[], W: number, H: number, prevWrapped: boolean): { S: number; wrapped: boolean; n: number } {
 
     const maxW = W * (this.phone.matches ? 0.94 : 0.82), S0 = H * 0.3, LH = 2.1;
     const ws = A.map(l => this.mw(l.ch));
-    const words = []; let cur = null;
+    const words: { sp?: boolean; idx: number[] }[] = []; let cur: { idx: number[] } | null = null;
     A.forEach((l, i) => {
       if (l.ch === ' ') { if (cur) { words.push(cur); cur = null; } words.push({ sp: true, idx: [i] }); }
       else { if (!cur) cur = { idx: [] }; cur.idx.push(i); }
     });
     if (cur) words.push(cur);
-    const lineW = (li, S) => { let e = li.length; while (e > 0 && A[li[e-1]].ch === ' ') e--; let w = 0; for (let k = 0; k < e; k++) w += ws[li[k]]; return w * S; };
-    const wrap = S => {
-      const lines = [[]]; let lw = 0;
+    const lineW = (li: number[], S: number) => { let e = li.length; while (e > 0 && A[li[e-1]].ch === ' ') e--; let w = 0; for (let k = 0; k < e; k++) w += ws[li[k]]; return w * S; };
+    const wrap = (S: number) => {
+      const lines = [[]] as number[][]; let lw = 0;
       for (const w of words) {
         const ww = w.idx.reduce((s, i) => s + ws[i], 0) * S;
         if (!w.sp && lw > 0 && lw + ww > maxW) { lines.push([]); lw = 0; }
@@ -411,7 +565,7 @@ class Garden {
     });
     return { S, wrapped, n };
   }
-  layout(snap) {
+  layout(snap?: boolean): void {
     if (!this.W) return;
     const A = this.letters.filter(l => !l.dead);
     const res = this.layoutCore(A, this.W, this.H, this.wrapped);
@@ -419,12 +573,12 @@ class Garden {
     A.forEach(l => { if (l.x == null) { l.x = l.tx; l.y = l.ty; } });
     const S = res.S, last = A[A.length - 1];
     this.St = S;
-    this.ctx_ = last ? last.tx + last.tw / 2 + 0.07 * S : this.W / 2;
-    this.cty = last ? last.ty - 0.33 * S : this.H / 2;
+    this.ctx_ = last ? last.tx! + last.tw! / 2 + 0.07 * S : this.W / 2;
+    this.cty = last ? last.ty! - 0.33 * S : this.H / 2;
     if (snap || !this.Sd) { this.Sd = S; this.cx = this.ctx_; this.cy = this.cty; A.forEach(l => { l.x = l.tx; l.y = l.ty; }); }
   }
 
-  add(ch, now) {
+  add(ch: string, now: number): void {
     const A = this.letters.filter(l => !l.dead), last = A[A.length - 1];
     if (ch === ' ') {
       if (last && last.ch !== ' ') { last.cut = now; this.genEnd(last, (now - last.birth) * this.cfg.speed); }
@@ -432,24 +586,24 @@ class Garden {
       this.layout(); return;
     }
     const same = last && last.ch !== ' ';
-    const l = { ch, id: this.uid++, birth: now, tb: now, ws: same ? last.ws : Math.floor(this.rand() * 1e9), wi: same ? last.wi + 1 : 0, prev: same ? last : null };
+    const l: Letter = { ch, id: this.uid++, birth: now, tb: now, els: [], ws: same ? last.ws : Math.floor(this.rand() * 1e9), wi: same ? last.wi! + 1 : 0, prev: same ? last : null };
     this.gen(l);
     this.letters.push(l);
     this.layout();
   }
 
-  wordParams(ws) {
+  wordParams(ws: number): WordParams {
     const r = this.rng(ws * 7 + 13), dens = this.cfg.density;
     return { roseP: 0.3 + r() * 0.3, leafy: (0.6 + r() * 0.8) * dens, dens, lean: (r() - 0.5) * 0.6, big: (0.85 + r() * 0.45) * this.plantScale(), curvy: 0.8 + r() * 0.6, bridgeP: Math.min(0.95, (0.45 + r() * 0.35) * dens), w: 0.5 };
   }
-  plantScale() { return this.phone.matches ? 1.3 : 1; }
-  grow(r, E, nid, p, o) {
+  plantScale(): number { return this.phone.matches ? 1.3 : 1; }
+  grow(r: Rng, E: GardenEl[], nid: () => number, p: WordParams, o: GrowOpts): Pt[] {
     const tip = o.tip || (r() < p.roseP ? 'rose' : r() < 0.45 ? 'fan' : r() < 0.6 ? 'leaf' : 'curl');
-    let P = o.pts || this.vine(o.base, o.dir, o.len, (0.35 + r() * 0.45) * p.curvy, 1 + r() * 1.6, r() * 6.28, (r() - 0.5) * 1.2, 40);
+    let P = o.pts || this.vine(o.base!, o.dir!, o.len!, (0.35 + r() * 0.45) * p.curvy, 1 + r() * 1.6, r() * 6.28, (r() - 0.5) * 1.2, 40);
     if (tip === 'curl') P = this.curl(P, r() < 0.5 ? -1 : 1, 0.05 + r() * 0.05);
     const segs = this.weave(r, o.layer0 != null ? o.layer0 : (r() < 0.5 ? 0 : 1));
     const dur = Math.max(320, (o.len || 0.8) * 620);
-    const thorns = []; const nt = Math.floor(r() * 2.5);
+    const thorns: { u: number; s: number }[] = []; const nt = Math.floor(r() * 2.5);
     for (let i = 0; i < nt; i++) thorns.push({ u: 0.15 + r() * 0.65, s: r() < 0.5 ? -1 : 1 });
     E.push({ t: 'stem', id: nid(), pts: P, segs, d0: o.d0, dur, w: o.depth ? 0.82 : 1, thorns });
     const nl = Math.floor(r() * 2.8 * p.leafy);
@@ -478,9 +632,9 @@ class Garden {
     }
     return P;
   }
-  gen(l) {
-    const r = this.rng((l.ws ^ Math.imul(l.wi + 1, 2654435761)) + Math.floor(this.rand() * 1e6));
-    const p = this.wordParams(l.ws), E = []; let k0 = 0; const nid = () => l.id * 100 + (k0++);
+  gen(l: Letter): void {
+    const r = this.rng((l.ws! ^ Math.imul(l.wi! + 1, 2654435761)) + Math.floor(this.rand() * 1e6));
+    const p = this.wordParams(l.ws!), E: GardenEl[] = []; let k0 = 0; const nid = () => l.id * 100 + (k0++);
     const ps = this.plantScale();
     const w = this.mw(l.ch), inX = () => (r() - 0.5) * w * 0.7; p.w = w;
     const nUp = 1 + (r() < 0.45 * p.dens ? 1 : 0);
@@ -490,7 +644,7 @@ class Garden {
     if (r() < 0.4 * p.dens) this.grow(r, E, nid, p, { base: [inX(), -0.1 - r() * 0.35], dir: Math.PI / 2 + (r() - 0.5) * 0.8, len: (0.35 + r() * 0.35) * ps, d0: 160 });
     if (l.prev && r() < p.bridgeP) {
       const px = -(this.mw(l.prev.ch) + w) / 2;
-      const a = [inX(), -0.05 - r() * 0.55], b = [px + (r() - 0.5) * 0.25, -0.05 - r() * 0.55];
+      const a: Pt = [inX(), -0.05 - r() * 0.55], b: Pt = [px + (r() - 0.5) * 0.25, -0.05 - r() * 0.55];
       const bulge = (r() < 0.55 ? -1 : 1) * (0.4 + r() * 0.4) * ps, dx = b[0] - a[0];
       let P = this.bez(a, [a[0] + dx * 0.15, a[1] + bulge], [b[0] - dx * 0.15, b[1] + bulge * 0.9], b, 40);
       if (r() < 0.45) P = P.slice(0, Math.floor(P.length * (0.7 + r() * 0.2)));
@@ -499,12 +653,12 @@ class Garden {
     if (l.wi === 0) this.grow(r, E, nid, p, { base: [-w * 0.3, -0.15 - r() * 0.4], dir: Math.PI + (r() - 0.5) * 1.2, len: (0.45 + r() * 0.3) * ps, d0: 120, tip: 'curl' });
     l.els = E;
     l.endEls = null;
-    const T = [], tr = this.rng(l.id * 977 + Math.floor(this.rand() * 1e6));
+    const T: GardenEl[] = [], tr = this.rng(l.id * 977 + Math.floor(this.rand() * 1e6));
     this.grow(tr, T, () => l.id * 100 + 90 + T.length, p, { base: [w * 0.25, -0.1 - tr() * 0.45], dir: (tr() - 0.5) * 1.4, len: 0.45 + tr() * 0.25, d0: 0, tip: 'curl', depth: 1 });
-    l.tend = T.filter(e => e.t === 'stem').slice(0, 1);
+    l.tend = T.filter((e): e is StemEl => e.t === 'stem').slice(0, 1);
   }
-  genEnd(l, rel) {
-    const r = this.rng(l.ws + l.wi * 31 + Math.floor(this.rand() * 1e6)), p = this.wordParams(l.ws), E = [];
+  genEnd(l: Letter, rel: number): void {
+    const r = this.rng(l.ws! + l.wi! * 31 + Math.floor(this.rand() * 1e6)), p = this.wordParams(l.ws!), E: GardenEl[] = [];
     let k0 = 50; const nid = () => l.id * 100 + (k0++);
     const w = this.mw(l.ch), n = 1 + Math.floor(r() * 2.5); p.w = w;
     for (let i = 0; i < n; i++) {
@@ -514,35 +668,36 @@ class Garden {
     l.endEls = E;
   }
 
-  strokeRange(B, P, a, b, col, w) {
+  strokeRange(B: GardenPainter, P: Pt[], a: number, b: number, col: string, w: number): void {
     const n = P.length - 1, ia = a * n, ib = b * n;
-    const lerp = t => { const i = Math.min(n - 1, Math.floor(t)), f = t - i; return [P[i][0] + (P[i+1][0] - P[i][0]) * f, P[i][1] + (P[i+1][1] - P[i][1]) * f]; };
-    const pts = [lerp(ia)];
+    const lerp = (t: number): Pt => { const i = Math.min(n - 1, Math.floor(t)), f = t - i; return [P[i][0] + (P[i+1][0] - P[i][0]) * f, P[i][1] + (P[i+1][1] - P[i][1]) * f]; };
+    const pts: Pt[] = [lerp(ia)];
     for (let i = Math.floor(ia) + 1; i < ib; i++) pts.push(P[i]);
     pts.push(lerp(ib));
     if (pts.length >= 2) B.stroke(pts, col, w);
   }
-  thorn(B, P, u, s, S) {
+  thorn(B: GardenPainter, P: Pt[], u: number, s: number, S: number): void {
     const [p, a] = this.at(P, u), d = a + s * 2.3, L = S * 0.045;
     B.stroke([p, [p[0] + Math.cos(d) * L, p[1] + Math.sin(d) * L]], this.cc.blue, S * 0.022);
   }
-  leaf(B, bx, by, a, L, bend) {
+  leaf(B: GardenPainter, bx: number, by: number, a: number, L: number, bend: number): void {
     if (L < 0.5) return;
     const ca = Math.cos(a), sa = Math.sin(a), px = -sa, py = ca;
-    const ax = u => { const b = Math.sin(Math.PI * u) * bend * 0.15 * L; return [bx + ca * u * L + px * b, by + sa * u * L + py * b]; };
-    const hw = u => L * 0.18 * Math.sin(Math.PI * Math.pow(u, 0.8));
-    const N = L < 10 ? 6 : L < 26 ? 9 : 12, s1 = [], s2 = [];
+    const ax = (u: number): Pt => { const b = Math.sin(Math.PI * u) * bend * 0.15 * L; return [bx + ca * u * L + px * b, by + sa * u * L + py * b]; };
+    const hw = (u: number) => L * 0.18 * Math.sin(Math.PI * Math.pow(u, 0.8));
+    const N = L < 10 ? 6 : L < 26 ? 9 : 12, s1: Pt[] = [], s2: Pt[] = [];
     for (let i = 0; i <= N; i++) { const u = i / N, c = ax(u), w = hw(u); s1.push([c[0] + px * w, c[1] + py * w]); s2.push([c[0] - px * w, c[1] - py * w]); }
     const tip = ax(1), base = ax(0);
     B.fill([base, ...s1.slice(1, N), tip, tip, ...s2.slice(1, N).reverse(), base], this.cc.blue);
-    if (L > 6) { const v = []; for (let i = 0; i <= 8; i++) v.push(ax(0.08 + 0.72 * i / 8)); B.stroke(v, this.cc.vein, Math.max(0.8, L * 0.03)); }
+    if (L > 6) { const v: Pt[] = []; for (let i = 0; i <= 8; i++) v.push(ax(0.08 + 0.72 * i / 8)); B.stroke(v, this.cc.vein, Math.max(0.8, L * 0.03)); }
   }
-  rose(B, cx, cy, R, rot, e, a, tl) {
+  rose(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const cr = Math.cos(rot), sr = Math.sin(rot);
-    const tm = tl ? Math.hypot(tl[0], tl[1]) : 0, ux = tm ? tl[0] / tm : 0, uy = tm ? tl[1] / tm : 0, sq = -0.28 * tm;
-    const T = (x, y, z = 0) => {
+    const tl0 = tl ? tl[0] : 0, tl1 = tl ? tl[1] : 0;
+    const tm = tl ? Math.hypot(tl[0], tl[1]) : 0, ux = tm ? tl0 / tm : 0, uy = tm ? tl1 / tm : 0, sq = -0.28 * tm;
+    const T = (x: number, y: number, z = 0): Pt => {
       let dx = x * cr - y * sr, dy = x * sr + y * cr;
-      if (tm) { const k = (dx * ux + dy * uy) * sq; dx += k * ux + tl[0] * R * z; dy += k * uy + tl[1] * R * z; }
+      if (tm) { const k = (dx * ux + dy * uy) * sq; dx += k * ux + tl0 * R * z; dy += k * uy + tl1 * R * z; }
       return [cx + dx, cy + dy];
     };
 
@@ -558,22 +713,22 @@ class Garden {
     P.forEach((q, i) => {
       const s = this.spr((a - i * st) / 1000, 8, 14); if (s <= 0.001) return;
       const open = (1 - Math.min(1, s)) * (q[0] < 0 ? 0.5 : -0.5), ang = q[4] + open, ca = Math.cos(ang), sa = Math.sin(ang);
-      const pt = th => {
+      const pt = (th: number): Pt => {
         const rr = 1 + 0.08 * Math.sin(3 * th + e.ph1 + i) + 0.04 * Math.sin(5 * th + e.ph2);
         const lx = Math.cos(th) * q[2] * rr, ly = Math.sin(th) * q[3] * rr;
         const px = q[0] + lx * ca - ly * sa, py = q[1] + lx * sa + ly * ca;
         return T((ax0 + (px - ax0) * s) * R, (ay0 + (py - ay0) * s) * R, q[5]);
       };
-      const n = this.tess(2 * q[2] * R * s), pts = []; for (let k = 0; k < n; k++) pts.push(pt(k / n * Math.PI * 2));
+      const n = this.tess(2 * q[2] * R * s), pts: Pt[] = []; for (let k = 0; k < n; k++) pts.push(pt(k / n * Math.PI * 2));
       B.fill(pts, this.cc.red);
       if (q[6] && R >= 12 && s > 0.4) {
-        const arc = []; for (let k = 0; k <= 14; k++) arc.push(pt(Math.PI * (1.18 + 0.64 * k / 14)));
+        const arc: Pt[] = []; for (let k = 0; k <= 14; k++) arc.push(pt(Math.PI * (1.18 + 0.64 * k / 14)));
         this.strokeRange(B, arc, 0, Math.min(1, (s - 0.4) / 0.5), this.cc.line, lw * 0.8);
       }
     });
     const fr = this.eo((a - P.length * st - 80) / 520);
     if (fr > 0 && R > 3) {
-      const sp = [], scl = [];
+      const sp: Pt[] = [], scl: Pt[] = [];
       const turns = R < 20 ? Math.min(e.turns, 1.3) : R < 32 ? e.turns * 0.8 : e.turns;
       for (let i = 0; i <= 70; i++) { const u = i / 70, th = e.ph1 + u * turns * Math.PI * 2, rr = R * (0.08 + 0.57 * u); sp.push(T(Math.cos(th) * rr * 1.05, Math.sin(th) * rr * 0.72 - 0.12 * R, 0.34 - 0.24 * u)); }
       this.strokeRange(B, sp, 0, fr, this.cc.line, lw);
@@ -584,26 +739,26 @@ class Garden {
     }
   }
 
-  frame() {
+  frame(): void {
     const now = performance.now(), dt = Math.min(64, now - (this.lt || now)); this.lt = now;
     if (!this.W) return;
     const k = 1 - Math.exp(-dt / 80);
     this.Sd += (this.St - this.Sd) * k;
     this.cx += (this.ctx_ - this.cx) * k; this.cy += (this.cty - this.cy) * k;
-    for (const l of this.letters) if (!l.dead && l.tx != null) { l.x += (l.tx - l.x) * k; l.y += (l.ty - l.y) * k; }
+    for (const l of this.letters) if (!l.dead && l.tx != null) { const px = l.x!, py = l.y!; l.x = px + (l.tx - px) * k; l.y = py + (l.ty! - py) * k; }
     if (this.letters.some(l => l.dead && now - l.dead > 300)) this.letters = this.letters.filter(l => !(l.dead && now - l.dead > 300));
 
     this.paint(now, !!this.typing && this.letters.length > 0);
   }
-  pal() {
+  pal(): GardenPalette {
     const i = this.state.palette;
-    if (this._palI === i) return this._pal;
+    if (this._palI === i && this._pal) return this._pal;
     const p = this.PAL[i] || this.PAL[0];
     this._palI = i;
     return (this._pal = { bg: p[1], C: { red: p[2], blue: p[3], line: p[4], text: p[5], vein: p[1] } });
   }
-  mainState() { return { letters: this.letters, S: this.Sd, C: this.pal().C, boil: this.cfg.boil, recoil: this.cfg.recoil, speed: this.cfg.speed, wither: 260, face: true, sway: this.cfg.sway }; }
-  paint(now, caret) {
+  mainState(): GardenState { return { letters: this.letters, S: this.Sd, C: this.pal().C, boil: this.cfg.boil, recoil: this.cfg.recoil, speed: this.cfg.speed, wither: 260, face: true, sway: this.cfg.sway }; }
+  paint(now: number, caret: boolean): void {
     const g = this.g, d = this.dpr, t0 = performance.now();
     g.setTransform(d, 0, 0, d, 0, 0);
     g.fillStyle = this.pal().bg; g.fillRect(0, 0, this.W, this.H);
@@ -620,8 +775,8 @@ class Garden {
     else if (this.msAvg < 7) this.pace = 0;
   }
 
-  relax(L, S, now, sp, smooth) {
-    const KF = this.KF, items = [];
+  relax(L: Letter[], S: number, now: number, sp: number, smooth: boolean): void {
+    const KF = this.KF, items: { e: RoseEl; x: number; y: number; r: number; o: number; k: number }[] = [];
     for (const l of L) {
       if (l.dead || l.ch === ' ' || !l.els) continue;
       const age = (now - l.birth) * sp;
@@ -630,12 +785,12 @@ class Garden {
         if (!list) continue;
         for (const e of list) {
           if (e.t !== 'rose' || age - e.d0 < 0) continue;
-          items.push({ e, x: l.x + e.x * S, y: l.y + e.y * S, r: e.R * S * (KF[e.kind || 'rose'] || 1), o: l.birth + e.d0 / sp, k: 1 });
+          items.push({ e, x: l.x! + e.x * S, y: l.y! + e.y * S, r: e.R * S * (KF[e.kind || 'rose'] || 1), o: l.birth + e.d0 / sp, k: 1 });
         }
       }
     }
     items.sort((a, b) => a.o - b.o);
-    const kept = [];
+    const kept: typeof items = [];
     for (const it of items) {
       if (it.r < 0.5) continue;
       let k = 1;
@@ -646,15 +801,16 @@ class Garden {
     }
     for (const it of items) {
       const e = it.e;
-      e._k = (smooth && e._k != null) ? e._k + (it.k - e._k) * 0.14 : it.k;
-      if (it.k === 0 && e._k < 0.04) e._k = 0;
+      const next = (smooth && e._k != null) ? e._k + (it.k - e._k) * 0.14 : it.k;
+      e._k = next;
+      if (it.k === 0 && next < 0.04) e._k = 0;
     }
   }
-  render(B, now, st) {
+  render(B: GardenPainter, now: number, st: GardenState): void {
     const S = st.S, L = st.letters, sp = st.speed || 1;
     this._pass++;
 
-    let nxt = null;
+    let nxt: Letter | null = null;
     for (let i = L.length - 1; i >= 0; i--) { const l = L[i]; l._nx = l.dead ? null : nxt; if (!l.dead) nxt = l; }
     let PD = L;
     const PL = this.planters;
@@ -671,7 +827,7 @@ class Garden {
     if (st.face) for (const l of L) {
       let tx = 0, ty = 0;
       if (this.mx != null && !l.dead && l.ch !== ' ') {
-        const dx = this.mx - l.x, dy = this.my - (l.y - S * 0.6), d = Math.hypot(dx, dy), reach = Math.max(260, S * 3.2);
+        const dx = this.mx - l.x!, dy = this.my - (l.y! - S * 0.6), d = Math.hypot(dx, dy), reach = Math.max(260, S * 3.2);
         if (d < reach && d > 1) { const w = 1 - d / reach, s = w * w * (3 - 2 * w); tx = dx / d * s; ty = dy / d * s; }
       }
       const c = l.lean || (l.lean = [0, 0]);
@@ -679,7 +835,7 @@ class Garden {
     }
     const f = st.boil ? Math.floor(now / this.cfg.boilMs) : 0, amp = st.boil ? Math.max(0.8, S * 0.01) * (this.cfg.boilAmp != null ? this.cfg.boilAmp : 1) : 0;
     const wither = st.wither;
-    const draw = layer => {
+    const draw = (layer: number) => {
       for (let pi = 0; pi < PD.length; pi++) {
         const l = PD[pi];
         if ((l.ch === ' ' && !l.planter) || !l.els) continue;
@@ -697,7 +853,7 @@ class Garden {
           else if (e.layer === layer) this.drawEl(B, e, l, age, kk, st, f, amp);
         }
         if (l.tend && (l.dead || !l._nx || l._nx.ch === ' ')) {
-          let fr = this.eo(((now - l.tb) * sp - 150) / 450);
+          let fr = this.eo(((now - l.tb!) * sp - 150) / 450);
           if (l.cut != null) fr *= 1 - this.eo((now - l.cut) * sp / 150) * Math.min(0.85, st.recoil / (0.6 * S));
           const t = l.tend;
           for (let i = 0; i < t.length; i++) this.drawStem(B, t[i], l, age, kk, st, f, amp, layer, fr * kk);
@@ -705,53 +861,53 @@ class Garden {
       }
     };
     draw(0);
-    for (const l of L) if (l.ch !== ' ' && !l.dead) B.text(l.ch, l.x, l.y, S, st.C.text);
+    for (const l of L) if (l.ch !== ' ' && !l.dead) B.text(l.ch, l.x!, l.y!, S, st.C.text);
     draw(1);
   }
-  wpt(st, l, x, y) {
+  wpt(st: GardenState, l: Letter, x: number, y: number): Pt {
     if (l.birth != null && this._now != null) {
       const t = (this._now - l.birth) * (st.speed || 1) / 1000;
       if (t > 0 && t < 4) {
-        const hh = Math.max(0, (l.y - y) / st.S), dmp = Math.exp(-t * 3.2 / this.cfg.bounce), dir = (l.id % 2 ? 1 : -1);
+        const hh = Math.max(0, (l.y! - y) / st.S), dmp = Math.exp(-t * 3.2 / this.cfg.bounce), dir = (l.id % 2 ? 1 : -1);
         const wob = this.cfg.wobble != null ? this.cfg.wobble : 1;
         x += st.S * 0.07 * wob * hh * dmp * Math.sin(t * 11) * dir;
         y += st.S * 0.035 * wob * hh * dmp * Math.sin(t * 11 + 1.2);
       }
     }
     if (st.face && l.lean) {
-      const hh = Math.min(2.5, Math.max(0, (l.y - y) / st.S)), f = hh * hh * 0.5 + hh * 0.5;
+      const hh = Math.min(2.5, Math.max(0, (l.y! - y) / st.S)), f = hh * hh * 0.5 + hh * 0.5;
       const la = this.cfg.leanAmt != null ? this.cfg.leanAmt : 1;
       x += l.lean[0] * st.S * 0.1 * la * f;
       y += l.lean[1] * st.S * 0.05 * la * f;
     }
     if (st.sway) {
-      const hh = Math.max(0, (l.y - y) / st.S), t = this._now / 1000;
-      x += Math.sin(t * 0.8 + l.x * 0.004 + hh * 1.1) * st.S * 0.02 * hh * st.sway;
+      const hh = Math.max(0, (l.y! - y) / st.S), t = this._now / 1000;
+      x += Math.sin(t * 0.8 + l.x! * 0.004 + hh * 1.1) * st.S * 0.02 * hh * st.sway;
       y += Math.cos(t * 0.6 + x * 0.003) * st.S * 0.006 * hh * st.sway;
     }
     return [x, y];
   }
-  drawStem(B, e, l, age, kk, st, f, amp, layer, frO) {
+  drawStem(B: GardenPainter, e: StemEl, l: Letter, age: number, kk: number, st: GardenState, f: number, amp: number, layer: number, frO?: number): void {
     const S = st.S, fr = frO != null ? frO : this.eo((age - e.d0) / e.dur) * kk; if (fr <= 0) return;
-    let P = e._wp;
+    let P: Pt[] | undefined = e._wp;
     if (e._wpP !== this._pass) {
       e._wpP = this._pass;
       const j = this.jit(e.id, f, amp), src = e.pts, n = src.length;
       if (!P || P.length !== n) P = e._wp = new Array(n);
-      for (let i = 0; i < n; i++) { const p = src[i]; P[i] = this.wpt(st, l, l.x + p[0] * S + j[0], l.y + p[1] * S + j[1]); }
+      for (let i = 0; i < n; i++) { const p = src[i]; P[i] = this.wpt(st, l, l.x! + p[0] * S + j[0], l.y! + p[1] * S + j[1]); }
     }
     const segs = e.segs;
     for (let i = 0; i < segs.length; i++) {
       const sg = segs[i];
       if (sg.layer !== layer) continue;
       const b = Math.min(sg.u1, fr); if (b <= sg.u0) continue;
-      this.strokeRange(B, P, sg.u0, b, st.C.blue, S * 0.022 * (e.w || 1));
+      this.strokeRange(B, P!, sg.u0, b, st.C.blue, S * 0.022 * (e.w || 1));
     }
     const thorns = e.thorns;
-    for (let i = 0; i < thorns.length; i++) { const th = thorns[i]; if (fr > th.u && this.layerAt(segs, th.u) === layer) this.thorn(B, P, th.u, th.s, S); }
+    for (let i = 0; i < thorns.length; i++) { const th = thorns[i]; if (fr > th.u && this.layerAt(segs, th.u) === layer) this.thorn(B, P!, th.u, th.s, S); }
   }
-  drawEl(B, e, l, age, kk, st, f, amp) {
-    const S = st.S, j = this.jit(e.id, f, amp), wx = (x, y) => this.wpt(st, l, l.x + x * S + j[0], l.y + y * S + j[1]);
+  drawEl(B: GardenPainter, e: LeafEl | RoseEl, l: Letter, age: number, kk: number, st: GardenState, f: number, amp: number): void {
+    const S = st.S, j = this.jit(e.id, f, amp), wx = (x: number, y: number) => this.wpt(st, l, l.x! + x * S + j[0], l.y! + y * S + j[1]);
     if (e.t === 'leaf') {
       const sc = this.spr((age - e.d0) / 1000, 7, 15) * kk; if (sc <= 0) return;
       const p = wx(e.x, e.y); this.leaf(B, p[0], p[1], e.a + j[2], e.L * S * sc, e.bend);
@@ -766,12 +922,12 @@ class Garden {
     }
   }
 
-  marigold(B, cx, cy, R, rot, e, a, tl) {
+  marigold(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.03), C = this.cc;
     const rings = [[13, 0.58, 0.30, 0.19], [11, 0.40, 0.24, 0.16], [8, 0.23, 0.18, 0.13]];
     let i = 0;
     rings.forEach((rg, ri) => {
-      const off = e.ph1 * 0.35 + ri * (Math.PI / rg[0]), ps = [];
+      const off = e.ph1 * 0.35 + ri * (Math.PI / rg[0]), ps: Pt[][] = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * 36) / 1000, 7, 13); if (s <= 0.001) continue;
         const th = off + k / rg[0] * Math.PI * 2;
@@ -786,12 +942,12 @@ class Garden {
     });
     const cs = this.spr((a - (i + 4) * 36) / 1000, 8, 12);
     if (cs > 0.001) {
-      const c = [];
+      const c: Pt[] = [];
       for (let k = 0; k < 10; k++) { const th = k / 10 * Math.PI * 2; c.push(T(Math.cos(th) * 0.085 * R * cs, Math.sin(th) * 0.085 * R * cs * 0.9, 0.06)); }
       B.fill(c, C.line);
     }
   }
-  pickKind(r) {
+  pickKind(r: Rng): string {
     const w = this.cfg.flowers || { rose: 1 }, ks = Object.keys(w).filter(k => w[k] > 0);
     if (!ks.length) return 'rose';
     let tot = 0; for (const k of ks) tot += w[k];
@@ -799,19 +955,20 @@ class Garden {
     return ks[ks.length - 1];
   }
 
-  mkT(cx, cy, R, rot, tl) {
+  mkT(cx: number, cy: number, R: number, rot: number, tl: Pt | null): TFn {
     const cr = Math.cos(rot), sr = Math.sin(rot);
-    const tm = tl ? Math.hypot(tl[0], tl[1]) : 0, ux = tm ? tl[0] / tm : 0, uy = tm ? tl[1] / tm : 0, sq = -0.28 * tm;
-    return (x, y, z = 0) => {
+    const tl0 = tl ? tl[0] : 0, tl1 = tl ? tl[1] : 0;
+    const tm = tl ? Math.hypot(tl[0], tl[1]) : 0, ux = tm ? tl0 / tm : 0, uy = tm ? tl1 / tm : 0, sq = -0.28 * tm;
+    return (x: number, y: number, z = 0): Pt => {
       let dx = x * cr - y * sr, dy = x * sr + y * cr;
-      if (tm) { const k = (dx * ux + dy * uy) * sq; dx += k * ux + tl[0] * R * z; dy += k * uy + tl[1] * R * z; }
+      if (tm) { const k = (dx * ux + dy * uy) * sq; dx += k * ux + tl0 * R * z; dy += k * uy + tl1 * R * z; }
       return [cx + dx, cy + dy];
     };
   }
 
-  tess(px) { return px < 8 ? 10 : px < 18 ? 14 : px < 40 ? 18 : 26; }
-  blob(T, q, s, R, e, i, ax, ay, ruf) {
-    const ca = Math.cos(q[4]), sa = Math.sin(q[4]), pts = [], n = this.tess(2 * q[2] * R * s);
+  tess(px: number): number { return px < 8 ? 10 : px < 18 ? 14 : px < 40 ? 18 : 26; }
+  blob(T: TFn, q: number[], s: number, R: number, e: RoseEl, i: number, ax: number, ay: number, ruf: number): Pt[] {
+    const ca = Math.cos(q[4]), sa = Math.sin(q[4]), pts: Pt[] = [], n = this.tess(2 * q[2] * R * s);
     for (let k = 0; k < n; k++) {
       const th = k / n * Math.PI * 2, rr = 1 + (0.08 * Math.sin(3 * th + e.ph1 + i) + 0.04 * Math.sin(5 * th + e.ph2)) * ruf;
       const lx = Math.cos(th) * q[2] * rr, ly = Math.sin(th) * q[3] * rr;
@@ -821,8 +978,8 @@ class Garden {
     return pts;
   }
 
-  lens(T, bx, by, tx, ty, hw, ls, bend, R) {
-    const dx = (tx - bx) * ls, dy = (ty - by) * ls, L = Math.hypot(dx, dy) || 1e-6, nx = -dy / L, ny = dx / L, N = this.tess(L * R) > 14 ? 10 : 7, s1 = [], s2 = [];
+  lens(T: TFn, bx: number, by: number, tx: number, ty: number, hw: number, ls: number, bend: number, R: number): Pt[] {
+    const dx = (tx - bx) * ls, dy = (ty - by) * ls, L = Math.hypot(dx, dy) || 1e-6, nx = -dy / L, ny = dx / L, N = this.tess(L * R) > 14 ? 10 : 7, s1: Pt[] = [], s2: Pt[] = [];
     for (let i = 0; i <= N; i++) {
       const u = i / N, w = hw * ls * Math.sin(Math.PI * Math.pow(u, 0.72)) * (1 + 0.25 * u), b = bend * Math.sin(Math.PI * u) * ls;
       const x = bx + dx * u + nx * b, y = by + dy * u + ny * b;
@@ -830,7 +987,7 @@ class Garden {
     }
     return [s1[0], ...s1.slice(1, N), s1[N], s1[N], ...s2.slice(1, N).reverse(), s2[0]];
   }
-  bloom(B, cx, cy, R, rot, e, a, tl) {
+  bloom(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const k = e.kind || 'rose';
     if (k === 'peony') return this.peony(B, cx, cy, R * 1.08, rot, e, a, tl);
     if (k === 'tulip') return this.tulip(B, cx, cy, R * 1.5, rot, e, a, tl);
@@ -841,7 +998,7 @@ class Garden {
     return this.rose(B, cx, cy, R, rot, e, a, tl);
   }
 
-  plantEdges(past) {
+  plantEdges(past: boolean): void {
     if (!this.W) return;
     const t0 = performance.now();
     this.planters = [];
@@ -854,13 +1011,13 @@ class Garden {
         const r = this.rng(Math.floor(this.rand() * 1e9));
         const p = this.wordParams(Math.floor(this.rand() * 1e9));
         p.w = 0.4; p.lean = 0; p.big = 0.72 * this.plantScale(); p.leafy = 1.15;
-        const P = {
+        const P: Letter = {
           ch: ' ', id: (side < 0 ? 7100 : 7200) + i, planter: true, side,
           ay: rows[i][0] + r() * 0.04,
           x: 0, y: 0, els: [],
           birth: past ? t0 - 12000 + i * 60 : t0 + 700 + i * 240
         };
-        const E = [], nid = () => P.id * 100 + E.length;
+        const E: GardenEl[] = [], nid = () => P.id * 100 + E.length;
 
         const inward = side < 0 ? -0.5 - r() * 0.6 : Math.PI + 0.5 + r() * 0.6;
         const ps = this.plantScale();
@@ -883,20 +1040,20 @@ class Garden {
     this.placePlanters();
   }
 
-  placePlanters() {
+  placePlanters(): void {
     if (!this.planters) return;
     const S = this.Sd || this.H * 0.28;
     for (const P of this.planters) {
-      P.x = P.side < 0 ? -0.03 * S : this.W + 0.03 * S;
-      P.y = P.ay * this.H;
+      P.x = P.side! < 0 ? -0.03 * S : this.W + 0.03 * S;
+      P.y = P.ay! * this.H;
     }
   }
-  peony(B, cx, cy, R, rot, e, a, tl) {
+  peony(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.04), st = 60, C = this.cc;
     const rings = [[7, 0.5, 0.5, 0.36], [6, 0.34, 0.42, 0.32], [5, 0.17, 0.32, 0.26]];
     let i = 0;
     rings.forEach((rg, ri) => {
-      const ps = [];
+      const ps: Pt[][] = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * st) / 1000, 8, 13); if (s <= 0.001) continue;
         const th = e.ph1 * 0.4 + ri * 0.55 + k / rg[0] * Math.PI * 2;
@@ -908,12 +1065,12 @@ class Garden {
     });
     const fr = this.eo((a - i * st - 100) / 500);
     if (fr > 0 && R > 4) {
-      const sp = [];
+      const sp: Pt[] = [];
       for (let n = 0; n <= 40; n++) { const u = n / 40, th = e.ph1 + u * 2.2 * Math.PI * 2, rr = R * (0.02 + 0.13 * u); sp.push(T(Math.cos(th) * rr, Math.sin(th) * rr * 0.8, 0.1)); }
       this.strokeRange(B, sp, 0, fr, C.line, lw);
     }
   }
-  tulip(B, cx, cy, R, rot, e, a, tl) {
+  tulip(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.045), C = this.cc;
     const o = this.spr((a - 350) / 1000, 4.5, 9);
     const sp = 0.1 + 0.36 * Math.max(0, Math.min(1.35, o));
@@ -932,12 +1089,12 @@ class Garden {
     const fr = this.eo((a - 420) / 400);
     if (fr > 0 && R > 5) this.strokeRange(B, [T(0, 0.52 * R, 0.1), T(sp * 0.04 * R, -0.2 * R, 0.1), T(sp * 0.08 * R, -0.62 * R, 0.1)], 0, fr, C.line, lw * 0.9);
   }
-  daisy(B, cx, cy, R, rot, e, a, tl) {
+  daisy(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.04), C = this.cc;
     const rings = [[10, 0.56, 0.4, 0.15], [10, 0.46, 0.32, 0.14]];
     let i = 0;
     rings.forEach((rg, ri) => {
-      const ps = [];
+      const ps: Pt[][] = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * 35) / 1000, 8, 13); if (s <= 0.001) continue;
         const th = e.ph1 + ri * Math.PI / rg[0] + k / rg[0] * Math.PI * 2;
@@ -949,15 +1106,15 @@ class Garden {
     });
     const cs = this.spr((a - 20 * 35 - 40) / 1000, 8, 12);
     if (cs > 0.001) {
-      const c = []; for (let k = 0; k < 16; k++) { const th = k / 16 * Math.PI * 2; c.push(T(Math.cos(th) * 0.2 * R * cs, Math.sin(th) * 0.2 * R * cs * 0.92, 0.1)); }
+      const c: Pt[] = []; for (let k = 0; k < 16; k++) { const th = k / 16 * Math.PI * 2; c.push(T(Math.cos(th) * 0.2 * R * cs, Math.sin(th) * 0.2 * R * cs * 0.92, 0.1)); }
       B.fill(c, C.line);
-      if (R >= 14) for (let k = 0; k < 7; k++) { const th = k * 2.39996, rr = (0.05 + 0.11 * Math.sqrt(k / 7)) * R * cs, d = []; for (let m = 0; m < 8; m++) { const t2 = m / 8 * Math.PI * 2; d.push(T(Math.cos(th) * rr + Math.cos(t2) * 0.025 * R, Math.sin(th) * rr * 0.92 + Math.sin(t2) * 0.025 * R, 0.12)); } B.fill(d, C.red); }
+      if (R >= 14) for (let k = 0; k < 7; k++) { const th = k * 2.39996, rr = (0.05 + 0.11 * Math.sqrt(k / 7)) * R * cs, d: Pt[] = []; for (let m = 0; m < 8; m++) { const t2 = m / 8 * Math.PI * 2; d.push(T(Math.cos(th) * rr + Math.cos(t2) * 0.025 * R, Math.sin(th) * rr * 0.92 + Math.sin(t2) * 0.025 * R, 0.12)); } B.fill(d, C.red); }
     }
   }
-  poppy(B, cx, cy, R, rot, e, a, tl) {
+  poppy(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.04), C = this.cc;
     const P = [[-0.36, -0.12, 0.5, 0.46, -0.35, 0], [0.38, -0.12, 0.5, 0.46, 0.35, 0], [-0.3, 0.2, 0.5, 0.44, 0.3, 0.08], [0.32, 0.2, 0.5, 0.44, -0.3, 0.08]];
-    const ps = [];
+    const ps: Pt[][] = [];
     P.forEach((q, i) => {
       const s = this.spr((a - i * 110) / 1000, 7, 12); if (s <= 0.001) return;
       ps.push(this.blob(T, q, s, R, e, i, 0, 0.15, 2));
@@ -968,12 +1125,12 @@ class Garden {
     }
     const cs = this.spr((a - 520) / 1000, 7, 12);
     if (cs > 0.001 && R > 4) {
-      const c = []; for (let k = 0; k < 16; k++) { const th = k / 16 * Math.PI * 2; c.push(T(Math.cos(th) * 0.17 * R * cs, (0.05 + Math.sin(th) * 0.15) * R * cs, 0.15)); }
+      const c: Pt[] = []; for (let k = 0; k < 16; k++) { const th = k / 16 * Math.PI * 2; c.push(T(Math.cos(th) * 0.17 * R * cs, (0.05 + Math.sin(th) * 0.15) * R * cs, 0.15)); }
       B.fill(c, C.vein);
       if (R >= 12) for (let k = 0; k < 9; k++) { const th = k / 9 * Math.PI * 2 + e.ph1, p0 = T(Math.cos(th) * 0.19 * R, (0.05 + Math.sin(th) * 0.17) * R, 0.18), p1 = T(Math.cos(th) * 0.32 * R * cs, (0.05 + Math.sin(th) * 0.28) * R * cs, 0.2); B.stroke([p0, p1], C.line, lw * 0.6); }
     }
   }
-  bell(B, cx, cy, R, rot, e, a, tl) {
+  bell(B: GardenPainter, cx: number, cy: number, R: number, rot: number, e: RoseEl, a: number, tl: Pt | null): void {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.04), C = this.cc;
     const ua = this.bez([0, 0.55], [0.12, 0.1], [-0.05, -0.45], [-0.5, -0.62], 24), arc = ua.map(p => T(p[0] * R, p[1] * R));
     const gs = this.eo(a / 500);
@@ -989,7 +1146,7 @@ class Garden {
     });
     const bs = this.spr((a - 800) / 1000, 7, 12);
     if (bs > 0.001) {
-      const end = ua[24], d = []; for (let k = 0; k < 12; k++) { const th = k / 12 * Math.PI * 2; d.push(T((end[0] + Math.cos(th) * 0.06 * bs) * R, (end[1] + Math.sin(th) * 0.06 * bs) * R)); }
+      const end = ua[24], d: Pt[] = []; for (let k = 0; k < 12; k++) { const th = k / 12 * Math.PI * 2; d.push(T((end[0] + Math.cos(th) * 0.06 * bs) * R, (end[1] + Math.sin(th) * 0.06 * bs) * R)); }
       B.fill(d, C.red);
     }
   }

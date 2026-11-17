@@ -1,7 +1,18 @@
+interface SheetPlant {
+  el: HTMLCanvasElement;
+  x: number;
+  y: number;
+  h: number;
+  lean: number;
+  max: number;
+  deg?: number;
+}
+
 (() => {
-  const sheet = document.querySelector('.plate');
-  if (!sheet) return;
-  const wrap = sheet.closest('.sheet') || sheet.parentElement;
+  const sheetOrNull = document.querySelector('.plate');
+  if (!sheetOrNull) return;
+  const sheet: Element = sheetOrNull;
+  const wrap = (sheet.closest('.sheet') || sheet.parentElement)!;
 
   const layer = document.createElement('div');
   layer.className = 'sheet-flora';
@@ -16,11 +27,11 @@
   const CREAM = '#FFE2B8';
   const CORE = '#0E1A12';
 
-  let collect = null;
-  const plants = [];
+  let collect: SheetBloom[] | null = null;
+  const plants: SheetPlant[] = [];
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function mulberry(a) {
+  function mulberry(a: number): () => number {
     return function () {
       a |= 0; a = (a + 0x6D2B79F5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
@@ -29,8 +40,8 @@
     };
   }
 
-  function bez(p0, p1, p2, p3, n) {
-    const out = [];
+  function bez(p0: Pt, p1: Pt, p2: Pt, p3: Pt, n: number): Pt[] {
+    const out: Pt[] = [];
     for (let k = 0; k <= n; k++) {
       const t = k / n, u = 1 - t;
       out.push([
@@ -41,7 +52,7 @@
     return out;
   }
 
-  function strokeLine(g, pts, w0, w1, colour) {
+  function strokeLine(g: CanvasRenderingContext2D, pts: Pt[], w0: number, w1: number, colour: string): void {
     for (let i = 1; i < pts.length; i++) {
       const p = pts[i - 1], q = pts[i];
       const u = i / (pts.length - 1);
@@ -55,12 +66,12 @@
     }
   }
 
-  const tangent = (pts, i) => {
+  const tangent = (pts: Pt[], i: number) => {
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
     return Math.atan2(b[1] - a[1], b[0] - a[0]);
   };
 
-  function leaf(g, x, y, ang, L, kind, colour) {
+  function leaf(g: CanvasRenderingContext2D, x: number, y: number, ang: number, L: number, kind: string, colour: string): void {
     g.save();
     g.translate(x, y);
     g.rotate(ang);
@@ -88,7 +99,7 @@
     g.restore();
   }
 
-  function petal(g, x, y, rx, ry, ang, fill) {
+  function petal(g: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, ang: number, fill: string): void {
     g.save();
     g.translate(x, y);
     g.rotate(ang);
@@ -99,7 +110,7 @@
     g.restore();
   }
 
-  function bloom(g, kind, x, y, r, rot) {
+  function bloom(g: CanvasRenderingContext2D, kind: string, x: number, y: number, r: number, rot: number): void {
     if (r < 0.6) return;
     if (collect) collect.push({ x, y, r });
     const rb = mulberry(Math.round(x * 29 + y * 13) | 0);
@@ -206,7 +217,7 @@
     g.restore();
   }
 
-  function bud(g, x, y, r, ang) {
+  function bud(g: CanvasRenderingContext2D, x: number, y: number, r: number, ang: number): void {
     g.save();
     g.translate(x, y);
     g.rotate(ang);
@@ -227,7 +238,7 @@
   const BLOOMS = ['marigold', 'poppy', 'daisy', 'bell', 'tulip', 'seed'];
   const LEAF_KINDS = ['broad', 'slim', 'round', 'blade'];
 
-  function tall(g, x, baseY, h, dir, rnd, lean) {
+  function tall(g: CanvasRenderingContext2D, x: number, baseY: number, h: number, dir: number, rnd: () => number, lean: number): void {
 
     const k1 = (rnd() - 0.5) * 0.1, k2 = (rnd() - 0.5) * 0.14;
     const tipX = x + dir * h * lean * (0.7 + rnd() * 0.7);
@@ -296,7 +307,7 @@
     }
   }
 
-  function clump(g, x, baseY, h, dir, rnd) {
+  function clump(g: CanvasRenderingContext2D, x: number, baseY: number, h: number, dir: number, rnd: () => number): void {
     const bias = (rnd() - 0.5) * 1.1;
     const stems = 4 + ((rnd() * 4) | 0);
     for (let s = 0; s < stems; s++) {
@@ -321,7 +332,7 @@
     }
   }
 
-  function grass(g, x, baseY, h, rnd) {
+  function grass(g: CanvasRenderingContext2D, x: number, baseY: number, h: number, rnd: () => number): void {
     const bias = (rnd() - 0.5) * 1.3;
     const blades = 5 + ((rnd() * 6) | 0);
     for (let i = 0; i < blades; i++) {
@@ -343,7 +354,7 @@
     }
   }
 
-  function fern(g, x, baseY, h, dir, rnd) {
+  function fern(g: CanvasRenderingContext2D, x: number, baseY: number, h: number, dir: number, rnd: () => number): void {
     const pts = bez([x, baseY], [x + dir * h * (0.14 + rnd() * 0.1), baseY - h * 0.38],
       [x + dir * h * (0.36 + rnd() * 0.12), baseY - h * 0.7],
       [x + dir * h * (0.44 + rnd() * 0.16), baseY - h * (0.9 + rnd() * 0.1)], 30);
@@ -365,7 +376,7 @@
     bloom(g, 'seed', tip[0], tip[1], 7.5 + rnd() * 3, rnd() * 6.3);
   }
 
-  function tendril(g, x, baseY, h, dir, rnd) {
+  function tendril(g: CanvasRenderingContext2D, x: number, baseY: number, h: number, dir: number, rnd: () => number): void {
     const pts = bez([x, baseY], [x + dir * h * 0.16, baseY - h * 0.5],
       [x + dir * h * (0.5 + rnd() * 0.1), baseY - h * 0.6],
       [x + dir * h * (0.44 + rnd() * 0.12), baseY - h], 30);
@@ -410,7 +421,7 @@
     bloom(g, rnd() < 0.5 ? 'bell' : 'tulip', ex, ey, 8.5 + rnd() * 4.5, rnd() * 6.3);
   }
 
-  function bed(g, x, baseY, w, h, rnd) {
+  function bed(g: CanvasRenderingContext2D, x: number, baseY: number, w: number, h: number, rnd: () => number): void {
     const bias = (rnd() - 0.5) * 0.6;
     const k = window.matchMedia('(max-width: 720px)').matches ? Math.max(1, h / 96) : 1;
     const n = Math.max(10, Math.round(w / 8));
@@ -469,7 +480,7 @@
     }
   }
 
-  function addSoil(W, H, soilH) {
+  function addSoil(W: number, H: number, soilH: number): HTMLCanvasElement {
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     const cv = document.createElement('canvas');
     cv.className = 'sheet-soil';
@@ -480,7 +491,7 @@
     cv.style.left = '0px';
     cv.style.top = (H - soilH) + 'px';
 
-    const g = cv.getContext('2d');
+    const g = cv.getContext('2d')!;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const rnd = mulberry(913);
 
@@ -521,9 +532,9 @@
     return cv;
   }
 
-  const FOOT = { tall: 0.85, fern: 1.5, tendril: 1.3, clump: 2.3, grass: 2.1 };
+  const FOOT: Record<string, number> = { tall: 0.85, fern: 1.5, tendril: 1.3, clump: 2.3, grass: 2.1 };
 
-  function addPlant(kind, x, baseY, h, dir, seed, clipEdge, found, width) {
+  function addPlant(kind: string, x: number, baseY: number, h: number, dir: number, seed: number, clipEdge: number | null, found: SheetBloom[], width?: number): HTMLCanvasElement {
     const rnd = mulberry(seed);
 
     const dpr = Math.min(window.devicePixelRatio || 1, h > 380 ? 1.25 : 1.5);
@@ -546,7 +557,7 @@
     cv.style.animationDelay = (-rnd() * 9).toFixed(2) + 's';
     cv.style.setProperty('--sway', (0.5 + rnd() * 0.85).toFixed(2) + 'deg');
 
-    const g = cv.getContext('2d');
+    const g = cv.getContext('2d')!;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     if (clipEdge !== null) {
@@ -573,12 +584,12 @@
     return cv;
   }
 
-  function leanCap(kind, h) {
+  function leanCap(kind: string, h: number): number {
     if (kind === 'bed') return 1.6;
     return Math.min(4, (Math.atan(18 / Math.max(60, h)) * 180) / Math.PI);
   }
 
-  function still(el) { if (el) { el.style.animation = 'none'; el.stillFrame = true; } return el; }
+  function still(el: HTMLCanvasElement): HTMLCanvasElement { if (el) { el.style.animation = 'none'; el.stillFrame = true; } return el; }
 
   function layout() {
     layer.textContent = '';
@@ -596,8 +607,8 @@
     const gutterL = left;
     const gutterR = W - right;
     const rnd = mulberry(2027);
-    const anchors = [];
-    const jit = (v, amt) => v + (rnd() - 0.5) * amt;
+    const anchors: SheetBloom[] = [];
+    const jit = (v: number, amt: number) => v + (rnd() - 0.5) * amt;
 
     if (gutterL > 90) {
       const x0 = 12, x1 = gutterL - 18;
@@ -637,8 +648,8 @@
       ground = { soilH, grassH, top: H - soilH - grassH };
     }
 
-    const inGutter = (a) => a.x < gutterL - 26 || a.x > right + 26;
-    const inStrip = (a) => a.y > H - padB - 2;
+    const inGutter = (a: SheetBloom) => a.x < gutterL - 26 || a.x > right + 26;
+    const inStrip = (a: SheetBloom) => a.y > H - padB - 2;
     window.sheetFlora = {
       blooms: anchors.filter((a) => inGutter(a) || inStrip(a)).map((a) => ({
         x: a.x, y: a.y, r: a.r,
@@ -650,9 +661,9 @@
   }
 
   const REACH = 320;
-  let pointer = null, leanRaf = 0;
+  let pointer: { x: number; y: number } | null = null, leanRaf = 0;
 
-  function setLean(p) {
+  function setLean(p: SheetPlant): boolean {
     const deg = Math.abs(p.lean) < 0.02 ? 0 : p.lean;
     if (p.deg === deg) return deg !== 0;
     p.deg = deg;
@@ -671,7 +682,7 @@
     for (const p of plants) {
       let target = 0;
       if (px != null) {
-        const dx = px - p.x, dy = py - (p.y - p.h * 0.6), d = Math.hypot(dx, dy);
+        const dx = px - p.x, dy = py! - (p.y - p.h * 0.6), d = Math.hypot(dx, dy);
         if (d < REACH && d > 1) {
           const w = 1 - d / REACH;
           target = (dx / d) * w * w * (3 - 2 * w) * Math.min(1, d / 40) * p.max;

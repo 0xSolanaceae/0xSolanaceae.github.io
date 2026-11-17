@@ -1,8 +1,9 @@
 (function () {
   'use strict';
 
-  var g = window.garden;
-  if (!g) return;
+  const engine = window.garden;
+  if (!engine) return;
+  const g: Garden = engine;
 
   var cv = document.getElementById('cv');
 
@@ -33,7 +34,7 @@
 
   function boot() {
     document.documentElement.classList.remove('no-garden');
-    if (g.plantEdges) g.plantEdges(STILL);
+    g.plantEdges(STILL);
     if (STILL) seedStill(); else typeOut();
   }
 
@@ -56,7 +57,7 @@
 
   if (cv) {
     cv.addEventListener('pointerdown', function (e) {
-      if (g.spawnFly) g.spawnFly(e.clientX, e.clientY);
+      g.spawnFly(e.clientX, e.clientY);
     });
   }
 
@@ -69,7 +70,7 @@
       });
     };
     window.addEventListener('resize', repaint);
-    if (window.ResizeObserver) new ResizeObserver(repaint).observe(cv);
+    if (window.ResizeObserver) new ResizeObserver(repaint).observe(cv!);
   }
 })();
 

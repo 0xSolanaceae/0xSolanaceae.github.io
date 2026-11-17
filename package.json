@@ -1,0 +1,14 @@
+{
+  "name": "solanaceae-site",
+  "private": true,
+  "description": "Static site. TypeScript sources live in src/js and compile to assets/js.",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json && esbuild \"build/js/*.js\" --outdir=assets/js --minify --target=es2020 --log-level=warning",
+    "serve": "npm run build && node tools/serve.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  }
+}

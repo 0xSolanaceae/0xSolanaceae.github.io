@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "esnext",
+    "moduleDetection": "legacy",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "rootDir": "src/js",
+    "outDir": "build/js",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "forceConsistentCasingInFileNames": true,
+    "newLine": "lf",
+    "removeComments": false,
+    "types": []
+  },
+  "include": ["src/js/**/*.ts"]
+}
