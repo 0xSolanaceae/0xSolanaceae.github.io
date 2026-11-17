@@ -10,8 +10,6 @@
   var STILL = !!g.still;
   var CHAR_MS = 145;
 
-  document.documentElement.classList.add('garden-ok');
-
   function typeOut() {
     var i = 0;
     g.typing = true;

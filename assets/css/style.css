@@ -138,7 +138,7 @@ a { color: inherit; }
 .fallback {
   position: absolute;
   inset: 0;
-  display: grid;
+  display: none;
   place-items: center;
   margin: 0;
   padding: 0 6vw;
@@ -147,7 +147,10 @@ a { color: inherit; }
   color: var(--ink);
   text-align: center;
 }
-html.garden-ok .fallback { display: none; }
+
+/* Only shown when scripting is off; the canvas types the word otherwise, and
+   the static copy would flash before the first letters land. */
+html.no-js .fallback { display: grid; }
 
 .chrome {
   position: absolute;
