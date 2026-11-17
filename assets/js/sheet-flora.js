@@ -410,6 +410,7 @@
 
   function bed(g, x, baseY, w, h, rnd) {
     const bias = (rnd() - 0.5) * 0.6;
+    const k = window.matchMedia('(max-width: 720px)').matches ? Math.max(1, h / 96) : 1;
     const n = Math.max(10, Math.round(w / 8));
     for (let i = 0; i < n; i++) {
       const bx = x - w / 2 + (i + rnd() * 0.85) * (w / n);
@@ -446,7 +447,7 @@
       const tip = pts[pts.length - 1];
 
       if (rnd() < 0.8) {
-        const r = 6.2 + rnd() * 4.6 * (0.7 + bh / h * 0.5);
+        const r = (6.2 + rnd() * 4.6 * (0.7 + bh / h * 0.5)) * k;
         bloom(g, BLOOMS[(rnd() * BLOOMS.length) | 0], tip[0], tip[1] - r * 0.35,
           r, rnd() * 6.3);
 
@@ -461,7 +462,7 @@
           bloom(g, BLOOMS[(rnd() * BLOOMS.length) | 0], ex, ey, r * 0.62, rnd() * 6.3);
         }
       } else {
-        bud(g, tip[0], tip[1] + 2, 3 + rnd() * 2, -Math.PI / 2 + d * 0.3);
+        bud(g, tip[0], tip[1] + 2, (3 + rnd() * 2) * k, -Math.PI / 2 + d * 0.3);
       }
     }
   }

@@ -2,6 +2,21 @@
   const svg = document.querySelector('.plate-svg');
   if (!svg) return;
 
+  // Phones show the byte columns with the contact strings beside them, in the
+  // row each string lives in, instead of scrolling a 24-byte row.
+  const FULL_BOX = svg.getAttribute('viewBox') || '0 0 800 792';
+  const COMPACT_BOX = '90 24 322 768';
+  const narrow = matchMedia('(max-width: 720px)');
+  const fitPlate = () => {
+    const box = narrow.matches ? COMPACT_BOX : FULL_BOX;
+    if (svg.getAttribute('viewBox') === box) return;
+    svg.setAttribute('viewBox', box);
+    dispatchEvent(new Event('resize'));
+  };
+  fitPlate();
+  if (narrow.addEventListener) narrow.addEventListener('change', fitPlate);
+  else if (narrow.addListener) narrow.addListener(fitPlate);
+
   const NS = 'http://www.w3.org/2000/svg';
   const CW = 6.9;
   const LH = 26;
@@ -50,6 +65,27 @@
   const asciiX = (b) => X_ASC + (b + 1) * CW;
   const rowY = (r) => ROW0 + r * LH;
 
+  // Phones drop the ascii column, so each row gets the decoded text of the
+  // bytes still on screen; contact rows keep their full label instead.
+  const tagRows = new Set();
+  for (const t of svg.querySelectorAll('.plate-tags text')) {
+    const y = Number(t.getAttribute('y'));
+    tagRows.add(Math.round((y - ROW0) / LH));
+  }
+  const decode = document.createElementNS(NS, 'g');
+  decode.setAttribute('class', 'plate-decode');
+  decode.setAttribute('aria-hidden', 'true');
+  rows.forEach((row, r) => {
+    if (!row.ascii || tagRows.has(r)) return;
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', 272);
+    t.setAttribute('y', rowY(r));
+    t.setAttribute('class', 'ascii');
+    t.textContent = row.ascii.slice(0, 8);
+    decode.appendChild(t);
+  });
+  svg.appendChild(decode);
+
   const place = (el, x, w, r) => {
     el.setAttribute('x', x.toFixed(1));
     el.setAttribute('y', (rowY(r) - CAP + 3).toFixed(1));
@@ -81,6 +117,8 @@
       return b >= 0 && b < 8 ? { r, b } : null;
     }
     if (u.x >= X_HEX2 && u.x < X_HEX2 + 16 * 3 * CW) {
+      // The second byte group is cropped out on phones, so it takes no taps.
+      if (narrow.matches) return null;
       const b = 8 + Math.floor((u.x - X_HEX2) / (3 * CW));
       return b < N ? { r, b } : null;
     }
@@ -238,6 +276,8 @@
   svg.addEventListener('pointerleave', () => { clearHover(); dragging = false; });
 
   svg.addEventListener('pointerdown', (e) => {
+    // A press on one of the contact links must reach the link, not the caret.
+    if (e.target.closest && e.target.closest('a')) return;
     const cell = cellAt(toUser(e));
     if (!cell) return;
     e.preventDefault();

@@ -81,6 +81,7 @@ class Garden {
       ['Mono', '#000000', '#F2F2F2', '#6E6E6E', '#000000', '#FFFFFF']
     ];
     this.state = { mode: 'type', preset: 'breathe', size: 'square', font: 'playfair', palette: 3, text: 'solanaceae', seed: 7, status: '', busy: false };
+    this.phone = matchMedia('(max-width: 720px)');
     this.headless = true;
     this.init();
   }
@@ -505,7 +506,7 @@ class Garden {
 
   layoutCore(A, W, H, prevWrapped) {
 
-    const maxW = W * (W < 640 ? 0.8 : 0.82), S0 = H * 0.3, LH = 2.1;
+    const maxW = W * (this.phone.matches ? 0.94 : 0.82), S0 = H * 0.3, LH = 2.1;
     const ws = A.map(l => this.mw(l.ch));
     const words = []; let cur = null;
     A.forEach((l, i) => {
@@ -641,8 +642,9 @@ class Garden {
 
   wordParams(ws) {
     const r = this.rng(ws * 7 + 13), dens = this.cfg.density;
-    return { roseP: 0.3 + r() * 0.3, leafy: (0.6 + r() * 0.8) * dens, dens, lean: (r() - 0.5) * 0.6, big: 0.85 + r() * 0.45, curvy: 0.8 + r() * 0.6, bridgeP: Math.min(0.95, (0.45 + r() * 0.35) * dens), w: 0.5 };
+    return { roseP: 0.3 + r() * 0.3, leafy: (0.6 + r() * 0.8) * dens, dens, lean: (r() - 0.5) * 0.6, big: (0.85 + r() * 0.45) * this.plantScale(), curvy: 0.8 + r() * 0.6, bridgeP: Math.min(0.95, (0.45 + r() * 0.35) * dens), w: 0.5 };
   }
+  plantScale() { return this.phone.matches ? 1.3 : 1; }
   grow(r, E, nid, p, o) {
     const tip = o.tip || (r() < p.roseP ? 'rose' : r() < 0.45 ? 'fan' : r() < 0.6 ? 'leaf' : 'curl');
     let P = o.pts || this.vine(o.base, o.dir, o.len, (0.35 + r() * 0.45) * p.curvy, 1 + r() * 1.6, r() * 6.28, (r() - 0.5) * 1.2, 40);
@@ -663,7 +665,9 @@ class Garden {
       const R = (0.13 + r() * 0.15) * p.big * (o.depth ? 0.75 : 1);
 
       const over = tp[1] > -0.78 && tp[1] < 0.05 && Math.abs(tp[0]) < p.w * 0.5;
-      const layer = over ? (r() < 0.22 ? 1 : 0) : (r() < 0.6 ? 1 : tl);
+      // On phones the blooms are large enough that a bloom in front of a glyph
+      // hides it, so far fewer of them are drawn over the letters.
+      const layer = over ? (r() < (this.phone.matches ? 0.08 : 0.22) ? 1 : 0) : (r() < 0.6 ? 1 : tl);
       E.push({ t: 'rose', kind: this.pickKind(r), id: nid(), x: tp[0], y: tp[1], R, rot: (r() - 0.5) * 1.0, ph1: r() * 6.28, ph2: r() * 6.28, turns: 1.8 + r() * 1, layer, d0: td });
       if (r() < 0.2) { const oo = ta + (r() < 0.5 ? 1 : -1) * 1.3; E.push({ t: 'rose', kind: this.pickKind(r), id: nid(), x: tp[0] + Math.cos(oo) * R * 1.4, y: tp[1] + Math.sin(oo) * R * 1.4, R: R * (0.6 + r() * 0.3), rot: (r() - 0.5) * 1.2, ph1: r() * 6.28, ph2: r() * 6.28, turns: 1.8 + r(), layer, d0: td + 120 }); }
     } else if (tip === 'fan') {
@@ -681,21 +685,22 @@ class Garden {
   gen(l) {
     const r = this.rng((l.ws ^ Math.imul(l.wi + 1, 2654435761)) + Math.floor(this.rand() * 1e6));
     const p = this.wordParams(l.ws), E = []; let k0 = 0; const nid = () => l.id * 100 + (k0++);
+    const ps = this.plantScale();
     const w = this.mw(l.ch), inX = () => (r() - 0.5) * w * 0.7; p.w = w;
     const nUp = 1 + (r() < 0.45 * p.dens ? 1 : 0);
     for (let i = 0; i < nUp; i++) {
-      this.grow(r, E, nid, p, { base: [inX(), -r() * 0.3], dir: -Math.PI / 2 + p.lean * 0.5 + (r() - 0.5) * 0.7, len: 0.6 + r() * 0.5, d0: 40 + i * 130, tip: l.wi === 0 && i === 0 ? 'rose' : null });
+      this.grow(r, E, nid, p, { base: [inX(), -r() * 0.3], dir: -Math.PI / 2 + p.lean * 0.5 + (r() - 0.5) * 0.7, len: (0.6 + r() * 0.5) * ps, d0: 40 + i * 130, tip: l.wi === 0 && i === 0 ? 'rose' : null });
     }
-    if (r() < 0.4 * p.dens) this.grow(r, E, nid, p, { base: [inX(), -0.1 - r() * 0.35], dir: Math.PI / 2 + (r() - 0.5) * 0.8, len: 0.35 + r() * 0.35, d0: 160 });
+    if (r() < 0.4 * p.dens) this.grow(r, E, nid, p, { base: [inX(), -0.1 - r() * 0.35], dir: Math.PI / 2 + (r() - 0.5) * 0.8, len: (0.35 + r() * 0.35) * ps, d0: 160 });
     if (l.prev && r() < p.bridgeP) {
       const px = -(this.mw(l.prev.ch) + w) / 2;
       const a = [inX(), -0.05 - r() * 0.55], b = [px + (r() - 0.5) * 0.25, -0.05 - r() * 0.55];
-      const bulge = (r() < 0.55 ? -1 : 1) * (0.4 + r() * 0.4), dx = b[0] - a[0];
+      const bulge = (r() < 0.55 ? -1 : 1) * (0.4 + r() * 0.4) * ps, dx = b[0] - a[0];
       let P = this.bez(a, [a[0] + dx * 0.15, a[1] + bulge], [b[0] - dx * 0.15, b[1] + bulge * 0.9], b, 40);
       if (r() < 0.45) P = P.slice(0, Math.floor(P.length * (0.7 + r() * 0.2)));
-      this.grow(r, E, nid, p, { pts: P, len: Math.abs(dx) + Math.abs(bulge), d0: 90, tip: r() < 0.5 ? 'curl' : r() < 0.5 ? 'leaf' : 'rose' });
+      this.grow(r, E, nid, p, { pts: P, len: (Math.abs(dx) + Math.abs(bulge)) * ps, d0: 90, tip: r() < 0.5 ? 'curl' : r() < 0.5 ? 'leaf' : 'rose' });
     }
-    if (l.wi === 0) this.grow(r, E, nid, p, { base: [-w * 0.3, -0.15 - r() * 0.4], dir: Math.PI + (r() - 0.5) * 1.2, len: 0.45 + r() * 0.3, d0: 120, tip: 'curl' });
+    if (l.wi === 0) this.grow(r, E, nid, p, { base: [-w * 0.3, -0.15 - r() * 0.4], dir: Math.PI + (r() - 0.5) * 1.2, len: (0.45 + r() * 0.3) * ps, d0: 120, tip: 'curl' });
     l.els = E;
     l.endEls = null;
     const T = [], tr = this.rng(l.id * 977 + Math.floor(this.rand() * 1e6));
@@ -1003,11 +1008,15 @@ class Garden {
     this.planters = [];
     [-1, 1].forEach(side => {
 
-      const rows = [[0.24, 0.30, 0.52], [0.55, 0.20, 0.32], [0.80, 0.30, 0.52]];
+      // On phones the word spans nearly the full width, so the side planters
+      // sit above and below it instead of growing across the letters.
+      const rows = this.phone.matches
+        ? [[0.15, 0.30, 0.52], [0.83, 0.30, 0.52]]
+        : [[0.24, 0.30, 0.52], [0.55, 0.20, 0.32], [0.80, 0.30, 0.52]];
       for (let i = 0; i < rows.length; i++) {
         const r = this.rng(Math.floor(this.rand() * 1e9));
         const p = this.wordParams(Math.floor(this.rand() * 1e9));
-        p.w = 0.4; p.lean = 0; p.big = 0.72; p.leafy = 1.15;
+        p.w = 0.4; p.lean = 0; p.big = 0.72 * this.plantScale(); p.leafy = 1.15;
         const P = {
           ch: ' ', id: (side < 0 ? 7100 : 7200) + i, planter: true, side,
           ay: rows[i][0] + r() * 0.04,
@@ -1017,15 +1026,16 @@ class Garden {
         const E = [], nid = () => P.id * 100 + E.length;
 
         const inward = side < 0 ? -0.5 - r() * 0.6 : Math.PI + 0.5 + r() * 0.6;
+        const ps = this.plantScale();
         this.grow(r, E, nid, p, {
           base: [side * -0.03, 0.02 + r() * 0.1],
-          dir: inward, len: rows[i][1] + r() * (rows[i][2] - rows[i][1]), d0: 0, tip: 'rose', depth: 0
+          dir: inward, len: (rows[i][1] + r() * (rows[i][2] - rows[i][1])) * ps, d0: 0, tip: 'rose', depth: 0
         });
 
         if (r() < 0.75) {
           this.grow(r, E, nid, p, {
             base: [side * -0.02, 0.06 + r() * 0.16],
-            dir: inward + (r() - 0.5) * 0.9, len: 0.18 + r() * 0.16,
+            dir: inward + (r() - 0.5) * 0.9, len: (0.18 + r() * 0.16) * ps,
             d0: 120 + r() * 160, depth: 1, tip: r() < 0.5 ? 'curl' : 'fan'
           });
         }
