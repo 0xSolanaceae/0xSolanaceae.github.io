@@ -66,16 +66,26 @@
   const hero = document.querySelector('.hero');
   const eng = window.garden;
   if (!hero || !eng) return;
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([e]) => {
-      eng.paused = !e.isIntersecting || document.hidden;
-    }, { rootMargin: '80px' }).observe(hero);
-  }
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) eng.paused = true;
-    else {
-      const r = hero.getBoundingClientRect();
-      eng.paused = r.bottom < 0 || r.top > window.innerHeight;
-    }
-  });
+
+  const MIN_VISIBLE = 120;
+
+  const measure = () => {
+    if (document.hidden) { eng.paused = true; return; }
+    const r = hero.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    const visible = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+    if (visible < MIN_VISIBLE) { eng.paused = true; return; }
+    if (eng.paused) { eng.paused = false; eng.lt = 0; }
+  };
+
+  let queued = 0;
+  const schedule = () => {
+    cancelAnimationFrame(queued);
+    queued = requestAnimationFrame(() => { queued = 0; measure(); });
+  };
+
+  addEventListener('scroll', schedule, { passive: true });
+  addEventListener('resize', schedule, { passive: true });
+  document.addEventListener('visibilitychange', schedule);
+  measure();
 })();

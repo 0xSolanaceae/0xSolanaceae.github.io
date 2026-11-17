@@ -2,8 +2,6 @@
   const svg = document.querySelector('.plate-svg');
   if (!svg) return;
 
-  // Phones drop the address and the second byte group, keeping the eight bytes
-  // and the ascii column beside them, in the same framed form as the desktop.
   const FULL_BOX = svg.getAttribute('viewBox') || '0 0 800 792';
   const COMPACT_BOX = '90 24 371 768';
   const COMPACT_ASC = 272;
@@ -101,7 +99,6 @@
       return b >= 0 && b < 8 ? { r, b } : null;
     }
     if (u.x >= X_HEX2 && u.x < X_HEX2 + 16 * 3 * CW) {
-      // The second byte group is cropped out on phones, so it takes no taps.
       if (narrow.matches) return null;
       const b = 8 + Math.floor((u.x - X_HEX2) / (3 * CW));
       return b < N ? { r, b } : null;
@@ -260,7 +257,6 @@
   svg.addEventListener('pointerleave', () => { clearHover(); dragging = false; });
 
   svg.addEventListener('pointerdown', (e) => {
-    // A press on one of the contact links must reach the link, not the caret.
     if (e.target.closest && e.target.closest('a')) return;
     const cell = cellAt(toUser(e));
     if (!cell) return;

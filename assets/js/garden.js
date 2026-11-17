@@ -54,8 +54,6 @@ class Garden {
   init() {
     this.letters = []; this.uid = 1; this.cache = {}; this.Sd = 0; this.St = 0; this.wrapped = false;
     this.t0 = performance.now(); this.lastKey = 0; this.rand = Math.random;
-    // The hero is repainted in full every frame, so an opaque surface saves the
-    // compositor a whole-canvas blend and lets it skip alpha bookkeeping.
     this.g = this.el.cv.getContext('2d', { alpha: false });
     this.BK = this.backend(this.g);
     this._pass = 0; this.msAvg = 0; this.pace = 0;
@@ -76,8 +74,6 @@ class Garden {
     const loop = () => {
       requestAnimationFrame(loop);
       if (this.paused) return;
-      // The pacing gate costs one branch on a fast machine and halves the
-      // work on one where the garden cannot keep up.
       const now = performance.now();
       if (this.pace && now - last < this.pace) return;
       last = now;
@@ -299,13 +295,10 @@ class Garden {
     return {
       fill: (p, col, al) => { g.beginPath(); self.path(g, p, true); g.fillStyle = col; if (al != null) g.globalAlpha = al; g.fill(); if (al != null) g.globalAlpha = 1; },
       stroke: (p, col, w, closed) => { g.beginPath(); self.path(g, p, !!closed); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
-      // One paint call for a whole group of same-coloured outlines: a flower
-      // ring is a dozen polygons, and the rasteriser charges per call.
       fillMany: (list, col) => { g.beginPath(); for (let i = 0; i < list.length; i++) self.path(g, list[i], true); g.fillStyle = col; g.fill(); },
       strokeMany: (list, col, w) => { g.beginPath(); for (let i = 0; i < list.length; i++) self.path(g, list[i], true); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
       rect: (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); },
       text: (ch, x, y, S, col) => {
-        // Assigning .font re-parses the shorthand, so only touch it on change.
         if (g._fgS !== S || g._fgF !== self.F) { g.font = `${self.FW} ${S}px ${self.F}`; g._fgS = S; g._fgF = self.F; }
         if (g._fgA !== 1) { g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g._fgA = 1; }
         g.fillStyle = col; g.fillText(ch, x, y);
@@ -344,9 +337,6 @@ class Garden {
   layerAt(segs, u) { for (const s of segs) if (u >= s.u0 && u <= s.u1) return s.layer; return segs[segs.length - 1].layer; }
 
   resize() {
-    // Resizes arrive in bursts (window drags, the mobile keyboard), and each
-    // one relayouts and repaints the whole garden, so let them coalesce into
-    // a single rAF after the first.
     if (this._rz) return;
     if (this._rzDone) { this._rz = requestAnimationFrame(() => { this._rz = 0; this.resizeNow(); }); return; }
     this._rzDone = true;
@@ -356,8 +346,6 @@ class Garden {
     const c = this.el.cv, r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
     if (!r.width) return;
     this.W = r.width; this.H = r.height;
-    // Thousands of small fills make the cost scale with pixel area; past 2x the
-    // extra resolution is invisible and every point of it is paid for again.
     this.dpr = Math.min(d, 2);
     c.width = Math.round(r.width * this.dpr); c.height = Math.round(r.height * this.dpr);
     this.g._fgS = -1;
@@ -475,8 +463,6 @@ class Garden {
       const R = (0.13 + r() * 0.15) * p.big * (o.depth ? 0.75 : 1);
 
       const over = tp[1] > -0.78 && tp[1] < 0.05 && Math.abs(tp[0]) < p.w * 0.5;
-      // On phones the blooms are large enough that a bloom in front of a glyph
-      // hides it, so far fewer of them are drawn over the letters.
       const layer = over ? (r() < (this.phone.matches ? 0.08 : 0.22) ? 1 : 0) : (r() < 0.6 ? 1 : tl);
       E.push({ t: 'rose', kind: this.pickKind(r), id: nid(), x: tp[0], y: tp[1], R, rot: (r() - 0.5) * 1.0, ph1: r() * 6.28, ph2: r() * 6.28, turns: 1.8 + r() * 1, layer, d0: td });
       if (r() < 0.2) { const oo = ta + (r() < 0.5 ? 1 : -1) * 1.3; E.push({ t: 'rose', kind: this.pickKind(r), id: nid(), x: tp[0] + Math.cos(oo) * R * 1.4, y: tp[1] + Math.sin(oo) * R * 1.4, R: R * (0.6 + r() * 0.3), rot: (r() - 0.5) * 1.2, ph1: r() * 6.28, ph2: r() * 6.28, turns: 1.8 + r(), layer, d0: td + 120 }); }
@@ -628,8 +614,6 @@ class Garden {
       const S = this.Sd, on = now - this.lastKey < 500 || Math.floor(now / 530) % 2 === 0, hf = this.eo((now - this.t0) / 600);
       if (on && hf > 0) { const h = 0.8 * S * hf, w = Math.max(2, S * 0.03); B.rect(this.cx - w / 2, this.cy - h / 2, w, h, st.C.text); }
     }
-    // Nothing here moves more than a few pixels a second, so a device that
-    // cannot hold 60fps gets every other frame rather than a stutter.
     const ms = performance.now() - t0;
     this.msAvg = this.msAvg ? this.msAvg + (ms - this.msAvg) * 0.1 : ms;
     if (this.msAvg > 12) this.pace = 32;
@@ -670,8 +654,6 @@ class Garden {
     const S = st.S, L = st.letters, sp = st.speed || 1;
     this._pass++;
 
-    // Both layer passes need to know the next live letter, so link them once
-    // instead of searching the live list twice per letter per frame.
     let nxt = null;
     for (let i = L.length - 1; i >= 0; i--) { const l = L[i]; l._nx = l.dead ? null : nxt; if (!l.dead) nxt = l; }
     let PD = L;
@@ -751,8 +733,6 @@ class Garden {
   }
   drawStem(B, e, l, age, kk, st, f, amp, layer, frO) {
     const S = st.S, fr = frO != null ? frO : this.eo((age - e.d0) / e.dur) * kk; if (fr <= 0) return;
-    // Both layer passes draw the same spine, so warp it once per frame rather
-    // than once per layer.
     let P = e._wp;
     if (e._wpP !== this._pass) {
       e._wpP = this._pass;
@@ -800,8 +780,6 @@ class Garden {
           [Math.cos(th) * rr * 0.9, Math.sin(th) * rr * 0.84 - 0.04, rg[2], rg[3], th, 0.02 * ri],
           s, R, e, i + ri * 3, 0, 0, 1.5 + ri * 0.15));
       }
-      // A ring is one paint call each for fill and outline: the petals in it
-      // share a colour and width, and neighbours overlap by a hair.
       if (!ps.length) return;
       B.fillMany(ps, C.red);
       if (R >= 9) B.strokeMany(ps, C.line, lw * 0.6);
@@ -831,9 +809,6 @@ class Garden {
     };
   }
 
-  // Petal and leaf outlines are drawn as quadratic-smoothed polygons, so the
-  // sample count can follow the on-screen size: a 20px blob reads the same at
-  // 14 points as at 26, and the rasteriser charges for every segment.
   tess(px) { return px < 8 ? 10 : px < 18 ? 14 : px < 40 ? 18 : 26; }
   blob(T, q, s, R, e, i, ax, ay, ruf) {
     const ca = Math.cos(q[4]), sa = Math.sin(q[4]), pts = [], n = this.tess(2 * q[2] * R * s);
@@ -872,8 +847,6 @@ class Garden {
     this.planters = [];
     [-1, 1].forEach(side => {
 
-      // On phones the word spans nearly the full width, so the side planters
-      // sit above and below it instead of growing across the letters.
       const rows = this.phone.matches
         ? [[0.15, 0.30, 0.52], [0.83, 0.30, 0.52]]
         : [[0.24, 0.30, 0.52], [0.55, 0.20, 0.32], [0.80, 0.30, 0.52]];

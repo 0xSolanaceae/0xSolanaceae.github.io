@@ -1,12 +1,9 @@
-# OS noise
 Thumbs.db
 desktop.ini
 .DS_Store
 
-# editors
 .vscode/
 .idea/
 
-# scratch
 *.log
 *.tmp

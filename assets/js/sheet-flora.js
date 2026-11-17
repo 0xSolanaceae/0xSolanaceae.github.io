@@ -573,8 +573,6 @@
     return cv;
   }
 
-  // Wide clumps pivot on a base that spans the whole canvas, so they get a
-  // gentler cap than the narrow creepers in the gutters.
   function leanCap(kind, h) {
     if (kind === 'bed') return 1.6;
     return Math.min(4, (Math.atan(18 / Math.max(60, h)) * 180) / Math.PI);
@@ -651,8 +649,6 @@
     wake();
   }
 
-  // The plants lean towards the cursor the way the hero's do: a smoothstep
-  // falloff across the reach, eased into place frame by frame.
   const REACH = 320;
   let pointer = null, leanRaf = 0;
 
