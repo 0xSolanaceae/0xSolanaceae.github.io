@@ -348,7 +348,7 @@ class Garden {
     this.W = r.width; this.H = r.height;
     this.dpr = Math.min(d, 2);
     c.width = Math.round(r.width * this.dpr); c.height = Math.round(r.height * this.dpr);
-    this.g._fgS = -1;
+    this.g._fgS = -1; this.g._fgA = 0;
     this.clearToBg();
     this.layout(true);
     this.placePlanters();
