@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>not here — solanaceae</title>
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e1a12">
+  <style>
+    
+    :root {
+      color-scheme: dark;
+      --bg: #0e1a12;
+      --ink: #fff6e8;
+      --dim: #9baa9a;
+      --mute: #7e8878;
+      --hair: #1c2a20;
+      --rose: #ff8a00;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px 22px calc(24px + env(safe-area-inset-bottom));
+      background: var(--bg);
+      color: var(--ink);
+      font: 400 12px/1.7 var(--mono);
+      letter-spacing: 0.04em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .wordmark {
+      align-self: flex-start;
+      color: var(--ink);
+      font: 500 13px/1 var(--mono);
+      letter-spacing: 0.2em;
+      text-decoration: none;
+      padding: 6px 0;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 0;
+      padding: 40px 0 8vh;
+      text-align: center;
+    }
+    h1 {
+      margin: 0;
+      font: 700 clamp(2rem, 7vw, 3.6rem) / 1.02 var(--serif);
+      letter-spacing: -0.015em;
+      text-wrap: balance;
+    }
+    p {
+      margin: 16px 0 0;
+      max-width: 34ch;
+      color: var(--dim);
+      text-wrap: pretty;
+    }
+    .back {
+      margin-top: 34px;
+      padding: 12px 22px;
+      border: 1px solid rgba(255, 246, 232, 0.22);
+      border-radius: 999px;
+      color: var(--ink);
+      font: 500 13px/1 var(--mono);
+      letter-spacing: 0.06em;
+      text-decoration: none;
+      transition: border-color 0.25s ease, background-color 0.25s ease;
+    }
+    .back:hover {
+      border-color: rgba(255, 138, 0, 0.8);
+      background: rgba(255, 138, 0, 0.08);
+    }
+    :focus-visible { outline: 1px solid var(--rose); outline-offset: 3px; }
+    ::selection { background: rgba(255, 138, 0, 0.9); color: #14100a; }
+    .foot {
+      color: var(--mute);
+      font-size: 11px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <a class="wordmark" href="./">solanaceae</a>
+
+  <main>
+    <h1>nothing grows here</h1>
+    <p>the page you asked for is not in this garden.</p>
+    <a class="back" href="./">back to the garden</a>
+  </main>
+
+  <p class="foot">&copy; 2026 solanaceae</p>
+</body>
+</html>

@@ -1,15 +1,12 @@
-# Dependencies
-node_modules/
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
-.DS_Store
+# OS noise
 Thumbs.db
+desktop.ini
+.DS_Store
 
-# Editors
-.vscode/*
-!.vscode/extensions.json
+# editors
+.vscode/
 .idea/
+
+# scratch
+*.log
+*.tmp

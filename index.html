@@ -1,93 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>artemive</title>
-    <meta
-        name="description"
-        content="A forest drawn in braille, and a note pinned to one of its trees with the ways to reach me."
-    />
-    <meta name="theme-color" content="#130d07" />
-    <meta name="color-scheme" content="dark" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="artemive" />
-    <meta
-        property="og:description"
-        content="A forest drawn in braille, and a note pinned to one of its trees."
-    />
-    <meta property="og:image" content="assets/fav.webp" />
-    <meta property="og:image:alt" content="A crow perched in a braille-drawn forest." />
-    <meta name="twitter:card" content="summary" />
-    <link rel="icon" type="image/webp" href="assets/fav.webp" />
-    <link
-        rel="preload"
-        href="fonts/Libron-Regular.woff2"
-        as="font"
-        type="font/woff2"
-        crossorigin
-    />
-    <link
-        rel="preload"
-        href="fonts/Caveat-Variable.woff2"
-        as="font"
-        type="font/woff2"
-        crossorigin
-    />
-    <link rel="stylesheet" href="css/style.css?v=20" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>solanaceae</title>
+  <meta name="description" content="A garden of marigolds grown from type. Contact details on the sheet.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e1a12">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="solanaceae">
+  <meta property="og:description" content="A garden of marigolds grown from type.">
+  <meta property="og:image" content="https://solanaceae.xyz/assets/img/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="The word solanaceae in cream serif type on a deep green ground, overgrown with orange marigolds and green stems.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="icon" href="assets/img/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="assets/img/favicon-64.webp" type="image/webp">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+
+  <link rel="preload" href="fonts/playfair-display-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="fonts/dm-mono-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css?v=112">
+
+  <script>
+
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    (function () {
+      var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      var reload = nav ? nav.type === 'reload' : false;
+      if (reload && location.hash) {
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+      addEventListener('pageshow', function (e) {
+        if (e.persisted || location.hash) return;
+        scrollTo(0, 0);
+      });
+    })();
+  </script>
 </head>
 <body>
-    <main id="stage" aria-label="A forest drawn in braille. A note pinned to the great tree holds the links.">
-        <h1 class="sr-only">artemive</h1>
-        <canvas class="layer" id="layer-far"></canvas>
-        <canvas class="layer" id="layer-birds-far"></canvas>
-        <canvas class="layer" id="layer-leaves-far"></canvas>
-        <div id="haze"></div>
-        <div id="light"></div>
-        <canvas class="layer" id="layer-mid-far"></canvas>
-        <canvas class="layer" id="layer-land-mid"></canvas>
-        <canvas class="layer" id="layer-mid-near"></canvas>
-        <canvas class="layer" id="layer-land-near"></canvas>
-        <canvas class="layer" id="layer-birds-near"></canvas>
-        <canvas class="layer" id="layer-leaves-mid"></canvas>
-        <canvas class="layer" id="layer-fore"></canvas>
-        <canvas class="layer" id="layer-paper"></canvas>
-        <canvas class="layer" id="layer-leaves-near"></canvas>
-        <canvas class="layer" id="layer-near"></canvas>
-        <button
-            id="note-open"
-            type="button"
-            aria-haspopup="dialog"
-            aria-label="Open the note pinned to the tree"
-        ></button>
-        <div id="groundlight"></div>
-        <div id="papercard" role="dialog" aria-modal="true" aria-label="solanaceae" aria-hidden="true">
-            <button id="papercard-backdrop" type="button" aria-label="Close note" tabindex="-1"></button>
-            <article id="papercard-sheet" tabindex="-1">
-                <canvas id="papercard-paper" aria-hidden="true"></canvas>
-                <div id="papercard-content">
-                    <ul id="papercard-links"></ul>
-                </div>
-            </article>
-        </div>
-        <div id="loading" role="status">
-            <div class="spinner" aria-hidden="true"></div>
-            <p class="sr-only">Drawing the forest</p>
-        </div>
-    </main>
-    <script src="js/config.js?v=20"></script>
-    <script src="js/util.js?v=20"></script>
-    <script src="js/motion.js?v=20"></script>
-    <script src="js/pointer.js?v=20"></script>
-    <script src="js/sprites.js?v=20"></script>
-    <script src="js/pixels.js?v=20"></script>
-    <script src="js/paper.js?v=20"></script>
-    <script src="js/layers.js?v=20"></script>
-    <script src="js/crows.js?v=20"></script>
-    <script src="js/leaves.js?v=20"></script>
-    <script src="js/anim.js?v=20"></script>
-    <script src="js/wind.js?v=20"></script>
-    <script src="js/papercard.js?v=20"></script>
-    <script src="js/main.js?v=20"></script>
+  <a class="skip" href="#contact">Skip to the bytes</a>
+
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <span class="mark" aria-hidden="true"><img src="assets/img/bloom-marigold.svg" alt="" width="384" height="353" decoding="async"></span>
+
+  <header class="hero" id="hero">
+    <canvas id="cv" aria-hidden="true"></canvas>
+    <p class="fallback" aria-hidden="true">solanaceae</p>
+
+    <h1 class="sr-only">solanaceae</h1>
+    <p class="sr-only">Marigolds, stems and leaves grown from the letters of the word.</p>
+
+    <div class="chrome">
+      <a class="scroll-cue" href="#contact" aria-label="Scroll to the contact sheet">
+        <span class="cue-word" aria-hidden="true">scroll</span>
+        <svg class="cue-sprout" viewBox="0 0 24 48" aria-hidden="true" focusable="false">
+          <path class="cue-stem" d="M12 46 L12 12" />
+          <path class="cue-leaf" d="M12 29 C12 22.4 7.1 19.2 2.8 19.2 C2.8 25.6 7.1 29 12 29 Z" />
+          <path class="cue-leaf cue-leaf-r" d="M12 22.4 C12 16.8 15.7 14 19.2 14 C19.2 19.2 16.2 22.4 12 22.4 Z" />
+          <circle class="cue-bud" cx="12" cy="9" r="4.2" />
+          <circle class="cue-bud-core" cx="12" cy="9" r="1.5" />
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <main id="main">
+  <div class="sheet">
+  <nav class="contact-list" aria-label="Contact">
+    <a href="mailto:solanaceae@duck.com">solanaceae@duck.com</a>
+    <a href="https://github.com/0xSolanaceae" target="_blank" rel="noopener noreferrer">github</a>
+    <a href="https://discord.com/users/1098339239432835162" target="_blank" rel="noopener noreferrer">discord</a>
+    <a href="https://solanaceae.xyz/">solanaceae.xyz</a>
+    <a href="pgp.asc">pgp.asc</a>
+  </nav>
+
+  <p class="sr-only" aria-live="polite" id="hex-live"></p>
+
+  <figure class="plate" id="contact">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 792" class="plate-svg" role="group" tabindex="0" aria-label="Hex dump. Click a byte, or use the arrow keys, to read its offset, value and character. Shift with the arrows or drag to select, and Control-C copies the range."><text x="28" y="24" class="hex-status" aria-hidden="true"></text><g aria-hidden="true" font-family="DM Mono, monospace" font-size="11.5" xml:space="preserve"><rect x="20" y="131" width="768.1" height="22" class="band"/><rect x="20" y="235" width="768.1" height="22" class="band"/><rect x="20" y="339" width="768.1" height="22" class="band"/><rect x="20" y="443" width="768.1" height="22" class="band"/><rect x="20" y="547" width="768.1" height="22" class="band"/><text x="28" y="44" class="addr">000a2040</text><text x="97" y="44" class="byte">49 42 5f 42 41 43 4b 54</text><text x="270" y="44" class="byte">52 41 43 45 52 55 53 54 5f 42 41 43 4b 54 52 41</text><text x="601" y="44" class="ascii">|IB_BACKTRACERUST_BACKTRA|</text><text x="28" y="70" class="addr">000a2058</text><text x="97" y="70" class="byte">43 45 00 00 00 00 00 00</text><text x="270" y="70" class="byte">78 41 0a 40 01 00 00 00 1c 00 00 00 00 00 00 00</text><text x="601" y="70" class="ascii">|CE......xA.@............|</text><text x="28" y="96" class="addr">000a2070</text><text x="97" y="96" class="byte">4c 01 00 00 18 00 00 00</text><text x="270" y="96" class="byte">75 6e 73 75 70 70 6f 72 74 65 64 20 62 61 63 6b</text><text x="601" y="96" class="ascii">|L.......unsupported back|</text><text x="28" y="122" class="addr">000a2088</text><text x="97" y="122" class="byte">74 72 61 63 65 64 69 73</text><text x="270" y="122" class="byte">61 62 6c 65 64 20 62 61 63 6b 74 72 61 63 65 00</text><text x="601" y="122" class="ascii">|tracedisabled backtrace.|</text><text x="28" y="148" class="addr">000a20a0</text><text x="97" y="148" class="byte hot">73 6f 6c 61 6e 61 63 65</text><text x="270" y="148" class="byte hot">61 65 40 64 75 63 6b 2e 63 6f 6d 00 00 00 00 00</text><text x="28" y="174" class="addr">000a20b8</text><text x="97" y="174" class="byte">60 36 00 40 01 00 00 00</text><text x="270" y="174" class="byte">28 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00</text><text x="601" y="174" class="ascii">|`6.@....(...............|</text><text x="28" y="200" class="addr">000a20d0</text><text x="97" y="200" class="byte">20 2f 00 40 01 00 00 00</text><text x="270" y="200" class="byte">80 de 03 40 01 00 00 00 78 41 0a 40 01 00 00 00</text><text x="601" y="200" class="ascii">| /.@.......@....xA.@....|</text><text x="28" y="226" class="addr">000a20e8</text><text x="97" y="226" class="byte">1c 00 00 00 00 00 00 00</text><text x="270" y="226" class="byte">c2 01 00 00 21 00 00 00 6c 69 62 72 61 72 79 5c</text><text x="601" y="226" class="ascii">|............!...library\|</text><text x="28" y="252" class="addr">000a2100</text><text x="97" y="252" class="byte hot">67 69 74 68 75 62 2e 63</text><text x="270" y="252" class="byte hot">6f 6d 2f 30 78 53 6f 6c 61 6e 61 63 65 61 65 00</text><text x="28" y="278" class="addr">000a2118</text><text x="97" y="278" class="byte">16 00 00 00 00 00 00 00</text><text x="270" y="278" class="byte">a3 00 00 00 39 00 00 00 f8 42 0a 40 01 00 00 00</text><text x="601" y="278" class="ascii">|............9....B.@....|</text><text x="28" y="304" class="addr">000a2130</text><text x="97" y="304" class="byte">16 00 00 00 00 00 00 00</text><text x="270" y="304" class="byte">a3 00 00 00 53 00 00 00 56 61 72 73 00 00 00 00</text><text x="601" y="304" class="ascii">|............S...Vars....|</text><text x="28" y="330" class="addr">000a2148</text><text x="97" y="330" class="byte">00 00 00 00 00 00 00 00</text><text x="270" y="330" class="byte">08 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00</text><text x="601" y="330" class="ascii">|........................|</text><text x="28" y="356" class="addr">000a2160</text><text x="97" y="356" class="byte hot">30 78 5f 53 6f 6c 61 6e</text><text x="270" y="356" class="byte hot">61 63 65 61 65 00 00 00 00 00 00 00 00 00 00 00</text><text x="28" y="382" class="addr">000a2178</text><text x="97" y="382" class="byte">00 51 00 40 01 00 00 00</text><text x="270" y="382" class="byte">10 00 00 00 00 00 00 00 08 00 00 00 00 00 00 00</text><text x="601" y="382" class="ascii">|.Q.@....................|</text><text x="28" y="408" class="addr">000a2190</text><text x="97" y="408" class="byte">80 82 04 40 01 00 00 00</text><text x="270" y="408" class="byte">65 6e 76 69 72 6f 6e 6d 65 6e 74 20 76 61 72 69</text><text x="601" y="408" class="ascii">|...@....environment vari|</text><text x="28" y="434" class="addr">000a21a8</text><text x="97" y="434" class="byte">61 62 6c 65 20 6e 6f 74</text><text x="270" y="434" class="byte">20 66 6f 75 6e 64 65 6e 76 69 72 6f 6e 6d 65 6e</text><text x="601" y="434" class="ascii">|able not foundenvironmen|</text><text x="28" y="460" class="addr">000a21c0</text><text x="97" y="460" class="byte hot">68 74 74 70 73 3a 2f 2f</text><text x="270" y="460" class="byte hot">73 6f 6c 61 6e 61 63 65 61 65 2e 78 79 7a 2f 00</text><text x="28" y="486" class="addr">000a21d8</text><text x="97" y="486" class="byte">20 75 6e 69 63 6f 64 65</text><text x="270" y="486" class="byte">3a 20 00 00 00 00 00 00 b6 43 0a 40 01 00 00 00</text><text x="601" y="486" class="ascii">| unicode: .......C.@....|</text><text x="28" y="512" class="addr">000a21f0</text><text x="97" y="512" class="byte">2c 00 00 00 00 00 00 00</text><text x="270" y="512" class="byte">53 70 6c 69 74 50 61 74 68 73 00 00 00 00 00 00</text><text x="601" y="512" class="ascii">|,.......SplitPaths......|</text><text x="28" y="538" class="addr">000a2208</text><text x="97" y="538" class="byte">f8 42 0a 40 01 00 00 00</text><text x="270" y="538" class="byte">16 00 00 00 00 00 00 00 67 03 00 00 33 00 00 00</text><text x="601" y="538" class="ascii">|.B.@............g...3...|</text><text x="28" y="564" class="addr">000a2220</text><text x="97" y="564" class="byte hot">70 67 70 2e 61 73 63 00</text><text x="270" y="564" class="byte hot">00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</text><text x="28" y="590" class="addr">000a2238</text><text x="97" y="590" class="byte">41 72 67 73 00 00 00 00</text><text x="270" y="590" class="byte">a0 51 00 40 01 00 00 00 20 00 00 00 00 00 00 00</text><text x="601" y="590" class="ascii">|Args.....Q.@.... .......|</text><text x="28" y="616" class="addr">000a2250</text><text x="97" y="616" class="byte">08 00 00 00 00 00 00 00</text><text x="270" y="616" class="byte">90 1d 04 40 01 00 00 00 41 72 67 73 4f 73 6c 69</text><text x="601" y="616" class="ascii">|...........@....ArgsOsli|</text><text x="28" y="642" class="addr">000a2268</text><text x="97" y="642" class="byte">62 72 61 72 79 5c 73 74</text><text x="270" y="642" class="byte">64 5c 73 72 63 5c 73 79 73 5f 63 6f 6d 6d 6f 6e</text><text x="601" y="642" class="ascii">|brary\std\src\sys_common|</text><text x="28" y="668" class="addr">000a2280</text><text x="97" y="668" class="byte">5c 77 74 66 38 2e 72 73</text><text x="270" y="668" class="byte">66 44 0a 40 01 00 00 00 22 00 00 00 00 00 00 00</text><text x="601" y="668" class="ascii">|\wtf8.rsfD.@....".......|</text><text x="28" y="694" class="addr">000a2298</text><text x="97" y="694" class="byte">d1 01 00 00 2c 00 00 00</text><text x="270" y="694" class="byte">6c 69 62 72 61 72 79 5c 73 74 64 5c 73 72 63 5c</text><text x="601" y="694" class="ascii">|....,...library\std\src\|</text><text x="28" y="720" class="addr">000a22b0</text><text x="97" y="720" class="byte">66 66 69 5c 6f 73 5f 73</text><text x="270" y="720" class="byte">74 72 2e 72 73 00 00 00 a0 44 0a 40 01 00 00 00</text><text x="601" y="720" class="ascii">|ffi\os_str.rs....D.@....|</text><text x="28" y="746" class="addr">000a22c8</text><text x="97" y="746" class="byte">1d 00 00 00 00 00 00 00</text><text x="270" y="746" class="byte">31 02 00 00 20 00 00 00 4d 65 74 61 64 61 74 61</text><text x="601" y="746" class="ascii">|........1... ...Metadata|</text></g><g font-family="DM Mono, monospace" font-size="11.5" xml:space="preserve" class="plate-links"><a href="mailto:solanaceae@duck.com" aria-label="email solanaceae@duck.com"><text x="601" y="148" class="ascii hot">|solanaceae@duck.com.....|</text></a><a href="https://github.com/0xSolanaceae" aria-label="github 0xSolanaceae" target="_blank" rel="noopener noreferrer"><text x="601" y="252" class="ascii hot">|github.com/0xSolanaceae.|</text></a><a href="https://discord.com/users/1098339239432835162" aria-label="discord 0x_Solanaceae" target="_blank" rel="noopener noreferrer"><text x="601" y="356" class="ascii hot">|0x_Solanaceae...........|</text></a><a href="https://solanaceae.xyz/" aria-label="solanaceae.xyz" target="_blank" rel="noopener noreferrer"><text x="601" y="460" class="ascii hot">|https://solanaceae.xyz/.|</text></a><a href="pgp.asc" aria-label="pgp.asc, public key download"><text x="601" y="564" class="ascii hot">|pgp.asc.................|</text></a></g><g aria-hidden="true" data-hex><rect class="hex-hover" x="0" y="0" width="0" height="0"/><rect class="hex-caret" x="0" y="0" width="0" height="0"/><rect class="hex-caret hex-caret-ascii" x="0" y="0" width="0" height="0"/></g></svg>
+  </figure>
+
+  </div>
+
+  </main>
+  <script src="assets/js/garden.js?v=112" defer></script>
+  <script src="assets/js/sheet-flora.js?v=112" defer></script>
+  <script src="assets/js/sheet-bugs.js?v=112" defer></script>
+  <script src="assets/js/hex.js?v=112" defer></script>
+  <script src="assets/js/cue.js?v=112" defer></script>
+  <script src="assets/js/mount.js?v=112" defer></script>
 </body>
 </html>
