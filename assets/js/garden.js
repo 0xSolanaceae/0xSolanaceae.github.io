@@ -4,7 +4,6 @@ const CONFIG = {
   boil: true,
   recoil: 20,
   density: 0.85,
-  showHint: true,
   speed: 0.75,
   bounce: 1.35,
   sway: 0.42,
@@ -12,8 +11,6 @@ const CONFIG = {
   boilAmp: 0.7,
   wobble: 0.8,
   leanAmt: 0.85,
-  sound: false,
-  volume: 0.5,
 
   flowers: { marigold: 1.4, rose: 0.5, daisy: 0.35, peony: 0.3, tulip: 0.25, poppy: 0.2, bell: 0.2 },
   avoidOverlap: true,
@@ -24,10 +21,7 @@ const CONFIG = {
 
 class Garden {
   constructor() {
-    const $ = id => document.getElementById(id);
-    this.el = { app: $('app'), cv: $('cv'), inp: $('inp'), pcv: $('pcv'), modes: $('modes'), bar: $('bar'), barPal: $('barPal'),
-      poster: $('poster'), info: $('info'), pText: $('pText'), presets: $('presets'), ppal: $('ppal'),
-      status: $('status'), credit: $('credit'), psizes: $('psizes'), pfonts: $('pfonts'), fontSel: $('fontSel') };
+    this.el = { cv: document.getElementById('cv') };
     this.cfg = CONFIG;
 
     this.KF = { rose: 1, peony: 1.08, tulip: 1.1, daisy: 1.05, poppy: 1.02, bell: 0.95, marigold: 1.1 };
@@ -37,36 +31,8 @@ class Garden {
       bee: { max: 0.55, base: 0.12, k: 0.003, leave: 0.62, acc: 0.12, fy: 9, fa: 0.22, wf: 6, wo: 0.2, jf: 41, ja: 1.1, wx: 2.6, wy: 3.7, wA: 90, wB: 50 },
       dragonfly: { max: 1.0, base: 0.25, k: 0.005, leave: 1.1, acc: 0.22, fy: 3, fa: 0.03, wf: 2, wo: 0.03, jf: 30, ja: 0.3, wx: 1.9, wy: 2.8, wA: 170, wB: 60 }
     };
-    this.SENT = String.fromCharCode(0x200b);
 
-    this.FONTS = [
-      { id: 'playfair', name: 'Playfair Display', w: 700, fb: 'Georgia,serif', cat: 'Serif · classic' },
-      { id: 'dmserif', name: 'DM Serif Display', w: 400, fb: 'Georgia,serif', cat: 'Serif · soft' },
-      { id: 'abril', name: 'Abril Fatface', w: 400, fb: 'Georgia,serif', cat: 'Serif · fat face' },
-      { id: 'bodoni', name: 'Bodoni Moda', w: 700, fb: 'Georgia,serif', cat: 'Serif · high contrast' },
-      { id: 'fraunces', name: 'Fraunces', w: 700, fb: 'Georgia,serif', cat: 'Serif · wonky' },
-      { id: 'cormorant', name: 'Cormorant Garamond', w: 700, fb: 'Georgia,serif', cat: 'Serif · elegant' },
-      { id: 'pacifico', name: 'Pacifico', w: 400, fb: 'cursive', cat: 'Script · retro' },
-      { id: 'caveat', name: 'Caveat', w: 700, fb: 'cursive', cat: 'Handwritten' },
-      { id: 'archivo', name: 'Archivo Black', w: 400, fb: 'Arial,sans-serif', cat: 'Sans · heavy' },
-      { id: 'bebas', name: 'Bebas Neue', w: 400, fb: 'Arial,sans-serif', cat: 'Sans · condensed' }
-    ];
     this.F = '"Playfair Display",Georgia,serif'; this.FW = 700;
-    this.SIZES = [
-      { id: 'square', label: 'Square', sub: '1:1 · 1080×1080', r: '1:1', W: 1080, H: 1080 },
-      { id: 'phone', label: 'Phone', sub: '9:16 · 1080×1920', r: '9:16', W: 1080, H: 1920 },
-      { id: 'desktop', label: 'Desktop', sub: '16:9 · 1920×1080', r: '16:9', W: 1920, H: 1080 },
-      { id: 'wide', label: 'Ultrawide', sub: '21:9 · 2560×1080', r: '21:9', W: 2560, H: 1080 }
-    ];
-    this.PRESETS = [
-      { id: 'breathe', label: 'Breathe', sub: 'Slow sway · 3s', T: 3000 },
-      { id: 'grow', label: 'Grow & wither', sub: 'Bloom, then back · 6s', T: 6000 },
-      { id: 'typed', label: 'Typed', sub: 'Type, cut, repeat · 5s', T: 5000 },
-      { id: 'wind', label: 'Gust', sub: 'Wind sweeps through · 4s', T: 4000 },
-      { id: 'reach', label: 'Reach', sub: 'Stems follow a light · 6s', T: 6000 },
-      { id: 'scatter', label: 'Scatter', sub: 'Random bloom, fade · 6s', T: 6000 },
-      { id: 'visit', label: 'Visitors', sub: 'Butterfly, bee & dragonfly · 7s', T: 7000 }
-    ];
 
     this.PAL = [
       ['Rose noir', '#000000', '#FF1400', '#3257FF', '#FFB4A8', '#FFFFFF'],
@@ -80,166 +46,44 @@ class Garden {
       ['Blush', '#FAD4D8', '#C8102E', '#274690', '#FFE3E6', '#1A1A1A'],
       ['Mono', '#000000', '#F2F2F2', '#6E6E6E', '#000000', '#FFFFFF']
     ];
-    this.state = { mode: 'type', preset: 'breathe', size: 'square', font: 'playfair', palette: 3, text: 'solanaceae', seed: 7, status: '', busy: false };
+    this.state = { palette: 3 };
     this.phone = matchMedia('(max-width: 720px)');
-    this.headless = true;
     this.init();
   }
-
-  set(patch, cb) { Object.assign(this.state, patch); this.ui(); if (cb) cb(); }
-  upd(patch) { this.set(patch, () => this.buildPoster()); }
 
   init() {
     this.letters = []; this.uid = 1; this.cache = {}; this.Sd = 0; this.St = 0; this.wrapped = false;
     this.t0 = performance.now(); this.lastKey = 0; this.rand = Math.random;
-    this.g = this.el.cv.getContext('2d');
+    // The hero is repainted in full every frame, so an opaque surface saves the
+    // compositor a whole-canvas blend and lets it skip alpha bookkeeping.
+    this.g = this.el.cv.getContext('2d', { alpha: false });
+    this.BK = this.backend(this.g);
+    this._pass = 0; this.msAvg = 0; this.pace = 0;
     this.fa = {}; this.mx = null; this.flies = []; this.perch = [];
-    if (this.headless) { this.mountHeadless(); return; }
-    this.buildUI();
-    window.addEventListener('resize', () => this.resize());
-    this.resize();
-    window.addEventListener('keydown', e => this.key(e));
-    window.addEventListener('pointermove', e => { this.mx = e.clientX; this.my = e.clientY; });
-    document.addEventListener('pointerleave', () => { this.mx = null; });
-
-    this.touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-    if (this.touch) document.documentElement.setAttribute('data-touch', '');
-    this.ptype = 'mouse';
-    window.addEventListener('pointerdown', e => { this.ptype = e.pointerType || 'mouse'; }, true);
-    const up = e => { if (e.pointerType && e.pointerType !== 'mouse') this.mx = null; };
-    window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
-    const fld = this.el.inp;
-    this.iv = this.SENT; fld.value = this.SENT;
-    fld.addEventListener('compositionstart', () => { this.composing = true; });
-    fld.addEventListener('compositionend', () => { this.composing = false; setTimeout(() => { if (!this.composing) this.inputDiff(fld); }, 0); });
-    fld.addEventListener('input', e => this.inputDiff(e.target));
-    this.vv = window.visualViewport || null; this.vvMax = 0;
-    if (this.vv && this.touch) { this.vv.addEventListener('resize', () => this.syncVV()); this.vv.addEventListener('scroll', () => this.syncVV()); this.syncVV(); }
-
-    this.el.app.addEventListener('pointerdown', ev => this.focus(ev));
-    this.el.app.addEventListener('click', ev => {
-      if (this.state.mode === 'type' && this.ptype !== 'mouse' && ev.target === this.el.cv) fld.focus({ preventScroll: true });
-    });
-    if (document.fonts) document.fonts.load(`${this.FW} 100px ${this.F}`).then(() => { this.cache = {}; this.layout(); this.buildPoster(); }).catch(() => {});
-    this.buildPoster();
-    this.ui();
-    const loop = () => {
-      requestAnimationFrame(loop);
-      if (this.paused) return;
-      this.frame();
-    };
-    loop();
-    if (!this.touch) setTimeout(() => fld.focus({ preventScroll: true }), 50);
+    this.mount();
   }
 
-  mountHeadless() {
+  mount() {
     window.addEventListener('resize', () => this.resize());
     this.resize();
     window.addEventListener('pointermove', e => { this.mx = e.clientX; this.my = e.clientY; });
     document.addEventListener('pointerleave', () => { this.mx = null; });
-    this.touch = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
-    this.ptype = 'mouse';
-    window.addEventListener('pointerdown', e => { this.ptype = e.pointerType || 'mouse'; }, true);
 
     if (document.fonts) document.fonts.load(`${this.FW} 100px ${this.F}`).then(() => { this.cache = {}; this.layout(); this.paint(performance.now(), false); }).catch(() => {});
     this.still = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (this.still) { this.frame = () => {}; return; }
+    let last = 0;
     const loop = () => {
       requestAnimationFrame(loop);
       if (this.paused) return;
+      // The pacing gate costs one branch on a fast machine and halves the
+      // work on one where the garden cannot keep up.
+      const now = performance.now();
+      if (this.pace && now - last < this.pace) return;
+      last = now;
       this.frame();
     };
     loop();
-  }
-
-  buildUI() {
-    const E = this.el, mk = (tag, css, parent) => { const n = document.createElement(tag); if (css) n.style.cssText = css; parent && parent.appendChild(n); return n; };
-    this.modeBtns = [['type', 'Type'], ['poster', 'Poster']].map(([id, label]) => {
-      const b = mk('button', '', E.modes); b.textContent = label;
-      b.addEventListener('click', () => {
-        if (id === 'poster' && this.state.mode !== 'poster') { const t = this.liveText() || this.state.text; E.pText.value = t; this.upd({ mode: 'poster', text: t }); }
-        else if (id === 'type' && this.state.mode !== 'type') this.set({ mode: 'type' }, () => { this.resize(); E.inp.focus({ preventScroll: true }); });
-      });
-      return { id, b };
-    });
-    this.sw = this.PAL.map((p, i) => {
-      const b = mk('button', '', E.barPal); b.setAttribute('data-tg', 'sw'); b.title = b.ariaLabel = p[0];
-      const d = mk('span', `background:${p[2]}`, b); d.setAttribute('data-tg', 'dot');
-      b.addEventListener('click', e => { e.stopPropagation(); this.set({ palette: i }, () => this.refocus()); });
-      return b;
-    });
-    this.pcards = this.PAL.map((p, i) => {
-      const b = mk('button', '', E.ppal); b.ariaLabel = p[0];
-      const chip = mk('span', `background:${p[1]}`, b); chip.className = 'chip';
-      mk('i', `width:18px;height:18px;background:${p[2]}`, chip);
-      mk('i', `width:12px;height:12px;margin-left:-4px;background:${p[3]}`, chip);
-      const aa = mk('span', `font-size:18px;color:${p[5]};margin-left:8px`, chip); aa.className = 'serif'; aa.textContent = 'Aa';
-      const nm = mk('span', 'padding:0 4px', b); nm.textContent = p[0];
-      b.addEventListener('click', () => this.set({ palette: i }, () => this.refocus()));
-      return b;
-    });
-    this.pbtns = this.PRESETS.map(p => {
-      const b = mk('button', '', E.presets);
-      const a = mk('span', 'font-size:13px', b); a.textContent = p.label;
-      const s = mk('span', '', b); s.textContent = p.sub;
-      b.addEventListener('click', () => this.upd({ preset: p.id }));
-      return { id: p.id, b };
-    });
-    this.sbtns = this.SIZES.map(z => {
-      const b = mk('button', '', E.psizes);
-      const a = mk('span', 'font-size:13px', b); a.textContent = z.label;
-      const t = mk('span', '', b); t.textContent = z.sub;
-      b.addEventListener('click', () => this.upd({ size: z.id }));
-      return { id: z.id, b };
-    });
-    this.fbtns = this.FONTS.map(f => {
-      const b = mk('button', '', E.pfonts);
-      const a = mk('span', `font-size:17px;line-height:1.2;font-family:"${f.name}",${f.fb};font-weight:${f.w}`, b); a.textContent = f.name;
-      const t = mk('span', '', b); t.textContent = f.cat;
-      b.addEventListener('click', () => this.setFont(f.id));
-      return { id: f.id, b };
-    });
-    this.FONTS.forEach(f => { const o = document.createElement('option'); o.value = f.id; o.textContent = f.name; o.style.fontFamily = `"${f.name}",${f.fb}`; E.fontSel.appendChild(o); });
-    E.fontSel.addEventListener('change', () => { this.setFont(E.fontSel.value); E.fontSel.blur(); this.refocus(); });
-    E.pText.addEventListener('change', e => this.upd({ text: e.target.value }));
-    $('bRegrow').addEventListener('click', () => this.upd({ seed: Math.floor(Math.random() * 1e6) }));
-    $('bSnd').addEventListener('click', e => { e.stopPropagation(); this.cfg.sound = !this.cfg.sound; if (this.cfg.sound) { this.audioInit(); this.sfx('note', 'g'); } this.ui(); this.refocus(); });
-    function $(id) { return document.getElementById(id); }
-  }
-  ui() {
-    const s = this.state, E = this.el, isType = s.mode === 'type', pal = this.pal(), pr = this.preset();
-    E.app.style.background = pal.bg;
-    E.cv.style.display = isType ? 'block' : 'none';
-    E.bar.classList.toggle('hide', !(isType && this.cfg.showHint));
-    E.bar.style.color = pal.C.text;
-    E.credit.style.color = pal.C.text; E.credit.classList.toggle('hide', !isType);
-    E.barPal.style.background = pal.bg;
-    E.poster.classList.toggle('hide', isType);
-    this.modeBtns.forEach(m => { const on = s.mode === m.id; m.b.style.background = on ? '#FFFFFF' : 'transparent'; m.b.style.color = on ? '#000' : '#BDBDBD'; });
-    this.PAL.forEach((p, i) => {
-      const on = s.palette === i, b = this.sw[i];
-      b.style.background = p[1];
-      b.style.borderColor = on ? pal.C.text : (p[1] === pal.bg ? '#3A3A3A' : 'transparent');
-      b.style.setProperty('--s', on ? 1.1 : 1);
-      this.pcards[i].style.borderColor = on ? '#FFFFFF' : '#2A2A2A';
-    });
-    this.pbtns.forEach(p => { const on = s.preset === p.id; p.b.style.background = on ? '#161616' : 'transparent'; p.b.style.borderColor = on ? '#FFFFFF' : '#2A2A2A'; });
-    this.sbtns.forEach(p => { const on = s.size === p.id; p.b.style.background = on ? '#161616' : 'transparent'; p.b.style.borderColor = on ? '#FFFFFF' : '#2A2A2A'; });
-    this.fbtns.forEach(p => { const on = s.font === p.id; p.b.style.background = on ? '#161616' : 'transparent'; p.b.style.borderColor = on ? '#FFFFFF' : '#2A2A2A'; });
-    E.fontSel.value = s.font; E.pText.style.fontFamily = this.F; E.pText.style.fontWeight = this.FW;
-    const zs = this.psize();
-    E.info.textContent = `${zs.r} · ${zs.W}×${zs.H} · ${pr.T / 1000}s loop · 30 fps`;
-    E.status.textContent = s.status;
-    document.getElementById('bSnd').textContent = this.cfg.sound ? 'SOUND ON' : 'MUTED';
-  }
-  focus(ev) {
-    if (this.state.mode !== 'type') return;
-    if (ev.target && ev.target.closest && ev.target.closest('select')) return;
-    const touch = ev.pointerType && ev.pointerType !== 'mouse', onCanvas = ev.target === this.el.cv;
-
-    if (touch) { if (ev.cancelable && (onCanvas || (ev.target.closest && ev.target.closest('button')))) ev.preventDefault(); }
-    else this.el.inp.focus({ preventScroll: true });
-    if (onCanvas) this.spawnFly(ev.clientX, ev.clientY);
   }
 
   pickInsect() {
@@ -307,6 +151,7 @@ class Garden {
   drawFlies(B, now, C) {
     this.ambient(now);
     const dt = Math.min(48, now - (this._fl || now)); this._fl = now;
+    if (!this.flies.length) return;
     const byId = {}; for (const p of this.perch) byId[p.id] = p;
     this.flies = this.flies.filter(f => {
       const k = f.kind || 'butterfly', m = this.MV[k], t = (now - f.t0) / 1000;
@@ -450,11 +295,21 @@ class Garden {
     }
   }
   backend(g) {
+    const self = this;
     return {
-      fill: (p, col, al) => { g.beginPath(); this.path(g, p, true); g.fillStyle = col; if (al != null) g.globalAlpha = al; g.fill(); if (al != null) g.globalAlpha = 1; },
-      stroke: (p, col, w) => { g.beginPath(); this.path(g, p, false); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
+      fill: (p, col, al) => { g.beginPath(); self.path(g, p, true); g.fillStyle = col; if (al != null) g.globalAlpha = al; g.fill(); if (al != null) g.globalAlpha = 1; },
+      stroke: (p, col, w, closed) => { g.beginPath(); self.path(g, p, !!closed); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
+      // One paint call for a whole group of same-coloured outlines: a flower
+      // ring is a dozen polygons, and the rasteriser charges per call.
+      fillMany: (list, col) => { g.beginPath(); for (let i = 0; i < list.length; i++) self.path(g, list[i], true); g.fillStyle = col; g.fill(); },
+      strokeMany: (list, col, w) => { g.beginPath(); for (let i = 0; i < list.length; i++) self.path(g, list[i], true); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke(); },
       rect: (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); },
-      text: (ch, x, y, S, col) => { g.font = `${this.FW} ${S}px ${this.F}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = col; g.fillText(ch, x, y); }
+      text: (ch, x, y, S, col) => {
+        // Assigning .font re-parses the shorthand, so only touch it on change.
+        if (g._fgS !== S || g._fgF !== self.F) { g.font = `${self.FW} ${S}px ${self.F}`; g._fgS = S; g._fgF = self.F; }
+        if (g._fgA !== 1) { g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g._fgA = 1; }
+        g.fillStyle = col; g.fillText(ch, x, y);
+      }
     };
   }
   vine(base, dir, len, amp, waves, ph, bend, n) {
@@ -489,16 +344,37 @@ class Garden {
   layerAt(segs, u) { for (const s of segs) if (u >= s.u0 && u <= s.u1) return s.layer; return segs[segs.length - 1].layer; }
 
   resize() {
+    // Resizes arrive in bursts (window drags, the mobile keyboard), and each
+    // one relayouts and repaints the whole garden, so let them coalesce into
+    // a single rAF after the first.
+    if (this._rz) return;
+    if (this._rzDone) { this._rz = requestAnimationFrame(() => { this._rz = 0; this.resizeNow(); }); return; }
+    this._rzDone = true;
+    this.resizeNow();
+  }
+  resizeNow() {
     const c = this.el.cv, r = c.getBoundingClientRect(), d = window.devicePixelRatio || 1;
     if (!r.width) return;
-    this.W = r.width; this.H = r.height; this.dpr = d;
-    c.width = Math.round(r.width * d); c.height = Math.round(r.height * d);
+    this.W = r.width; this.H = r.height;
+    // Thousands of small fills make the cost scale with pixel area; past 2x the
+    // extra resolution is invisible and every point of it is paid for again.
+    this.dpr = Math.min(d, 2);
+    c.width = Math.round(r.width * this.dpr); c.height = Math.round(r.height * this.dpr);
+    this.g._fgS = -1;
+    this.clearToBg();
     this.layout(true);
     this.placePlanters();
+  }
+  clearToBg() {
+    const g = this.g, d = this.dpr;
+    g.setTransform(d, 0, 0, d, 0, 0);
+    g.fillStyle = this.pal().bg;
+    g.fillRect(0, 0, this.W, this.H);
   }
   mw(ch) {
     if (this.cache[ch] != null) return this.cache[ch];
     this.g.font = `${this.FW} 100px ${this.F}`;
+    this.g._fgS = 100; this.g._fgF = this.F;
     let w = this.g.measureText(ch).width / 100;
     if (ch === ' ') w *= 1.4;
     return (this.cache[ch] = w);
@@ -560,75 +436,10 @@ class Garden {
     if (snap || !this.Sd) { this.Sd = S; this.cx = this.ctx_; this.cy = this.cty; A.forEach(l => { l.x = l.tx; l.y = l.ty; }); }
   }
 
-  syncVV() {
-    const vv = this.vv; if (!vv) return;
-    const w = Math.round(vv.width);
-    if (this.vvW !== w) { this.vvW = w; this.vvMax = 0; }
-    this.vvMax = Math.max(this.vvMax, vv.height);
-    const kb = this.vvMax - vv.height > 120, de = document.documentElement;
-    de.style.setProperty('--tg-top', vv.offsetTop + 'px');
-    de.style.setProperty('--tg-h', vv.height + 'px');
-    if (kb) de.setAttribute('data-kb', ''); else de.removeAttribute('data-kb');
-
-    if (!kb && this.kbWas && document.activeElement === this.el.inp) this.el.inp.blur();
-    this.kbWas = kb;
-    this.resize();
-  }
-  refocus() { if (this.ptype === 'mouse' && this.state.mode === 'type') this.el.inp.focus({ preventScroll: true }); }
-  liveText() { return (this.letters || []).filter(l => !l.dead).map(l => l.ch).join('').trim(); }
-  wither(now) {
-    const A = this.letters.filter(l => !l.dead), last = A[A.length - 1];
-    if (!last) return;
-    this.sfx('wither');
-    last.dead = now;
-    const pv = A[A.length - 2];
-    if (pv && pv.ch !== ' ') { pv.cut = null; pv.endEls = null; pv.tb = now; }
-    this.layout();
-  }
-
-  inputDiff(el) {
-    const S = this.SENT;
-    if (this.state.mode !== 'type' || this._kd) { this.iv = this.composing ? el.value : S; if (!this.composing) el.value = S; return; }
-    const old = this.iv == null ? S : this.iv, cur = el.value;
-    let p = 0; while (p < old.length && p < cur.length && old[p] === cur[p]) p++;
-    let dels = old.length - p;
-    if (p === 0 && old[0] === S && old.length > 1) dels -= 1;
-    const now = performance.now(); this.lastKey = now;
-    for (let i = 0; i < dels; i++) this.wither(now);
-    for (const ch of cur.slice(p)) {
-      if (ch === S) continue;
-      if (ch.charCodeAt(0) === 10) { this.sfx('clear'); this.letters = []; this.layout(); } else this.add(ch, now);
-    }
-    if (this.composing) this.iv = cur; else { el.value = S; this.iv = S; }
-  }
-
-  key(e) {
-    if (this.state.mode !== 'type') return;
-    if (e.target && e.target.tagName === 'SELECT') return;
-    if (e.metaKey || e.ctrlKey || e.altKey) {
-      return;
-    }
-    if (e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'A') && (e.key === 'Enter' || e.key === ' ')) return;
-    const now = performance.now();
-    const A = this.letters.filter(l => !l.dead), last = A[A.length - 1];
-    if (e.key === 'Backspace') {
-      e.preventDefault(); this.mark(); if (!last) return;
-      this.sfx('wither');
-      last.dead = now;
-      const pv = A[A.length - 2];
-      if (pv && pv.ch !== ' ') { pv.cut = null; pv.endEls = null; pv.tb = now; }
-      this.layout(); return;
-    }
-    if (e.key === 'Enter') { e.preventDefault(); this.mark(); this.sfx('clear'); this.letters = []; this.layout(); return; }
-    if (e.key.length !== 1) return;
-    e.preventDefault(); this.mark();
-    this.add(e.key, now);
-  }
-  mark() { this.lastKey = performance.now(); this._kd = true; setTimeout(() => { this._kd = false; }, 0); }
   add(ch, now) {
     const A = this.letters.filter(l => !l.dead), last = A[A.length - 1];
     if (ch === ' ') {
-      if (last && last.ch !== ' ') { last.cut = now; this.genEnd(last, (now - last.birth) * this.cfg.speed); this.sfx('snip'); }
+      if (last && last.ch !== ' ') { last.cut = now; this.genEnd(last, (now - last.birth) * this.cfg.speed); }
       this.letters.push({ ch: ' ', id: this.uid++, birth: now, els: [] });
       this.layout(); return;
     }
@@ -636,7 +447,6 @@ class Garden {
     const l = { ch, id: this.uid++, birth: now, tb: now, ws: same ? last.ws : Math.floor(this.rand() * 1e9), wi: same ? last.wi + 1 : 0, prev: same ? last : null };
     this.gen(l);
     this.letters.push(l);
-    this.sfx('note', ch);
     this.layout();
   }
 
@@ -735,7 +545,7 @@ class Garden {
     const ca = Math.cos(a), sa = Math.sin(a), px = -sa, py = ca;
     const ax = u => { const b = Math.sin(Math.PI * u) * bend * 0.15 * L; return [bx + ca * u * L + px * b, by + sa * u * L + py * b]; };
     const hw = u => L * 0.18 * Math.sin(Math.PI * Math.pow(u, 0.8));
-    const N = 12, s1 = [], s2 = [];
+    const N = L < 10 ? 6 : L < 26 ? 9 : 12, s1 = [], s2 = [];
     for (let i = 0; i <= N; i++) { const u = i / N, c = ax(u), w = hw(u); s1.push([c[0] + px * w, c[1] + py * w]); s2.push([c[0] - px * w, c[1] - py * w]); }
     const tip = ax(1), base = ax(0);
     B.fill([base, ...s1.slice(1, N), tip, tip, ...s2.slice(1, N).reverse(), base], this.cc.blue);
@@ -768,7 +578,7 @@ class Garden {
         const px = q[0] + lx * ca - ly * sa, py = q[1] + lx * sa + ly * ca;
         return T((ax0 + (px - ax0) * s) * R, (ay0 + (py - ay0) * s) * R, q[5]);
       };
-      const pts = []; for (let k = 0; k < 26; k++) pts.push(pt(k / 26 * Math.PI * 2));
+      const n = this.tess(2 * q[2] * R * s), pts = []; for (let k = 0; k < n; k++) pts.push(pt(k / n * Math.PI * 2));
       B.fill(pts, this.cc.red);
       if (q[6] && R >= 12 && s > 0.4) {
         const arc = []; for (let k = 0; k <= 14; k++) arc.push(pt(Math.PI * (1.18 + 0.64 * k / 14)));
@@ -790,40 +600,54 @@ class Garden {
 
   frame() {
     const now = performance.now(), dt = Math.min(64, now - (this.lt || now)); this.lt = now;
-    if (this.state.mode === 'poster') {
-      if (!this.state.busy) this.posterDraw(this.el.pcv.getContext('2d'), now - (this.pt0 || 0));
-      return;
-    }
     if (!this.W) return;
     const k = 1 - Math.exp(-dt / 80);
     this.Sd += (this.St - this.Sd) * k;
     this.cx += (this.ctx_ - this.cx) * k; this.cy += (this.cty - this.cy) * k;
     for (const l of this.letters) if (!l.dead && l.tx != null) { l.x += (l.tx - l.x) * k; l.y += (l.ty - l.y) * k; }
-    this.letters = this.letters.filter(l => !(l.dead && now - l.dead > 300));
+    if (this.letters.some(l => l.dead && now - l.dead > 300)) this.letters = this.letters.filter(l => !(l.dead && now - l.dead > 300));
 
     this.paint(now, !!this.typing && this.letters.length > 0);
   }
-  pal() { const p = this.PAL[this.state.palette] || this.PAL[0]; return { bg: p[1], C: { red: p[2], blue: p[3], line: p[4], text: p[5], vein: p[1] } }; }
+  pal() {
+    const i = this.state.palette;
+    if (this._palI === i) return this._pal;
+    const p = this.PAL[i] || this.PAL[0];
+    this._palI = i;
+    return (this._pal = { bg: p[1], C: { red: p[2], blue: p[3], line: p[4], text: p[5], vein: p[1] } });
+  }
   mainState() { return { letters: this.letters, S: this.Sd, C: this.pal().C, boil: this.cfg.boil, recoil: this.cfg.recoil, speed: this.cfg.speed, wither: 260, face: true, sway: this.cfg.sway }; }
   paint(now, caret) {
-    const g = this.g, d = this.dpr;
-    g.setTransform(d, 0, 0, d, 0, 0); g.fillStyle = this.pal().bg; g.fillRect(0, 0, this.W, this.H);
-    const B = this.backend(g), st = this.mainState();
+    const g = this.g, d = this.dpr, t0 = performance.now();
+    g.setTransform(d, 0, 0, d, 0, 0);
+    g.fillStyle = this.pal().bg; g.fillRect(0, 0, this.W, this.H);
+    const B = this.BK, st = this.mainState();
     this.render(B, now, st);
     this.drawFlies(B, now, st.C);
     if (caret) {
       const S = this.Sd, on = now - this.lastKey < 500 || Math.floor(now / 530) % 2 === 0, hf = this.eo((now - this.t0) / 600);
       if (on && hf > 0) { const h = 0.8 * S * hf, w = Math.max(2, S * 0.03); B.rect(this.cx - w / 2, this.cy - h / 2, w, h, st.C.text); }
     }
+    // Nothing here moves more than a few pixels a second, so a device that
+    // cannot hold 60fps gets every other frame rather than a stutter.
+    const ms = performance.now() - t0;
+    this.msAvg = this.msAvg ? this.msAvg + (ms - this.msAvg) * 0.1 : ms;
+    if (this.msAvg > 12) this.pace = 32;
+    else if (this.msAvg < 7) this.pace = 0;
   }
 
   relax(L, S, now, sp, smooth) {
     const KF = this.KF, items = [];
     for (const l of L) {
       if (l.dead || l.ch === ' ' || !l.els) continue;
-      for (const e of (l.endEls ? l.els.concat(l.endEls) : l.els)) {
-        if (e.t !== 'rose' || (now - l.birth) * sp - e.d0 < 0) continue;
-        items.push({ e, x: l.x + e.x * S, y: l.y + e.y * S, r: e.R * S * (KF[e.kind || 'rose'] || 1), o: l.birth + e.d0 / sp, k: 1 });
+      const age = (now - l.birth) * sp;
+      for (let pass = 0; pass < 2; pass++) {
+        const list = pass ? l.endEls : l.els;
+        if (!list) continue;
+        for (const e of list) {
+          if (e.t !== 'rose' || age - e.d0 < 0) continue;
+          items.push({ e, x: l.x + e.x * S, y: l.y + e.y * S, r: e.R * S * (KF[e.kind || 'rose'] || 1), o: l.birth + e.d0 / sp, k: 1 });
+        }
       }
     }
     items.sort((a, b) => a.o - b.o);
@@ -843,10 +667,24 @@ class Garden {
     }
   }
   render(B, now, st) {
-    const S = st.S, L = st.letters, act = L.filter(l => !l.dead), sp = st.speed || 1;
+    const S = st.S, L = st.letters, sp = st.speed || 1;
+    this._pass++;
 
-    const PD = this.planters && this.planters.length ? L.concat(this.planters) : L;
-    this.cc = st.C; this._now = now; if (st.face) this.perch = [];
+    // Both layer passes need to know the next live letter, so link them once
+    // instead of searching the live list twice per letter per frame.
+    let nxt = null;
+    for (let i = L.length - 1; i >= 0; i--) { const l = L[i]; l._nx = l.dead ? null : nxt; if (!l.dead) nxt = l; }
+    let PD = L;
+    const PL = this.planters;
+    if (PL && PL.length) {
+      const pd = this._pd || (this._pd = []);
+      pd.length = 0;
+      for (let i = 0; i < L.length; i++) pd.push(L[i]);
+      for (let i = 0; i < PL.length; i++) { PL[i]._nx = null; pd.push(PL[i]); }
+      PD = pd;
+    }
+    this.cc = st.C; this._now = now;
+    if (st.face && this.perch.length) this.perch.length = 0;
     if (this.cfg.avoidOverlap) this.relax(L, S, now, sp, !!st.face);
     if (st.face) for (const l of L) {
       let tx = 0, ty = 0;
@@ -858,24 +696,34 @@ class Garden {
       c[0] += (tx - c[0]) * 0.07; c[1] += (ty - c[1]) * 0.07;
     }
     const f = st.boil ? Math.floor(now / this.cfg.boilMs) : 0, amp = st.boil ? Math.max(0.8, S * 0.01) * (this.cfg.boilAmp != null ? this.cfg.boilAmp : 1) : 0;
-    const kd = l => l.dead ? 1 - this.eo((now - l.dead) / st.wither) : 1;
+    const wither = st.wither;
     const draw = layer => {
-      for (const l of PD) {
+      for (let pi = 0; pi < PD.length; pi++) {
+        const l = PD[pi];
         if ((l.ch === ' ' && !l.planter) || !l.els) continue;
-        const age = (now - l.birth) * sp, kk = kd(l);
-        const each = e => { if (e.t === 'stem') this.drawStem(B, e, l, age, kk, st, f, amp, layer); else if (e.layer === layer) this.drawEl(B, e, l, age, kk, st, f, amp); };
-        l.els.forEach(each);
-        if (l.endEls) l.endEls.forEach(each);
-        const i = act.indexOf(l), nx = i >= 0 ? act[i + 1] : null;
-        if (l.tend && (l.dead || !nx || nx.ch === ' ')) {
+        const age = (now - l.birth) * sp, kk = l.dead ? 1 - this.eo((now - l.dead) / wither) : 1;
+        const els = l.els;
+        for (let i = 0; i < els.length; i++) {
+          const e = els[i];
+          if (e.t === 'stem') this.drawStem(B, e, l, age, kk, st, f, amp, layer);
+          else if (e.layer === layer) this.drawEl(B, e, l, age, kk, st, f, amp);
+        }
+        const ends = l.endEls;
+        if (ends) for (let i = 0; i < ends.length; i++) {
+          const e = ends[i];
+          if (e.t === 'stem') this.drawStem(B, e, l, age, kk, st, f, amp, layer);
+          else if (e.layer === layer) this.drawEl(B, e, l, age, kk, st, f, amp);
+        }
+        if (l.tend && (l.dead || !l._nx || l._nx.ch === ' ')) {
           let fr = this.eo(((now - l.tb) * sp - 150) / 450);
           if (l.cut != null) fr *= 1 - this.eo((now - l.cut) * sp / 150) * Math.min(0.85, st.recoil / (0.6 * S));
-          for (const e of l.tend) this.drawStem(B, e, l, age, kk, st, f, amp, layer, fr * kk);
+          const t = l.tend;
+          for (let i = 0; i < t.length; i++) this.drawStem(B, t[i], l, age, kk, st, f, amp, layer, fr * kk);
         }
       }
     };
     draw(0);
-    for (const l of L) if (l.ch !== ' ' && (st.textAll || !l.dead)) B.text(l.ch, l.x, l.y, S, st.C.text);
+    for (const l of L) if (l.ch !== ' ' && !l.dead) B.text(l.ch, l.x, l.y, S, st.C.text);
     draw(1);
   }
   wpt(st, l, x, y) {
@@ -899,33 +747,42 @@ class Garden {
       x += Math.sin(t * 0.8 + l.x * 0.004 + hh * 1.1) * st.S * 0.02 * hh * st.sway;
       y += Math.cos(t * 0.6 + x * 0.003) * st.S * 0.006 * hh * st.sway;
     }
-    return st.warp ? st.warp(x, y, l) : [x, y];
+    return [x, y];
   }
   drawStem(B, e, l, age, kk, st, f, amp, layer, frO) {
     const S = st.S, fr = frO != null ? frO : this.eo((age - e.d0) / e.dur) * kk; if (fr <= 0) return;
-    const j = this.jit(e.id, f, amp);
-    const P = e.pts.map(p => this.wpt(st, l, l.x + p[0] * S + j[0], l.y + p[1] * S + j[1]));
-    for (const sg of e.segs) {
+    // Both layer passes draw the same spine, so warp it once per frame rather
+    // than once per layer.
+    let P = e._wp;
+    if (e._wpP !== this._pass) {
+      e._wpP = this._pass;
+      const j = this.jit(e.id, f, amp), src = e.pts, n = src.length;
+      if (!P || P.length !== n) P = e._wp = new Array(n);
+      for (let i = 0; i < n; i++) { const p = src[i]; P[i] = this.wpt(st, l, l.x + p[0] * S + j[0], l.y + p[1] * S + j[1]); }
+    }
+    const segs = e.segs;
+    for (let i = 0; i < segs.length; i++) {
+      const sg = segs[i];
       if (sg.layer !== layer) continue;
       const b = Math.min(sg.u1, fr); if (b <= sg.u0) continue;
       this.strokeRange(B, P, sg.u0, b, st.C.blue, S * 0.022 * (e.w || 1));
     }
-    for (const th of e.thorns) if (fr > th.u && this.layerAt(e.segs, th.u) === layer) this.thorn(B, P, th.u, th.s, S);
+    const thorns = e.thorns;
+    for (let i = 0; i < thorns.length; i++) { const th = thorns[i]; if (fr > th.u && this.layerAt(segs, th.u) === layer) this.thorn(B, P, th.u, th.s, S); }
   }
   drawEl(B, e, l, age, kk, st, f, amp) {
     const S = st.S, j = this.jit(e.id, f, amp), wx = (x, y) => this.wpt(st, l, l.x + x * S + j[0], l.y + y * S + j[1]);
-    const rw = st.rotw ? st.rotw(e) : 0;
     if (e.t === 'leaf') {
       const sc = this.spr((age - e.d0) / 1000, 7, 15) * kk; if (sc <= 0) return;
-      const p = wx(e.x, e.y); this.leaf(B, p[0], p[1], e.a + j[2] + rw, e.L * S * sc, e.bend);
+      const p = wx(e.x, e.y); this.leaf(B, p[0], p[1], e.a + j[2], e.L * S * sc, e.bend);
     } else if (e.t === 'rose') {
       const a = age - e.d0; if (a < 0) return;
       if (kk <= 0.001) return;
       const kb = this.cfg.avoidOverlap && e._k != null ? e._k : 1;
       if (kb < 0.04) return;
       const Rr = e.R * S * kk * kb, p = wx(e.x, e.y), tl = st.face ? this.faceTurn(e, p[0], p[1]) : null;
-      if ((st.face || st.perchOn) && !l.dead && a > 700) this.perch.push({ id: e.id, x: p[0], y: p[1], R: Rr });
-      this.bloom(B, p[0], p[1], Rr, e.rot + j[2] + rw + (tl ? tl[0] * 0.22 : 0), e, a, tl);
+      if (st.face && !l.dead && a > 700) this.perch.push({ id: e.id, x: p[0], y: p[1], R: Rr });
+      this.bloom(B, p[0], p[1], Rr, e.rot + j[2] + (tl ? tl[0] * 0.22 : 0), e, a, tl);
     }
   }
 
@@ -934,17 +791,20 @@ class Garden {
     const rings = [[13, 0.58, 0.30, 0.19], [11, 0.40, 0.24, 0.16], [8, 0.23, 0.18, 0.13]];
     let i = 0;
     rings.forEach((rg, ri) => {
-      const off = e.ph1 * 0.35 + ri * (Math.PI / rg[0]);
+      const off = e.ph1 * 0.35 + ri * (Math.PI / rg[0]), ps = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * 36) / 1000, 7, 13); if (s <= 0.001) continue;
         const th = off + k / rg[0] * Math.PI * 2;
         const rr = rg[1] * (0.92 + 0.08 * Math.sin(th * 3 + e.ph2));
-        const pts = this.blob(T,
+        ps.push(this.blob(T,
           [Math.cos(th) * rr * 0.9, Math.sin(th) * rr * 0.84 - 0.04, rg[2], rg[3], th, 0.02 * ri],
-          s, R, e, i + ri * 3, 0, 0, 1.5 + ri * 0.15);
-        B.fill(pts, C.red);
-        if (R >= 9) B.stroke(pts.concat([pts[0]]), C.line, lw * 0.6);
+          s, R, e, i + ri * 3, 0, 0, 1.5 + ri * 0.15));
       }
+      // A ring is one paint call each for fill and outline: the petals in it
+      // share a colour and width, and neighbours overlap by a hair.
+      if (!ps.length) return;
+      B.fillMany(ps, C.red);
+      if (R >= 9) B.strokeMany(ps, C.line, lw * 0.6);
     });
     const cs = this.spr((a - (i + 4) * 36) / 1000, 8, 12);
     if (cs > 0.001) {
@@ -971,10 +831,14 @@ class Garden {
     };
   }
 
+  // Petal and leaf outlines are drawn as quadratic-smoothed polygons, so the
+  // sample count can follow the on-screen size: a 20px blob reads the same at
+  // 14 points as at 26, and the rasteriser charges for every segment.
+  tess(px) { return px < 8 ? 10 : px < 18 ? 14 : px < 40 ? 18 : 26; }
   blob(T, q, s, R, e, i, ax, ay, ruf) {
-    const ca = Math.cos(q[4]), sa = Math.sin(q[4]), pts = [];
-    for (let k = 0; k < 26; k++) {
-      const th = k / 26 * Math.PI * 2, rr = 1 + (0.08 * Math.sin(3 * th + e.ph1 + i) + 0.04 * Math.sin(5 * th + e.ph2)) * ruf;
+    const ca = Math.cos(q[4]), sa = Math.sin(q[4]), pts = [], n = this.tess(2 * q[2] * R * s);
+    for (let k = 0; k < n; k++) {
+      const th = k / n * Math.PI * 2, rr = 1 + (0.08 * Math.sin(3 * th + e.ph1 + i) + 0.04 * Math.sin(5 * th + e.ph2)) * ruf;
       const lx = Math.cos(th) * q[2] * rr, ly = Math.sin(th) * q[3] * rr;
       const px = q[0] + lx * ca - ly * sa, py = q[1] + lx * sa + ly * ca;
       pts.push(T((ax + (px - ax) * s) * R, (ay + (py - ay) * s) * R, q[5] || 0));
@@ -983,7 +847,7 @@ class Garden {
   }
 
   lens(T, bx, by, tx, ty, hw, ls, bend, R) {
-    const dx = (tx - bx) * ls, dy = (ty - by) * ls, L = Math.hypot(dx, dy) || 1e-6, nx = -dy / L, ny = dx / L, N = 10, s1 = [], s2 = [];
+    const dx = (tx - bx) * ls, dy = (ty - by) * ls, L = Math.hypot(dx, dy) || 1e-6, nx = -dy / L, ny = dx / L, N = this.tess(L * R) > 14 ? 10 : 7, s1 = [], s2 = [];
     for (let i = 0; i <= N; i++) {
       const u = i / N, w = hw * ls * Math.sin(Math.PI * Math.pow(u, 0.72)) * (1 + 0.25 * u), b = bend * Math.sin(Math.PI * u) * ls;
       const x = bx + dx * u + nx * b, y = by + dy * u + ny * b;
@@ -1059,13 +923,15 @@ class Garden {
     const rings = [[7, 0.5, 0.5, 0.36], [6, 0.34, 0.42, 0.32], [5, 0.17, 0.32, 0.26]];
     let i = 0;
     rings.forEach((rg, ri) => {
+      const ps = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * st) / 1000, 8, 13); if (s <= 0.001) continue;
         const th = e.ph1 * 0.4 + ri * 0.55 + k / rg[0] * Math.PI * 2;
-        const pts = this.blob(T, [Math.cos(th) * rg[1], Math.sin(th) * rg[1] * 0.88 - 0.04, rg[2], rg[3], th, 0.05 * ri], s, R, e, i, 0, 0, 1.3);
-        B.fill(pts, C.red);
-        if (R >= 10) B.stroke(pts.concat([pts[0]]), C.line, lw * 0.7);
+        ps.push(this.blob(T, [Math.cos(th) * rg[1], Math.sin(th) * rg[1] * 0.88 - 0.04, rg[2], rg[3], th, 0.05 * ri], s, R, e, i, 0, 0, 1.3));
       }
+      if (!ps.length) return;
+      B.fillMany(ps, C.red);
+      if (R >= 10) B.strokeMany(ps, C.line, lw * 0.7);
     });
     const fr = this.eo((a - i * st - 100) / 500);
     if (fr > 0 && R > 4) {
@@ -1088,7 +954,7 @@ class Garden {
       const ls = this.spr((a - i * 90) / 1000, 7, 12); if (ls <= 0.001) return;
       const pts = this.lens(T, q[0], q[1], q[2], q[3], q[4], ls, q[5], R);
       B.fill(pts, C.red);
-      if (R >= 10) B.stroke(pts.concat([pts[0]]), C.line, lw * 0.7);
+      if (R >= 10) B.stroke(pts, C.line, lw * 0.7, true);
     });
     const fr = this.eo((a - 420) / 400);
     if (fr > 0 && R > 5) this.strokeRange(B, [T(0, 0.52 * R, 0.1), T(sp * 0.04 * R, -0.2 * R, 0.1), T(sp * 0.08 * R, -0.62 * R, 0.1)], 0, fr, C.line, lw * 0.9);
@@ -1098,13 +964,15 @@ class Garden {
     const rings = [[10, 0.56, 0.4, 0.15], [10, 0.46, 0.32, 0.14]];
     let i = 0;
     rings.forEach((rg, ri) => {
+      const ps = [];
       for (let k = 0; k < rg[0]; k++, i++) {
         const s = this.spr((a - i * 35) / 1000, 8, 13); if (s <= 0.001) continue;
         const th = e.ph1 + ri * Math.PI / rg[0] + k / rg[0] * Math.PI * 2;
-        const pts = this.blob(T, [Math.cos(th) * rg[1], Math.sin(th) * rg[1] * 0.92, rg[2], rg[3], th, 0.03 * ri], s, R, e, i, 0, 0, 0.6);
-        B.fill(pts, C.red);
-        if (ri === 1 && R >= 10) B.stroke(pts.concat([pts[0]]), C.line, lw * 0.6);
+        ps.push(this.blob(T, [Math.cos(th) * rg[1], Math.sin(th) * rg[1] * 0.92, rg[2], rg[3], th, 0.03 * ri], s, R, e, i, 0, 0, 0.6));
       }
+      if (!ps.length) return;
+      B.fillMany(ps, C.red);
+      if (ri === 1 && R >= 10) B.strokeMany(ps, C.line, lw * 0.6);
     });
     const cs = this.spr((a - 20 * 35 - 40) / 1000, 8, 12);
     if (cs > 0.001) {
@@ -1116,12 +984,15 @@ class Garden {
   poppy(B, cx, cy, R, rot, e, a, tl) {
     const T = this.mkT(cx, cy, R, rot, tl), lw = Math.max(0.8, R * 0.04), C = this.cc;
     const P = [[-0.36, -0.12, 0.5, 0.46, -0.35, 0], [0.38, -0.12, 0.5, 0.46, 0.35, 0], [-0.3, 0.2, 0.5, 0.44, 0.3, 0.08], [0.32, 0.2, 0.5, 0.44, -0.3, 0.08]];
+    const ps = [];
     P.forEach((q, i) => {
       const s = this.spr((a - i * 110) / 1000, 7, 12); if (s <= 0.001) return;
-      const pts = this.blob(T, q, s, R, e, i, 0, 0.15, 2);
-      B.fill(pts, C.red);
-      if (R >= 10) B.stroke(pts.concat([pts[0]]), C.line, lw * 0.6);
+      ps.push(this.blob(T, q, s, R, e, i, 0, 0.15, 2));
     });
+    if (ps.length) {
+      B.fillMany(ps, C.red);
+      if (R >= 10) B.strokeMany(ps, C.line, lw * 0.6);
+    }
     const cs = this.spr((a - 520) / 1000, 7, 12);
     if (cs > 0.001 && R > 4) {
       const c = []; for (let k = 0; k < 16; k++) { const th = k / 16 * Math.PI * 2; c.push(T(Math.cos(th) * 0.17 * R * cs, (0.05 + Math.sin(th) * 0.15) * R * cs, 0.15)); }
@@ -1149,218 +1020,6 @@ class Garden {
       B.fill(d, C.red);
     }
   }
-
-  audioInit() {
-    if (this.ac || !this.cfg.sound) return;
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    const ac = this.ac = new AC(), out = this.out = ac.createGain();
-    out.gain.value = this.cfg.volume;
-
-    const dl = ac.createDelay(1), fb = ac.createGain(), lp = ac.createBiquadFilter(), wet = ac.createGain();
-    dl.delayTime.value = 0.32; fb.gain.value = 0.38; lp.type = 'lowpass'; lp.frequency.value = 2400; wet.gain.value = 0.45;
-    out.connect(ac.destination); out.connect(dl); dl.connect(lp); lp.connect(fb); fb.connect(dl); lp.connect(wet); wet.connect(ac.destination);
-  }
-  tone(f, t0, dur, gain, type, f1) {
-    const ac = this.ac, o = ac.createOscillator(), g = ac.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(f, t0);
-    if (f1) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g); g.connect(this.out); o.start(t0); o.stop(t0 + dur + 0.05);
-  }
-  sfx(kind, ch) {
-    if (!this.cfg.sound) return;
-    this.audioInit(); const ac = this.ac; if (!ac) return;
-    if (ac.state === 'suspended') ac.resume();
-    const t = ac.currentTime + 0.005, S = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21];
-    if (kind === 'note') {
-      const f = 261.63 * Math.pow(2, S[(ch.toLowerCase().charCodeAt(0) || 0) % S.length] / 12);
-      this.tone(f, t, 1.6, 0.16); this.tone(f * 2.005, t, 0.8, 0.05); this.tone(f * 3.01, t, 0.3, 0.02, 'triangle');
-      if (Math.random() < 0.45) this.tone(f * 2, t + 0.42, 1.4, 0.05);
-    } else if (kind === 'wither') {
-      this.tone(392, t, 0.45, 0.09, 'sine', 196);
-    } else if (kind === 'snip') {
-      const n = Math.floor(ac.sampleRate * 0.06), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-      const src = ac.createBufferSource(), hp = ac.createBiquadFilter(), g = ac.createGain();
-      src.buffer = buf; hp.type = 'highpass'; hp.frequency.value = 3200; g.gain.value = 0.12;
-      src.connect(hp); hp.connect(g); g.connect(this.out); src.start(t);
-      this.tone(1568, t, 0.25, 0.03);
-    } else if (kind === 'clear') {
-      [19, 12, 7, 0].forEach((st, i) => this.tone(261.63 * Math.pow(2, st / 12), t + i * 0.09, 1.0, 0.07));
-    }
-  }
-
-  preset() { return this.PRESETS.find(p => p.id === this.state.preset) || this.PRESETS[0]; }
-  fnt() { return this.FONTS.find(f => f.id === this.state.font) || this.FONTS[0]; }
-
-  async setFont(id) {
-    const f = this.FONTS.find(x => x.id === id); if (!f || (this.state.font === id && this.F.includes(f.name))) return;
-    this.F = `"${f.name}",${f.fb}`; this.FW = f.w;
-    this.set({ font: id });
-    try { if (document.fonts) await document.fonts.load(`${f.w} 100px ${this.F}`, 'Ab' + (this.state.text || '')); } catch (e) {  }
-    if (this.state.font !== id) return;
-    this.cache = {}; this.layout(); this.buildPoster(); this.ui();
-  }
-  psize() { return this.SIZES.find(z => z.id === this.state.size) || this.SIZES[0]; }
-  buildPoster() {
-    if (!this.g) return;
-    const zs = this.psize(), W = zs.W, H = zs.H, cvp = this.el.pcv;
-    if (cvp.width !== W || cvp.height !== H) { cvp.width = W; cvp.height = H; }
-    cvp.style.aspectRatio = W + ' / ' + H;
-    const s = this.state, pr = this.preset(), text = (s.text || '').slice(0, 40) || ' ';
-    this.rand = this.rng(s.seed * 7919 + 1);
-    const L = []; let prev = null, uid = 1;
-    for (const ch of text) {
-      if (ch === ' ') { const sp = { ch: ' ', id: 9000 + uid++, els: [] }; L.push(sp); prev = sp; continue; }
-      const same = prev && prev.ch !== ' ';
-      const l = { ch, id: 9000 + uid++, ws: same ? prev.ws : Math.floor(this.rand() * 1e9), wi: same ? prev.wi + 1 : 0, prev: same ? prev : null };
-      this.gen(l); L.push(l); prev = l;
-    }
-    const n = L.length;
-    const step = pr.id === 'grow' ? Math.min(110, 3000 / n) : pr.id === 'typed' ? Math.min(85, 3600 / n) : 0;
-    const off = pr.id === 'grow' ? 200 : pr.id === 'typed' ? 300 : 0;
-    L.forEach((l, i) => { l.b = off + i * step; });
-    if (pr.id === 'scatter') { const r = this.rng(s.seed * 31 + 5); L.forEach(l => { l.b = 150 + r() * 2400; }); }
-    const wd = Math.min(60, 900 / n);
-    L.forEach((l, i) => {
-      l.d = pr.id === 'scatter' ? 4700 + i * 8 : 4200 + (n - 1 - i) * wd;
-      const nx = L[i + 1];
-      l.cutRel = null;
-      if (pr.id !== 'scatter' && l.ch !== ' ' && nx && nx.ch === ' ') { l.cutRel = Math.max(30, nx.b - l.b); this.genEnd(l, l.cutRel); }
-    });
-    this.rand = Math.random;
-    const res = this.layoutCore(L, W, H, false);
-
-    let S = res.S, x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-    const addP = (l, x, y, r) => { const X = l.tx + x * S, Y = l.ty + y * S, R = (r || 0) * S; x0 = Math.min(x0, X - R); x1 = Math.max(x1, X + R); y0 = Math.min(y0, Y - R); y1 = Math.max(y1, Y + R); };
-    for (const l of L) {
-      if (l.ch === ' ') continue;
-      addP(l, -l.tw / S / 2, -0.75); addP(l, l.tw / S / 2, 0.1);
-      const all = [...l.els, ...(l.endEls || [])];
-      for (const e of all) {
-        if (e.t === 'stem') e.pts.forEach(q => addP(l, q[0], q[1], 0.02));
-        else if (e.t === 'leaf') addP(l, e.x, e.y, e.L);
-        else addP(l, e.x, e.y, e.R * 1.15);
-      }
-    }
-
-    let tx0 = 1e9, tx1 = -1e9, ty0 = 1e9, ty1 = -1e9;
-    for (const l of L) if (l.ch !== ' ') { tx0 = Math.min(tx0, l.tx - l.tw / 2); tx1 = Math.max(tx1, l.tx + l.tw / 2); ty0 = Math.min(ty0, l.ty - 0.72 * S); ty1 = Math.max(ty1, l.ty); }
-    const hx = W * 0.44, hy = H * 0.44, bcx = (tx0 + tx1) / 2, bcy = (ty0 + ty1) / 2;
-    const k = Math.min(1.25, hx / Math.max(1, bcx - x0, x1 - bcx), hy / Math.max(1, bcy - y0, y1 - bcy));
-    L.forEach(l => { l.tx = W / 2 + (l.tx - bcx) * k; l.ty = H / 2 + (l.ty - bcy) * k; l.tw *= k; l.x = l.tx; l.y = l.ty; });
-    this.P = { letters: L, S: S * k, T: pr.T, preset: pr.id, W, H };
-    this.pt0 = performance.now();
-  }
-  posterFly(B, tt, P, C) {
-    const ps = this.perch.slice().sort((a, b) => a.x - b.x);
-    if (!ps.length) return;
-    const p1 = ps[Math.floor(ps.length * 0.25)], p2 = ps[Math.min(ps.length - 1, Math.floor(ps.length * 0.75))];
-    const A = [-80, P.H * 0.28], s1 = [p1.x, p1.y - p1.R * 0.55], s2 = [p2.x, p2.y - p2.R * 0.55], E = [P.W + 80, P.H * 0.24];
-    const sz = Math.max(12, P.S * 0.09), t = tt / 1000, eo = v => this.eo(Math.max(0, Math.min(1, v)));
-    const leg = (a, b, u, lift) => { const e = eo(u); return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e - Math.sin(e * Math.PI) * lift]; };
-    let p, flying = true, vx = 0;
-    if (t < 1.8) { p = leg(A, s1, t / 1.8, 160); vx = 1; }
-    else if (t < 3.4) { p = s1; flying = false; }
-    else if (t < 4.6) { p = leg(s1, s2, (t - 3.4) / 1.2, 140); vx = s2[0] > s1[0] ? 1 : -1; }
-    else if (t < 5.8) { p = s2; flying = false; }
-    else { p = leg(s2, E, (t - 5.8) / 1.2, 60); vx = 1; }
-    let o, ang;
-    if (flying) { o = Math.abs(Math.cos(t * 17)); p = [p[0] + Math.sin(t * 7) * 6, p[1] + Math.sin(t * 13) * 4]; ang = vx * 0.3; }
-    else { const burst = (t > 2.4 && t < 2.8) || (t > 5 && t < 5.3); o = burst ? 0.2 + 0.8 * Math.abs(Math.cos(t * 9)) : 0.3 + 0.1 * Math.sin(t * 3); ang = 0; }
-    this.butterfly(B, p[0], p[1], sz, ang, o, C);
-
-    const at = f => { const q = ps[Math.max(0, Math.min(ps.length - 1, Math.floor(ps.length * f)))]; return [q.x, q.y - q.R * 0.55]; };
-    const b1 = at(0.5), b2 = at(0.1), b3 = at(0.9), d1 = at(0.62), d2 = at(0.38);
-    this.posterInsect(B, 'bee', t, [[-90, P.H * 0.7, 0, 0.25], [b1[0], b1[1], 1.6, 2.8], [b2[0], b2[1], 3.7, 4.9], [b3[0], b3[1], 5.8, 6.2], [P.W + 90, P.H * 0.3, 6.9, 7]], 55, Math.max(10, P.S * 0.075), C);
-    this.posterInsect(B, 'dragonfly', t, [[P.W + 90, P.H * 0.39, 0, 0.35], [d1[0], d1[1], 1.5, 2.5], [d2[0], d2[1], 3.2, 4.1], [-100, P.H * 0.17, 5.2, 7]], 30, Math.max(11, P.S * 0.08), C);
-  }
-  posterRoute(wps, t, lift) {
-    const sg = v => (v < 0 ? -1 : 1), w0 = wps[0];
-    if (t < w0[3]) return { p: [w0[0], w0[1]], hold: true, dir: sg(wps[1][0] - w0[0]), pit: 0 };
-    for (let i = 1; i < wps.length; i++) {
-      const a = wps[i - 1], b = wps[i];
-      if (t < b[2]) {
-        const u = Math.max(0, Math.min(1, (t - a[3]) / (b[2] - a[3]))), e = this.eo(u), dx = b[0] - a[0], dy = b[1] - a[1];
-        return { p: [a[0] + dx * e, a[1] + dy * e - Math.sin(e * Math.PI) * lift], hold: false, dir: sg(dx), pit: Math.max(-0.5, Math.min(0.5, Math.atan2(dy, Math.abs(dx) + 1) * 0.6)) };
-      }
-      if (t < b[3]) return { p: [b[0], b[1]], hold: true, dir: sg(b[0] - a[0]), pit: 0 };
-    }
-    const z = wps[wps.length - 1], y = wps[wps.length - 2];
-    return { p: [z[0], z[1]], hold: true, dir: sg(z[0] - y[0]), pit: 0 };
-  }
-  posterInsect(B, kind, t, wps, lift, sz, C) {
-    const r = this.posterRoute(wps, t, lift), bee = kind === 'bee', sd = bee ? 1.3 : 4.1;
-    let x = r.p[0], y = r.p[1];
-    if (!r.hold) { x += Math.sin(t * (bee ? 37 : 21) + sd) * (bee ? 3 : 1); y += Math.sin(t * (bee ? 29 : 17)) * (bee ? 3 : 1); }
-    else if (bee) y += Math.sin(t * 20) * 0.6;
-    if (bee) this.bee(B, x, y, sz, r.dir, r.pit, r.hold ? ((t * 1.3 % 2) > 1.6 ? Math.sin(t * 62) : 0.25 * Math.sin(t * 14)) : Math.sin(t * 64 + sd), C);
-    else this.dragonfly(B, x, y, sz, r.dir, r.pit, r.hold ? 1 - 0.04 * Math.sin(t * 10) : 0.55 + 0.45 * Math.abs(Math.sin(t * 46 + sd)), C);
-  }
-  posterDraw(g, t) {
-    const P = this.P; if (!P) return;
-    const pc = this.pal();
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.fillStyle = pc.bg; g.fillRect(0, 0, P.W, P.H);
-    const tt = ((t % P.T) + P.T) % P.T, L = P.letters, B = this.backend(g);
-    const st = { letters: L, S: P.S, C: pc.C, boil: this.cfg.boil, recoil: this.cfg.recoil, speed: 1, wither: 600, textAll: true };
-    L.forEach(l => { l.x = l.tx; l.y = l.ty; l.dead = null; });
-    const set = base => L.forEach(l => { l.birth = base + l.b; l.tb = l.birth; l.cut = l.cutRel != null ? l.birth + l.cutRel : null; });
-    if (P.preset === 'breathe') {
-      set(-1e5);
-      const ph = tt / P.T * Math.PI * 2, S = P.S;
-      st.warp = (x, y, l) => { const h = Math.max(0, (l.y - y) / S); return [x + Math.sin(ph + l.x * 0.004 + h * 1.1) * S * 0.03 * h, y + Math.cos(ph + x * 0.003) * S * 0.008 * h]; };
-      st.rotw = e => Math.sin(ph + e.id * 0.7) * 0.12;
-    } else if (P.preset === 'grow' || P.preset === 'scatter') {
-      set(0);
-      L.forEach(l => { if (tt >= l.d) l.dead = l.d; });
-    } else if (P.preset === 'wind') {
-      set(-1e5);
-      const S = P.S, u = tt / P.T, front = -0.35 + u * 1.9;
-      st.warp = (x, y, l) => {
-        const hh = Math.max(0, (l.y - y) / S), d = l.x / P.W - front;
-        const g = d < 0 ? Math.exp(d * 2.2) * Math.cos(-d * 9) : Math.exp(-d * d * 30);
-        const idle = Math.sin(tt / 1000 * 1.6 + l.x * 0.01) * 0.012;
-        return [x + (g * 0.13 + idle) * S * hh * hh * 0.6 + (g * 0.13 + idle) * S * hh * 0.4, y + Math.abs(g) * 0.02 * S * hh];
-      };
-      st.rotw = e => { const d = e.x / P.W - front; return (d < 0 ? Math.exp(d * 2.2) * Math.cos(-d * 9) : Math.exp(-d * d * 30)) * 0.35; };
-    } else if (P.preset === 'reach') {
-      set(-1e5);
-      const S = P.S, ph = tt / P.T * Math.PI * 2, lx = P.W / 2 + Math.sin(ph) * P.W * 0.398, ly = P.H / 2 + Math.sin(ph * 2) * P.H * 0.24, rr = Math.min(P.W, P.H) * 0.52;
-      this._light = [lx, ly];
-      st.warp = (x, y, l) => {
-        const dx = lx - l.x, dy = ly - (l.y - S * 0.6), d = Math.hypot(dx, dy) || 1, w = Math.max(0, 1 - d / rr), s = w * w * (3 - 2 * w);
-        const hh = Math.min(2.5, Math.max(0, (l.y - y) / S)), f = hh * hh * 0.5 + hh * 0.5;
-        return [x + dx / d * s * S * 0.12 * f, y + dy / d * s * S * 0.06 * f];
-      };
-      st.rotw = e => { const a = Math.atan2(ly - e.y, lx - e.x); return Math.sin(a) * 0.15; };
-    } else if (P.preset === 'visit') {
-      set(-1e5);
-      st.perchOn = true; this.perch = [];
-      const ph = tt / P.T * Math.PI * 2;
-      st.warp = (x, y, l) => { const hh = Math.max(0, (l.y - y) / P.S); return [x + Math.sin(ph + l.x * 0.004 + hh) * P.S * 0.015 * hh, y]; };
-    } else {
-      if (tt >= 4400) return;
-      set(0);
-      st.letters = L.filter(l => tt >= l.birth);
-      st.textAll = false;
-    }
-    this.render(B, tt, st);
-    if (P.preset === 'reach') {
-      const [lx, ly] = this._light, r = P.S * 0.09, pts = [];
-      for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2; pts.push([lx + Math.cos(a) * r, ly + Math.sin(a) * r]); }
-      B.fill(pts, st.C.line);
-    }
-    if (P.preset === 'visit') this.posterFly(B, tt, P, st.C);
-    if (P.preset === 'typed') {
-      const born = st.letters, last = born[born.length - 1], S = P.S;
-      if (Math.floor(tt / 400) % 2 === 0 || (last && tt - last.birth < 300)) {
-        const x = last ? last.tx + last.tw / 2 + 0.07 * S : P.W / 2, y = last ? last.ty - 0.33 * S : P.H / 2, w = Math.max(2, S * 0.03), h = 0.8 * S;
-        B.rect(x - w / 2, y - h / 2, w, h, st.C.text);
-      }
-    }
-  }
-
 }
 
 if (document.getElementById('cv')) window.garden = new Garden();

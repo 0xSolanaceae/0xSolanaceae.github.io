@@ -31,17 +31,6 @@
     U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
-@font-face {
-  font-family: 'Caveat';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('../../fonts/caveat-700-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
 :root {
   --bg: #0e1a12;
   --ink: #fff6e8;
@@ -54,7 +43,6 @@
   --stem: #1fa463;
   --mono: 'DM Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --hand: 'Caveat', ui-rounded, 'Segoe Script', cursive;
   color-scheme: dark;
 }
 
@@ -166,22 +154,7 @@ html.no-garden .fallback { display: grid; }
   pointer-events: none;
 }
 
-.chrome a,
-.chrome button { pointer-events: auto; }
-
-.top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.mark img {
-  display: block;
-  width: 26px;
-  height: auto;
-  filter: saturate(0.92) brightness(0.98);
-}
+.chrome a { pointer-events: auto; }
 
 .scroll-cue {
   align-self: center;
